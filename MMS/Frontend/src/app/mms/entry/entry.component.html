@@ -68,18 +68,11 @@
                                         <input type="date" class="form-control" [(ngModel)]="deposit.depositDate"
                                             name="depDate">
                                     </div>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <label class="form-label text-muted small fw-bold text-uppercase">Interest
-                                                (%)</label>
-                                            <input type="number" class="form-control" [(ngModel)]="deposit.interestRate"
-                                                name="intRate" (change)="onInterestRateChange()" min="0.1" step="0.1">
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label text-muted small fw-bold text-uppercase">Loan
-                                                Typ</label>
-                                            <input type="text" class="form-control" value="Secured" readonly disabled>
-                                        </div>
+                                    <div class="mb-0">
+                                        <label class="form-label text-muted small fw-bold text-uppercase">Interest
+                                            (%)</label>
+                                        <input type="number" class="form-control" [(ngModel)]="deposit.interestRate"
+                                            name="intRate" (change)="onInterestRateChange()" min="0.1" step="0.1">
                                     </div>
                                 </div>
                             </div>
