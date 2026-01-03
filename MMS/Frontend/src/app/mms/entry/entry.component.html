@@ -1,292 +1,363 @@
 <div class="row">
     <div class="col-sm-12">
-        <app-card [cardTitle]="isEditMode ? 'Edit Deposit (ID: ' + editId + ')' : 'New Deposit'" [options]="false"
-            cardClass="shadow-sm border-0">
+        <div class="card border-0 shadow-none bg-transparent">
 
-            <form class="business-form">
-                <!-- SECTION 1: CUSTOMER & TERMS -->
-                <div class="section-container mb-4">
-                    <div class="row g-3">
-                        <!-- Customer Search -->
-                        <div class="col-lg-8">
-                            <label class="form-label text-muted small fw-bold text-uppercase">Customer</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0">
-                                    <i class="feather icon-search text-muted"></i>
-                                </span>
-                                <input type="text" class="form-control border-start-0 ps-0"
-                                    placeholder="Search by Name, Mobile or ID..." [(ngModel)]="searchTerm"
-                                    name="searchBox" (input)="searchCustomers()" [disabled]="isEditMode"
-                                    autocomplete="off">
-                                <button class="btn btn-primary" type="button" (click)="openNewCustomerModal()">
-                                    <i class="feather icon-plus me-1"></i> New Customer
-                                </button>
-                            </div>
-
-                            <!-- Search Results Dropdown -->
-                            <div class="dropdown-menu show w-100 shadow-lg border-0 mt-1" *ngIf="showResults"
-                                style="position: absolute; z-index: 1050; max-height: 300px; overflow-y: auto;">
-                                <a class="dropdown-item py-2 border-bottom" *ngFor="let result of searchResults"
-                                    (click)="selectCustomer(result)" href="javascript:void(0)">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-0 text-dark fw-bold">{{ result.customerName }}</h6>
-                                            <small class="text-muted"><i class="feather icon-phone me-1"></i>{{
-                                                result.mobileNumber }}</small>
-                                        </div>
-                                        <span class="badge bg-light text-dark">ID: {{ result.id }}</span>
-                                    </div>
-                                    <small class="text-secondary d-block mt-1">{{ result.city }}</small>
-                                </a>
-                            </div>
-
-                            <!-- Selected Customer Badge -->
-                            <div class="selected-customer-card mt-3 p-3 bg-primary-light rounded border border-primary-light"
-                                *ngIf="selectedCustomer">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="mb-1 text-primary fw-bold">{{ selectedCustomer.customerName }}</h5>
-                                        <div class="text-muted small">
-                                            <i class="feather icon-phone me-1"></i> {{ selectedCustomer.mobileNumber }}
-                                            <span class="mx-2">|</span>
-                                            <i class="feather icon-map-pin me-1"></i> {{ selectedCustomer.city }}
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-primary">ID: {{ selectedCustomer.id }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Transaction Terms -->
-                        <div class="col-lg-4">
-                            <div class="card bg-light border-0 h-100">
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted small fw-bold text-uppercase">Date</label>
-                                        <input type="date" class="form-control" [(ngModel)]="deposit.depositDate"
-                                            name="depDate">
-                                    </div>
-                                    <div class="mb-0">
-                                        <label class="form-label text-muted small fw-bold text-uppercase">Interest
-                                            (%)</label>
-                                        <input type="number" class="form-control" [(ngModel)]="deposit.interestRate"
-                                            name="intRate" (change)="onInterestRateChange()" min="0.1" step="0.1">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SECTION 2: LOAN AMOUNT (Highlighted) -->
-                <div class="section-container mb-4">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="p-3 rounded"
-                                [ngClass]="isLoanAmountInvalid ? 'bg-danger-light border border-danger' : 'bg-primary-light border-start border-4 border-primary'">
-                                <div class="row align-items-center">
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold mb-0"
-                                            [class.text-danger]="isLoanAmountInvalid">PRINCIPAL LOAN AMOUNT</label>
-                                        <small class="d-block text-danger mt-1 fw-bold" *ngIf="isLoanAmountInvalid">
-                                            <i class="feather icon-alert-circle me-1"></i> Exceeds Limit by {{
-                                            currencySymbol }}{{ excessAmount | number }}
-                                        </small>
-                                        <small class="d-block text-muted mt-1"
-                                            *ngIf="!isLoanAmountInvalid && deposit.initialLoanAmount">
-                                            (Limit: {{ currencySymbol }}{{ eligibleLoanAmount | number }})
-                                        </small>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <div class="input-group input-group-lg bg-white rounded">
-                                            <span
-                                                class="input-group-text border-0 bg-transparent text-secondary pl-3">{{
-                                                currencySymbol }}</span>
-                                            <input type="text"
-                                                class="form-control border-0 fs-3 fw-bold ps-1 text-primary"
-                                                [class.text-danger]="isLoanAmountInvalid" [ngModel]="loanAmountDisplay"
-                                                (input)="onLoanAmountInput($event)" name="loanAmt" placeholder="0">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SECTION 3: ORNAMENTS TABLE -->
-                <div class="section-container mb-5">
+            <!-- HEADER: TITLE & CUSTOMER SEARCH -->
+            <div class="card shadow-sm border-0 mb-4 rounded-3 animate__animated animate__fadeInDown">
+                <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-secondary mb-0">COLLATERAL ITEMS</h5>
-                    </div>
-
-                    <div class="table-responsive rounded border">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="py-3 ps-3 text-muted text-uppercase small fw-bold" style="width: 20%;">
-                                        Item</th>
-                                    <th class="py-3 text-end text-muted text-uppercase small fw-bold"
-                                        style="width: 15%;">Gross Wt</th>
-                                    <th class="py-3 text-center text-muted text-uppercase small fw-bold"
-                                        style="width: 10%;">Fine %</th>
-                                    <th class="py-3 text-end text-muted text-uppercase small fw-bold"
-                                        style="width: 15%;">Fine Wt</th>
-                                    <th class="py-3 text-end text-muted text-uppercase small fw-bold text-primary"
-                                        style="width: 15%;">Valuation</th>
-                                    <th class="py-3 ps-3 text-muted text-uppercase small fw-bold" style="width: 20%;">
-                                        Description</th>
-                                    <th class="py-3 text-center" style="width: 5%;"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr *ngFor="let line of deposit.itemLines; let i = index">
-                                    <td class="ps-3">
-                                        <select class="form-select form-select-sm border-0 fw-bold text-dark"
-                                            [(ngModel)]="line.itemId" [name]="'item'+i" (change)="onItemChange(line)">
-                                            <option [ngValue]="null" disabled selected>Select...</option>
-                                            <option *ngFor="let item of items" [value]="item.id">{{ item.itemName }}
-                                            </option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control text-end border-end-0"
-                                                [(ngModel)]="line.weight" [name]="'wt'+i" (input)="onWeightChange(line)"
-                                                (blur)="formatDecimal(line, 'weight')" placeholder="0.000">
-                                            <span class="input-group-text bg-white border-start-0 text-muted">{{
-                                                getUnitName(line.itemId) }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <input type="number" class="form-control form-control-sm text-center mx-auto"
-                                            style="max-width: 80px;" [(ngModel)]="line.finePercentage" [name]="'fpt'+i"
-                                            (input)="onFinePercentageChange(line)" max="100" min="0" step="1"
-                                            placeholder="75">
-                                    </td>
-                                    <td>
-                                        <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control text-end bg-light"
-                                                [(ngModel)]="line.fineWeight" [name]="'fwt'+i" tabindex="-1" readonly
-                                                placeholder="0.000">
-                                            <span class="input-group-text bg-light text-muted">{{
-                                                getUnitName(line.itemId)
-                                                }}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text bg-light border-end-0 text-muted">{{
-                                                currencySymbol }}</span>
-                                            <input type="text"
-                                                class="form-control text-end bg-light border-start-0 fw-bold text-primary"
-                                                [value]="line.assetValue != null ? (line.assetValue | number) : ''"
-                                                readonly>
-                                        </div>
-                                    </td>
-                                    <td class="ps-3">
-                                        <input type="text" class="form-control form-control-sm border-0"
-                                            [(ngModel)]="line.description" [name]="'desc'+i" placeholder="Add notes...">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-link text-danger p-0"
-                                            (click)="deposit.itemLines.splice(i, 1)">
-                                            <i class="feather icon-x-circle"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr *ngIf="deposit.itemLines.length === 0">
-                                    <td colspan="7" class="text-center py-4 text-muted">
-                                        Scan barcode or click 'Add Ornament' to begin
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-2">
-                        <button class="btn btn-secondary btn-sm" (click)="addItemLine()">
-                            <i class="feather icon-plus me-1"></i> Add Ornament
+                        <h5 class="mb-0 fw-bold text-dark text-uppercase letter-spacing-1">
+                            <i class="feather icon-file-text text-primary me-2"></i>
+                            {{ isEditMode ? 'Edit Deposit #' + editId : 'New Deposit Entry' }}
+                        </h5>
+                        <button class="btn btn-primary btn-sm rounded-pill px-3" (click)="openNewCustomerModal()">
+                            <i class="feather icon-user-plus me-1"></i> New Customer
                         </button>
                     </div>
-                </div>
 
-                <!-- SECTION 4: FINANCIAL SUMMARY (UPDATED) -->
-                <div class="row justify-content-end" *ngIf="deposit.itemLines.length > 0">
-                    <div class="col-lg-5">
-                        <div class="card shadow-sm border-0">
-                            <div class="card-body p-0">
-                                <!-- Metal Breakdown -->
-                                <div class="p-3 bg-light border-bottom" *ngFor="let group of itemSummaryGrouped">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-bold text-dark">{{ group.name }} TOTAL</span>
-                                        <div class="text-end">
-                                            <div class="fw-bold">{{ group.weight | number:'1.3-3' }} {{ group.unit }}
-                                            </div>
-                                            <small class="text-muted">Fine: {{ group.fineWeight | number:'1.3-3'
-                                                }}</small>
-                                        </div>
-                                    </div>
+                    <!-- Customer Search Bar -->
+                    <div class="position-relative">
+                        <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden bg-white border">
+                            <span class="input-group-text border-0 bg-transparent ps-4">
+                                <i class="feather icon-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-0 bg-transparent ps-2"
+                                placeholder="Search Customer by Name, Mobile or ID..." [(ngModel)]="searchTerm"
+                                name="searchBox" (input)="searchCustomers()" [disabled]="isEditMode" autocomplete="off">
+                        </div>
+
+                        <!-- Dropdown Results -->
+                        <div class="dropdown-menu show w-100 shadow-lg border-0 mt-2 rounded-3" *ngIf="showResults"
+                            style="position: absolute; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                            <a class="dropdown-item py-3 border-bottom d-flex align-items-center"
+                                *ngFor="let result of searchResults" (click)="selectCustomer(result)"
+                                href="javascript:void(0)">
+                                <div class="bg-light rounded-circle p-2 me-3 text-center"
+                                    style="width: 40px; height: 40px;">
+                                    <i class="feather icon-user text-secondary"></i>
                                 </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0 text-dark fw-bold">{{ result.customerName }}</h6>
+                                    <small class="text-muted">
+                                        <i class="feather icon-phone me-1"></i>{{ result.mobileNumber }}
+                                        <span class="mx-2">•</span>
+                                        {{ result.city }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-light text-dark border">ID: {{ result.id }}</span>
+                            </a>
+                        </div>
+                    </div>
 
-                                <!-- Valuations -->
-                                <div class="p-4">
-                                    <div class="d-flex justify-content-between mb-2 align-items-center">
-                                        <span class="text-secondary text-uppercase fw-bold">MAX ELIGIBLE LIMIT (<input
-                                                type="number" class="border-0 text-primary fw-bold p-0 text-center"
-                                                style="width: 35px; background: transparent; font-size: 1.1em;"
-                                                [(ngModel)]="deposit.givingPercentage" name="givingPct"
-                                                (change)="onGivingPercentageChange()">%)</span>
-                                        <span class="fw-bold fs-5 text-dark">{{ currencySymbol }} {{ eligibleLoanAmount
-                                            | number
-                                            }}</span>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
-                                        <span class="text-muted small fw-bold text-uppercase">SURPLUS MARGIN</span>
-                                        <span class="fw-bold text-success">{{ currencySymbol }} {{ netValuationSurplus |
-                                            number }}</span>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-center pt-2">
-                                        <span class="text-muted small fw-bold text-uppercase">EST. MONTHLY
-                                            INTEREST</span>
-                                        <span class="fw-bold text-dark">{{ currencySymbol }} {{ monthlyInterestAmount |
-                                            number:'1.0-0' }}</span>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-center pt-2">
-                                        <span class="text-muted small fw-bold text-uppercase">INTEREST COVERAGE</span>
-                                        <span class="fw-bold text-info">{{ interestCoverMonths | number:'1.1-1' }}
-                                            Months</span>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-2">
-                                        <span class="text-primary fw-bold fs-5">TOTAL VALUATION</span>
-                                        <span class="text-primary fw-bold fs-4">{{ currencySymbol }} {{ totalAssetValue
-                                            | number }}</span>
+                    <!-- Selected Customer Profile Card -->
+                    <div class="mt-4 animate__animated animate__fadeIn" *ngIf="selectedCustomer">
+                        <div
+                            class="bg-primary-light border border-primary-light rounded-3 p-3 position-relative overflow-hidden">
+                            <div class="d-flex align-items-center position-relative" style="z-index: 1;">
+                                <div class="bg-white p-3 rounded-circle shadow-sm text-primary me-3">
+                                    <i class="feather icon-user fs-4"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1 text-primary fw-bold">{{ selectedCustomer.customerName }}</h5>
+                                    <div class="d-flex align-items-center text-secondary small fw-bold">
+                                        <span class="me-3"><i class="feather icon-phone me-1"></i> {{
+                                            selectedCustomer.mobileNumber }}</span>
+                                        <span class="me-3"><i class="feather icon-map-pin me-1"></i> {{
+                                            selectedCustomer.city }}</span>
+                                        <span class="badge bg-primary rounded-pill">ID: {{ selectedCustomer.id }}</span>
                                     </div>
                                 </div>
                             </div>
+                            <!-- Background Decoration -->
+                            <i class="feather icon-users position-absolute text-primary opacity-10"
+                                style="right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.05;"></i>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Actions -->
-                        <div class="d-grid gap-2 mt-4">
-                            <button class="btn btn-primary btn-lg fw-bold shadow-lg" (click)="submitDeposit()"
-                                [disabled]="isLoanAmountInvalid || !deposit.customerId || deposit.itemLines.length === 0">
-                                {{ isEditMode ? 'UPDATE DEPOSIT' : 'SUBMIT DEPOSIT' }}
-                            </button>
+            <!-- TRANSACTION CONTROL RIBBON (Token, Date, Interest) -->
+            <div class="row g-3 mb-4">
+                <!-- Token Number -->
+                <div class="col-md-5">
+                    <div class="card shadow-sm border-0 h-100 rounded-3">
+                        <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
+                            <label class="text-muted small fw-bold text-uppercase mb-2">Token Number <span
+                                    class="text-danger">*</span></label>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1 position-relative">
+                                    <div class="input-group shadow-sm rounded overflow-hidden"
+                                        [class.border]="tokenStatus === 'invalid'"
+                                        [class.border-danger]="tokenStatus === 'invalid'">
+                                        <span class="input-group-text bg-white border-0 ps-3">
+                                            <i class="feather icon-tag text-dark"></i>
+                                        </span>
+                                        <input type="number" class="form-control border-0 fw-bold fs-5 text-dark"
+                                            [(ngModel)]="deposit.tokenNo" name="tokenNo" placeholder="---" min="1"
+                                            (input)="onTokenInput()" autocomplete="off">
+                                        <button class="btn btn-dark fw-bold px-3" (click)="generateToken()">
+                                            <i class="feather icon-zap text-warning me-1"></i> Auto
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Status Line -->
+                            <div class="d-flex align-items-center mt-2" style="min-height: 20px;">
+                                <div *ngIf="tokenStatus === 'loading'" class="text-primary small fw-bold"><i
+                                        class="feather icon-loader fa-spin me-1"></i> Checking...</div>
+                                <div *ngIf="tokenStatus === 'valid'" class="text-success small fw-bold"><i
+                                        class="feather icon-check-circle me-1"></i> Available</div>
+                                <div *ngIf="tokenStatus === 'invalid'" class="text-danger small fw-bold"><i
+                                        class="feather icon-alert-triangle me-1"></i> {{ tokenErrorMessage }}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-            </form>
-        </app-card>
+                <!-- Date -->
+                <div class="col-md-4">
+                    <div class="card shadow-sm border-0 h-100 rounded-3">
+                        <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
+                            <label class="text-muted small fw-bold text-uppercase mb-2">Deposit Date <span
+                                    class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm rounded">
+                                <span class="input-group-text bg-light border-0"><i
+                                        class="feather icon-calendar"></i></span>
+                                <input type="date" class="form-control border-0 bg-light fw-bold fs-6"
+                                    [(ngModel)]="deposit.depositDate" name="depDate">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interest Rate -->
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0 h-100 rounded-3">
+                        <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
+                            <label class="text-muted small fw-bold text-uppercase mb-2">Interest Rate (%) <span
+                                    class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm rounded">
+                                <input type="number"
+                                    class="form-control border-0 bg-light fw-bold fs-5 text-center text-primary"
+                                    [(ngModel)]="deposit.interestRate" name="intRate" (change)="onInterestRateChange()"
+                                    min="0.1" step="0.1">
+                                <span class="input-group-text bg-light border-0 fw-bold">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HERO: PRINCIPAL LOAN AMOUNT -->
+            <div class="card shadow-sm border-0 mb-4 rounded-3 overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="row g-0">
+                        <div class="col-md-12">
+                            <div class="p-4" [ngClass]="isLoanAmountInvalid ? 'bg-danger-light' : 'bg-primary-light'">
+                                <label class="form-label fw-bold small text-uppercase mb-2"
+                                    [class.text-danger]="isLoanAmountInvalid"
+                                    [class.text-primary]="!isLoanAmountInvalid">
+                                    Principal Loan Amount <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group input-group-lg bg-white rounded shadow-sm border-0">
+                                    <span class="input-group-text border-0 bg-transparent text-secondary ps-4 fs-4">{{
+                                        currencySymbol }}</span>
+                                    <input type="text" class="form-control border-0 fs-2 fw-bold text-dark ps-2"
+                                        [class.text-danger]="isLoanAmountInvalid" [ngModel]="loanAmountDisplay"
+                                        (input)="onLoanAmountInput($event)" name="loanAmt" placeholder="0">
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                                    <small class="fw-bold" [class.text-danger]="isLoanAmountInvalid"
+                                        [class.text-muted]="!isLoanAmountInvalid">
+                                        <i class="feather icon-info me-1"></i>
+                                        <span *ngIf="isLoanAmountInvalid">Exceeds Limit by {{ currencySymbol }}{{
+                                            excessAmount | number }}</span>
+                                        <span *ngIf="!isLoanAmountInvalid">Max Eligible Limit: {{ currencySymbol }}{{
+                                            eligibleLoanAmount | number }}</span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLLATERAL TABLE -->
+            <div class="card shadow-sm border-0 mb-4 rounded-3">
+                <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-dark mb-0 text-uppercase letter-spacing-1">Collateral Items</h6>
+                    <button class="btn btn-light btn-sm fw-bold border" (click)="addItemLine()">
+                        <i class="feather icon-plus text-primary me-1"></i> Add Item
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light text-uppercase">
+                            <tr>
+                                <th class="ps-4 py-3 small fw-bold text-muted border-0" style="width: 20%;">Item</th>
+                                <th class="text-end py-3 small fw-bold text-muted border-0" style="width: 15%;">Gross Wt
+                                </th>
+                                <th class="text-center py-3 small fw-bold text-muted border-0" style="width: 10%;">Fine
+                                    %</th>
+                                <th class="text-end py-3 small fw-bold text-muted border-0" style="width: 15%;">Fine Wt
+                                </th>
+                                <th class="text-end py-3 small fw-bold text-primary border-0" style="width: 15%;">
+                                    Valuation</th>
+                                <th class="ps-4 text-start py-3 small fw-bold text-muted border-0" style="width: 20%;">
+                                    Description</th>
+                                <th class="py-3 border-0" style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let line of deposit.itemLines; let i = index">
+                                <td class="ps-4">
+                                    <select class="form-select form-select-sm border-0 bg-light fw-bold text-dark"
+                                        [(ngModel)]="line.itemId" [name]="'item'+i" (change)="onItemChange(line)">
+                                        <option [ngValue]="null" disabled selected>Select Item</option>
+                                        <option *ngFor="let item of items" [value]="item.id">{{ item.itemName }}
+                                        </option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control text-end border-0"
+                                            [(ngModel)]="line.weight" [name]="'wt'+i" (input)="onWeightChange(line)"
+                                            (blur)="formatDecimal(line, 'weight')" placeholder="0.000">
+                                        <span class="input-group-text bg-transparent border-0 text-muted small">{{
+                                            getUnitName(line.itemId) }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="bg-light rounded d-inline-block px-2">
+                                        <input type="number"
+                                            class="form-control form-control-sm border-0 bg-transparent text-center p-0 fw-bold"
+                                            style="width: 50px;" [(ngModel)]="line.finePercentage" [name]="'fpt'+i"
+                                            (input)="onFinePercentageChange(line)" max="100" min="0" step="1">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control text-end border-0 bg-light rounded"
+                                            [(ngModel)]="line.fineWeight" [name]="'fwt'+i" tabindex="-1" readonly
+                                            placeholder="0.000">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-end text-primary fw-bold" style="font-family: monospace;">
+                                        {{ currencySymbol }} {{ line.assetValue != null ? (line.assetValue | number) :
+                                        '0' }}
+                                    </div>
+                                </td>
+                                <td class="ps-4">
+                                    <input type="text" class="form-control form-control-sm border-0 text-muted"
+                                        [(ngModel)]="line.description" [name]="'desc'+i" placeholder="Add details...">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button"
+                                        class="btn btn-link text-danger p-0 opacity-50 hover-opacity-100"
+                                        (click)="deposit.itemLines.splice(i, 1)">
+                                        <i class="feather icon-x-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr *ngIf="deposit.itemLines.length === 0">
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="text-muted opacity-50">
+                                        <i class="feather icon-layers display-6 mb-2"></i>
+                                        <p class="mb-0 small">No items added yet. Click "Add Item" to start.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FINANCIAL SUMMARY & ACTIONS -->
+            <div class="row" *ngIf="deposit.itemLines.length > 0">
+                <div class="col-lg-6">
+                    <!-- Optional: Notes or Extra Actions could go here -->
+                    <div class="form-group">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Notes / Remarks</label>
+                        <textarea class="form-control bg-light border-0" rows="4" [(ngModel)]="deposit.notes"
+                            name="notes" placeholder="Enter any specific transaction notes..."></textarea>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow-sm border-0 rounded-3 bg-white">
+                        <div class="card-body p-4">
+                            <!-- Metal Totals -->
+                            <div class="mb-4" *ngFor="let group of itemSummaryGrouped">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                                    <span class="fw-bold text-dark small text-uppercase me-2">{{ group.name }}</span>
+                                    <div class="text-end lh-1">
+                                        <span class="fw-bold text-dark">{{ group.weight | number:'1.3-3' }} {{
+                                            group.unit }}</span>
+                                        <br>
+                                        <small class="text-muted" style="font-size: 0.75rem;">Fine: {{ group.fineWeight
+                                            | number:'1.3-3' }}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="opacity-10 my-3">
+
+                            <!-- Financials -->
+                            <!-- Financials -->
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted fw-bold text-uppercase">Total Valuation</span>
+                                <span class="fw-bold fs-4 text-primary">{{ currencySymbol }} {{ totalAssetValue | number
+                                    }}</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <span class="text-muted fw-bold text-uppercase">
+                                    Max Limit (<input type="number"
+                                        class="border-0 text-primary fw-bold p-0 text-center bg-transparent"
+                                        style="width: 50px;" [(ngModel)]="deposit.givingPercentage" name="givingPct"
+                                        (change)="onGivingPercentageChange()">%)
+                                </span>
+                                <span class="fw-bold fs-3 text-dark">{{ currencySymbol }} {{ eligibleLoanAmount | number
+                                    }}</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <span class="text-success fw-bold text-uppercase fs-5">TOTAL MARGIN</span>
+                                <span class="fw-bold text-success fs-4">{{ currencySymbol }} {{ netValuationSurplus |
+                                    number }}</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted fw-bold text-uppercase">Est. Monthly Interest</span>
+                                <span class="fw-bold fs-5 text-danger">{{ currencySymbol }} {{ monthlyInterestAmount |
+                                    number:'1.0-0' }}</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="text-muted small fw-bold text-uppercase">DURATION</span>
+                                <span class="fw-bold fs-5 text-dark">
+                                    {{ interestCoverMonths | number:'1.1-1' }} <small class="text-muted">Months</small>
+                                </span>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid gap-2 mt-4">
+                                <button class="btn btn-primary btn-lg shadow-lg fw-bold" (click)="submitDeposit()"
+                                    [disabled]="isLoanAmountInvalid || !deposit.customerId || deposit.itemLines.length === 0 || !deposit.tokenNo || !deposit.depositDate || !deposit.interestRate">
+                                    <i class="feather icon-check-circle me-2"></i>
+                                    {{ isEditMode ? 'UPDATE DEPOSIT RECORD' : 'SUBMIT DEPOSIT RECORD' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
-<!-- NEW CUSTOMER MODAL (Unchanged) -->
+<!-- NEW CUSTOMER MODAL (Maintained as is) -->
 <div class="modal fade show" *ngIf="showNewCustomerModal" style="display: block; background: rgba(0,0,0,0.5);"
     tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">

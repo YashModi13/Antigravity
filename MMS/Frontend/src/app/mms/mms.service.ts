@@ -248,6 +248,14 @@ export class MmsService {
         return this.http.post(`${REST_URLS.DEPOSITS}/${id}/transactions`, data, { responseType: 'text' });
     }
 
+    checkTokenAvailability(tokenNo: number): Observable<boolean> {
+        return this.http.get<boolean>(`${REST_URLS.DEPOSITS}/check-token?tokenNo=${tokenNo}`);
+    }
+
+    generateToken(): Observable<number> {
+        return this.http.get<number>(`${REST_URLS.DEPOSITS}/generate-token`);
+    }
+
     checkActiveMerchantItems(id: number): Observable<boolean> {
         return this.http.get<boolean>(`${REST_URLS.DEPOSITS}/${id}/has-active-merchant-items`);
     }

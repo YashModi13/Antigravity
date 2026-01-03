@@ -92,6 +92,67 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         }
     }
 
+    // Token Logic
+    tokenStatus: 'none' | 'loading' | 'valid' | 'invalid' = 'none';
+    tokenErrorMessage = '';
+    private tokenDebounceTimer: any;
+
+    onTokenInput() {
+        if (!this.deposit.tokenNo) {
+            this.tokenStatus = 'none';
+            return;
+        }
+
+        this.tokenStatus = 'loading';
+        clearTimeout(this.tokenDebounceTimer);
+
+        this.tokenDebounceTimer = setTimeout(() => {
+            const token = Number(this.deposit.tokenNo);
+            if (isNaN(token)) {
+                this.tokenStatus = 'invalid';
+                this.tokenErrorMessage = 'Invalid Token Format';
+                return;
+            }
+
+            if (token <= 0) {
+                this.tokenStatus = 'invalid';
+                this.tokenErrorMessage = 'Token must be greater than 0';
+                return;
+            }
+
+            this.mmsService.checkTokenAvailability(token).subscribe({
+                next: (isAvailable) => {
+                    if (isAvailable) {
+                        this.tokenStatus = 'valid';
+                        this.tokenErrorMessage = '';
+                    } else {
+                        this.tokenStatus = 'invalid';
+                        this.tokenErrorMessage = 'Token already exists!';
+                    }
+                },
+                error: (err) => {
+                    console.error('Token check failed', err);
+                    this.tokenStatus = 'none'; // Reset or show generic error
+                }
+            });
+        }, 500); // 500ms Debounce
+    }
+
+    generateToken() {
+        this.tokenStatus = 'loading';
+        this.mmsService.generateToken().subscribe({
+            next: (token) => {
+                this.deposit.tokenNo = token.toString();
+                this.tokenStatus = 'valid';
+                this.tokenErrorMessage = '';
+            },
+            error: (err) => {
+                this.toastService.error('Failed to generate token');
+                this.tokenStatus = 'none';
+            }
+        });
+    }
+
     onGivingPercentageChange() {
         if (this.deposit.givingPercentage != null && this.deposit.givingPercentage < 1) {
             this.deposit.givingPercentage = 1; // Minimum 1%
@@ -104,6 +165,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
     deposit = {
         customerId: null as number | null,
         depositDate: new Date().toISOString().split('T')[0],
+        tokenNo: '' as string,
         interestRate: 3.0,
         givingPercentage: 60,
         notes: '',
@@ -535,12 +597,19 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
             return;
         }
 
+        // 6. Validate Token
+        if (!this.deposit.tokenNo) {
+            this.toastService.error('Please enter a Token Number');
+            return;
+        }
+
         if (this.isEditMode) {
             const payload = {
                 depositDate: this.deposit.depositDate,
                 interestRate: this.deposit.interestRate,
                 notes: this.deposit.notes,
                 initialLoanAmount: this.deposit.initialLoanAmount,
+                tokenNo: Number(this.deposit.tokenNo),
                 items: this.deposit.itemLines.map(line => {
                     const item = this.items.find(i => i.id == line.itemId);
                     const factor = (item && item.unit) ? item.unit.unitInGram : 1;
@@ -571,6 +640,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 interestRate: this.deposit.interestRate,
                 notes: this.deposit.notes,
                 initialLoanAmount: this.deposit.initialLoanAmount,
+                tokenNo: Number(this.deposit.tokenNo),
                 items: this.deposit.itemLines.map(line => {
                     const item = this.items.find(i => i.id == line.itemId);
                     const factor = (item && item.unit) ? item.unit.unitInGram : 1;
@@ -587,8 +657,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
             this.mmsService.createDeposit(payload).subscribe({
                 next: () => {
                     this.toastService.success('Deposit Created Successfully!');
-                    this.deposit.itemLines = [];
-                    this.addItemLine();
+                    this.resetForm();
                 },
                 error: (err) => {
                     this.toastService.error('Error creating deposit');
@@ -596,6 +665,26 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 }
             });
         }
+    }
+
+    resetForm() {
+        this.deposit = {
+            customerId: null,
+            depositDate: new Date().toISOString().split('T')[0],
+            tokenNo: '',
+            interestRate: this.defaultInterestRate,
+            givingPercentage: this.defaultGivingPercentage,
+            notes: '',
+            initialLoanAmount: null,
+            itemLines: []
+        };
+        this.selectedCustomer = null;
+        this.selectedCustomerName = '';
+        this.searchTerm = '';
+        this.loanAmountDisplay = '';
+        this.tokenStatus = 'none';
+        this.tokenErrorMessage = '';
+        this.addItemLine();
     }
 
 }

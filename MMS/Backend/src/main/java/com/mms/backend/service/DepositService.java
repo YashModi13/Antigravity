@@ -61,6 +61,15 @@ public class DepositService {
         return merchantEntryRepository.countActiveByDepositId(depositId) > 0;
     }
 
+    public boolean isTokenExists(Integer tokenNo) {
+        return depositRepository.existsByTokenNo(tokenNo);
+    }
+
+    public Integer generateNextToken() {
+        Integer maxToken = depositRepository.findMaxTokenNo();
+        return (maxToken == null) ? 1 : maxToken + 1;
+    }
+
     public List<com.mms.backend.dto.MerchantItemDTO> getActiveMerchantPledges(Long depositId) {
         return merchantEntryRepository.findActiveByDepositId(depositId).stream().map(entry -> {
             com.mms.backend.dto.MerchantItemDTO dto = new com.mms.backend.dto.MerchantItemDTO();
@@ -234,6 +243,7 @@ public class DepositService {
         entry.setDepositDate(request.getDepositDate());
         entry.setTotalInterestRate(request.getInterestRate());
         entry.setNotes(request.getNotes());
+        entry.setTokenNo(request.getTokenNo());
         entry.setCreatedDate(LocalDateTime.now());
         entry = depositRepository.save(entry);
 

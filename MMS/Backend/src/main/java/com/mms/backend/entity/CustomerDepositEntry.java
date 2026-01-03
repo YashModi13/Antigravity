@@ -30,6 +30,12 @@ public class CustomerDepositEntry {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "token_no", nullable = false)
+    private Integer tokenNo;
+
+    @Column(name = "close_date")
+    private LocalDate closeDate;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 

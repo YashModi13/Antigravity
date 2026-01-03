@@ -253,6 +253,16 @@ public class MMSController {
         }
     }
 
+    @GetMapping("/deposits/check-token")
+    public ResponseEntity<Boolean> checkTokenAvailability(@RequestParam Integer tokenNo) {
+        return ResponseEntity.ok(!depositService.isTokenExists(tokenNo));
+    }
+
+    @GetMapping("/deposits/generate-token")
+    public ResponseEntity<Integer> generateToken() {
+        return ResponseEntity.ok(depositService.generateNextToken());
+    }
+
     @GetMapping("/merchants")
     public ResponseEntity<List<MerchantMaster>> getAllMerchants() {
         // Filter only active merchants

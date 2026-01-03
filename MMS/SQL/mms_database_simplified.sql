@@ -183,6 +183,7 @@ EXECUTE FUNCTION mms.set_updated_date();
 
 CREATE TABLE mms.customer_deposit_entry (
     id SERIAL PRIMARY KEY,
+    token_no INT NOT NULL,
     customer_id INTEGER NOT NULL REFERENCES mms.customer_master(id),
     deposit_date DATE NOT NULL,
     total_interest_rate DECIMAL(5, 2) NOT NULL,
@@ -190,7 +191,8 @@ CREATE TABLE mms.customer_deposit_entry (
     notes TEXT,
     is_active BOOLEAN DEFAULT true,
     created_date TIMESTAMP,
-    updated_date TIMESTAMP
+    updated_date TIMESTAMP,
+    close_date DATE DEFAULT NULL
 );
 
 CREATE TRIGGER customer_deposit_entry_insert_trigger

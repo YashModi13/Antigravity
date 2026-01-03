@@ -13,4 +13,5 @@ public class CreateDepositRequest {
     private String notes;
     private List<DepositItemRequest> items;
     private BigDecimal initialLoanAmount;
+    private Integer tokenNo;
 }
