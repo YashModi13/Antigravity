@@ -1,0 +1,13 @@
+<div class="nav-logo-container">
+  <a [routerLink]="['/dashboard']" class="b-brand">
+    <div class="b-bg">
+      <i class="feather icon-aperture text-gold"></i>
+    </div>
+    <div class="b-title-wrapper ms-2">
+      <span class="b-title-main text-uppercase">{{ (businessName$ | async)?.substring(0, 18) }}</span>
+      <span class="b-title-sub text-uppercase f-10 opacity-75 d-block">Dhiran System</span>
+    </div>
+  </a>
+  <a href="javascript:" class="mobile-menu" [ngClass]="{ on: navCollapsed }" id="mobile-collapse"
+    (click)="navCollapse()"><span></span></a>
+</div>

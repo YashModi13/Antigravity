@@ -1,0 +1,32 @@
+<div class="market-ticker-container d-flex">
+  <div class="ticker-label text-nowrap">
+    <i class="feather icon-trending-up m-r-5 text-c-green"></i> LIVE RATES:
+  </div>
+
+  <div class="ticker-content-wrapper" *ngIf="latestPrices && latestPrices.length > 0; else noData">
+    <div class="ticker-content">
+      <div class="ticker-item" *ngFor="let item of latestPrices; trackBy: trackByItem">
+        <span class="item-name text-uppercase">{{ item.itemName }}:</span>
+        <span class="item-price">{{ currencySymbol$ | async }} {{ item.price | number:'1.0-0' }}</span>
+        <span class="item-unit">/ {{ +item.unitQuantity === 1 ? '' : (+item.unitQuantity) }} {{ item.unitName }}</span>
+      </div>
+      <!-- Duplicate items multiple times to ensure the container is wide enough for infinite scroll -->
+      <div class="ticker-item" *ngFor="let item of latestPrices; trackBy: trackByItem">
+        <span class="item-name text-uppercase">{{ item.itemName }}:</span>
+        <span class="item-price">{{ currencySymbol$ | async }} {{ item.price | number:'1.0-0' }}</span>
+        <span class="item-unit">/ {{ +item.unitQuantity === 1 ? '' : (+item.unitQuantity) }} {{ item.unitName }}</span>
+      </div>
+      <div class="ticker-item" *ngFor="let item of latestPrices; trackBy: trackByItem">
+        <span class="item-name text-uppercase">{{ item.itemName }}:</span>
+        <span class="item-price">{{ currencySymbol$ | async }} {{ item.price | number:'1.0-0' }}</span>
+        <span class="item-unit">/ {{ +item.unitQuantity === 1 ? '' : (+item.unitQuantity) }} {{ item.unitName }}</span>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noData>
+    <div class="ticker-content-static">
+      <span class="text-muted f-12 m-l-10">Fetching latest prices...</span>
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,174 @@
+.deposit-form {
+    padding: 10px;
+}
+
+.items-header {
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    border-bottom: 2px solid #e9ecef;
+    padding: 12px 0;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.items-list {
+    .item-row {
+        padding: 8px 0;
+        border-bottom: 1px dashed #f1f1f1;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: #fcfcfc;
+        }
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+}
+
+.summary-section {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.metal-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 10px 15px;
+    min-width: 140px;
+
+    .metal-name {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #adb5bd;
+        margin-bottom: 4px;
+    }
+
+    .metal-weight {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #495057;
+        line-height: 1.2;
+    }
+
+    .metal-fine {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+}
+
+.financial-card {
+    border-radius: 8px;
+    padding: 12px 20px;
+    min-width: 180px;
+    text-align: right;
+    border: 1px solid transparent;
+
+    &.safe-limit {
+        background-color: #f0fdf4; // Light Green
+        border-color: #dcfce7;
+
+        .label {
+            color: #166534;
+        }
+
+        .value {
+            color: #15803d;
+        }
+    }
+
+    &.valuation {
+        background-color: #eff6ff; // Light Blue
+        border-color: #dbeafe;
+
+        .label {
+            color: #1e40af;
+        }
+
+        .value {
+            color: #2563eb;
+        }
+    }
+
+    .label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+}
+
+
+/* Input Styling Enhancements */
+.giving-input-wrapper {
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #c4d7d1;
+    border-radius: 4px;
+    padding: 0 4px;
+    margin: 0 4px;
+    height: 24px;
+
+    .giving-input {
+        width: 32px;
+        border: none;
+        background: transparent;
+        text-align: right;
+        font-weight: 600;
+        color: inherit;
+        font-size: 0.8rem;
+        padding: 0;
+
+        &:focus {
+            outline: none;
+        }
+    }
+
+    .pct-sign {
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 1px;
+    }
+}
+
+.bg-gold-light {
+    background-color: #fff8e1 !important;
+    border-color: #ffecb3 !important;
+    color: #856404;
+}
+
+.bg-gold-lighter {
+    background-color: #fffbf2 !important;
+}
+
+input.form-control {
+    font-size: 0.9rem;
+    border-color: #e2e5e8;
+
+    &:focus {
+        border-color: #4099ff;
+        box-shadow: 0 0 0 0.2rem rgba(64, 153, 255, 0.1);
+    }
+
+    &.text-end {
+        text-align: right;
+    }
+}

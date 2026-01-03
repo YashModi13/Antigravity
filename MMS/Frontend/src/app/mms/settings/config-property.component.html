@@ -1,0 +1,187 @@
+<div class="row">
+    <div class="col-sm-12">
+        <app-card cardTitle="System Configuration Settings" [options]="false">
+            <div class="p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary shadow-sm" (click)="openAddModal()">
+                            <i class="feather icon-plus me-2"></i> Add New Property
+                        </button>
+                        <button class="btn btn-outline-primary shadow-sm" (click)="checkDefaults()">
+                            <i class="feather icon-refresh-cw me-2"></i> Check for Recommended Defaults
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive border rounded-3 bg-white shadow-sm overflow-hidden">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light fw-bold text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4 py-3">Property Key</th>
+                                <th>Value</th>
+                                <th>Description</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let config of configs" class="border-bottom-0">
+                                <td class="ps-4">
+                                    <span class="badge bg-light text-primary border fw-bold px-2 py-1">{{
+                                        config.propertyKey
+                                        }}</span>
+                                </td>
+                                <td>
+                                    <div class="text-dark fw-bold" style="max-width: 300px; word-break: break-all;">
+                                        {{ config.propertyValue }}
+                                    </div>
+                                </td>
+                                <td class="text-muted small">{{ config.description || 'No description' }}</td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill px-3"
+                                        [ngClass]="config.isActive ? 'bg-success' : 'bg-danger'">
+                                        {{ config.isActive ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button class="btn btn-icon btn-light-info btn-sm border-0"
+                                            (click)="editConfig(config)" title="Edit">
+                                            <i class="feather icon-edit"></i>
+                                        </button>
+                                        <button class="btn btn-icon btn-light-danger btn-sm border-0" *ngIf="config.id"
+                                            (click)="deleteConfig(config.id)" title="Delete">
+                                            <i class="feather icon-trash-2"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr *ngIf="configs.length === 0">
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="feather icon-settings fs-1 d-block mb-3 opacity-25"></i>
+                                    No configuration properties found. Click "Add New Property" to get started.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </app-card>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit -->
+<div class="modal fade show" *ngIf="showModal"
+    style="display: block; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1050;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-primary text-white p-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="feather {{ isEdit ? 'icon-edit' : 'icon-plus' }} me-2"></i>
+                    {{ isEdit ? 'Edit Property' : 'Add New Property' }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showModal = false"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Property Key *</label>
+                        <input type="text" class="form-control" [(ngModel)]="currentConfig.propertyKey"
+                            [disabled]="isEdit" placeholder="e.g., business.name">
+                        <small class="text-muted" *ngIf="!isEdit">Unique identifier for this setting.</small>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Property Value *</label>
+                        <textarea class="form-control" rows="3" [(ngModel)]="currentConfig.propertyValue"
+                            placeholder="Enter value here..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold text-muted text-uppercase">Description</label>
+                        <textarea class="form-control" rows="2" [(ngModel)]="currentConfig.description"
+                            placeholder="What is this setting for?"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="isActiveSwitch"
+                                [(ngModel)]="currentConfig.isActive">
+                            <label class="form-check-label fw-bold" for="isActiveSwitch">Active Status</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white p-3">
+                <button type="button" class="btn btn-secondary border-0" (click)="showModal = false">Cancel</button>
+                <button type="button" class="btn btn-primary px-4 shadow-sm" (click)="saveConfig()">
+                    {{ isEdit ? 'Update Setting' : 'Create Setting' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Sync Differences -->
+<div class="modal fade show" *ngIf="showSyncModal"
+    style="display: block; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 1051;">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-info text-white p-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="feather icon-refresh-cw me-2"></i>
+                    Sync Recommended Settings
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showSyncModal = false"></button>
+            </div>
+            <div class="modal-body p-0 bg-light">
+                <div class="alert alert-info border-0 rounded-0 mb-0 d-flex align-items-center">
+                    <i class="feather icon-info fs-4 me-3"></i>
+                    <span>The following settings are either missing or differ from the recommended system
+                        defaults.</span>
+                </div>
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover align-middle mb-0 bg-white">
+                        <thead class="bg-light small text-uppercase fw-bold text-muted">
+                            <tr>
+                                <th class="ps-4 py-3" style="width: 50px;">
+                                    <!-- Select All maybe? -->
+                                </th>
+                                <th>Property</th>
+                                <th>Current State</th>
+                                <th>Recommended</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let item of differenceConfigs">
+                                <td class="ps-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" [(ngModel)]="item.selected">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-primary small">{{ item.key }}</div>
+                                    <div class="text-muted extra-small">{{ item.description }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge" [class.bg-light-danger]="item.type === 'MISSING'"
+                                        [class.text-danger]="item.type === 'MISSING'"
+                                        [class.bg-light-warning]="item.type === 'DIFFERENT'"
+                                        [class.text-warning]="item.type === 'DIFFERENT'">
+                                        {{ item.currentValue }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-success fw-bold small">{{ item.recommendedValue }}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-white p-3">
+                <button type="button" class="btn btn-secondary border-0" (click)="showSyncModal = false">Cancel</button>
+                <button type="button" class="btn btn-info text-white px-4 shadow-sm" (click)="syncSelected()">
+                    Sync Selected Settings
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

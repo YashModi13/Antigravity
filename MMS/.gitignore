@@ -1,0 +1,44 @@
+# Angular
+/dist/
+/out-tsc/
+/node_modules/
+npm-debug.log
+yarn-error.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Spring Boot
+/backend/target/
+/backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+*.jar
+*.war
+*.ear
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/

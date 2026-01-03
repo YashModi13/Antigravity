@@ -1,0 +1,116 @@
+<div class="row">
+    <!-- Summary Cards -->
+    <!-- Summary Cards (Row 1) -->
+    <div class="col-md-6 col-xl-3">
+        <app-card [hidHeader]="true">
+            <h6 class="mb-4">Active Deposits</h6>
+            <div class="row d-flex align-items-center">
+                <div class="col-9">
+                    <h3 class="f-w-300 d-flex align-items-center m-b-0">
+                        <i class="feather icon-layers f-30 m-r-10 text-c-blue"></i>
+                        {{ stats.totalActiveDeposits || 0 }}
+                    </h3>
+                </div>
+            </div>
+        </app-card>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <app-card [hidHeader]="true">
+            <h6 class="mb-4">Closed Deposits</h6>
+            <div class="row d-flex align-items-center">
+                <div class="col-9">
+                    <h3 class="f-w-300 d-flex align-items-center m-b-0">
+                        <i class="feather icon-check-circle f-30 m-r-10 text-c-green"></i>
+                        {{ stats.totalClosedDeposits || 0 }}
+                    </h3>
+                </div>
+            </div>
+        </app-card>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <app-card [hidHeader]="true">
+            <h6 class="mb-4">Active Principal Loan</h6>
+            <div class="row d-flex align-items-center">
+                <div class="col-12">
+                    <h3 class="f-w-300 d-flex align-items-center m-b-0">
+                        <i class="feather icon-credit-card f-30 m-r-10 text-c-yellow"></i>
+                        <span class="small me-1">{{ currencySymbol$ | async }}</span>
+                        {{ (stats.totalLoanAmount || 0) | number:'1.0-2' }}
+                    </h3>
+                </div>
+            </div>
+        </app-card>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <app-card [hidHeader]="true">
+            <h6 class="mb-4">Today's Overview</h6>
+            <div class="row d-flex align-items-center">
+                <div class="col-6">
+                    <p class="m-b-0 text-muted">Active</p>
+                    <h4 class="f-w-300 d-flex align-items-center m-b-0">
+                        <i class="feather icon-trending-up f-20 m-r-5 text-c-purple"></i>
+                        {{ (stats.todayPurchase || 0) }}
+                    </h4>
+                </div>
+                <div class="col-6">
+                    <p class="m-b-0 text-muted">Closed</p>
+                    <h4 class="f-w-300 d-flex align-items-center m-b-0">
+                        <i class="feather icon-trending-down f-20 m-r-5 text-c-red"></i>
+                        {{ (stats.todaySell || 0) }}
+                    </h4>
+                </div>
+            </div>
+        </app-card>
+    </div>
+
+    <!-- Price Update Section -->
+    <div class="col-xl-12">
+        <app-card cardTitle="Update Market Prices" [options]="false">
+            <div class="row">
+                <div class="col-md-4 mb-3" *ngFor="let item of items">
+                    <label>{{ item.itemName }} Price (per {{ +item.unitQuantity === 1 ? '' :
+                        (+item.unitQuantity) }} {{
+                        item.unit.unitName }})</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" [ngModel]="priceDisplay[item.id]"
+                            (input)="onPriceInput(item.id, $event)" placeholder="Enter new price">
+                        <button class="btn btn-primary" (click)="updatePrice(item.id)">Update</button>
+                    </div>
+                </div>
+            </div>
+        </app-card>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="col-xl-12">
+        <app-card cardTitle="Business Trends: Active vs Closed" [options]="false">
+            <!-- Controls -->
+            <div class="mb-3 d-flex justify-content-end">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='WEEK'"
+                        (click)="setPeriod('WEEK')">Week</button>
+                    <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='MONTH'"
+                        (click)="setPeriod('MONTH')">Month</button>
+                    <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='YEAR'"
+                        (click)="setPeriod('YEAR')">Year</button>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div *ngIf="isChartLoaded">
+                <apx-chart [series]="chartOptions.series" [chart]="chartOptions.chart" [colors]="chartOptions.colors"
+                    [dataLabels]="chartOptions.dataLabels" [plotOptions]="chartOptions.plotOptions"
+                    [yaxis]="{ title: { text: 'Amount (' + (currencySymbol$ | async) + ')' } }"
+                    [legend]="chartOptions.legend" [fill]="chartOptions.fill" [stroke]="chartOptions.stroke"
+                    [tooltip]="chartOptions.tooltip" [xaxis]="chartOptions.xaxis"></apx-chart>
+            </div>
+            <div *ngIf="!isChartLoaded" class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+        </app-card>
+    </div>
+
+
+</div>

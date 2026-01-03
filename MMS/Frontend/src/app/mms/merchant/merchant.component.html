@@ -1,0 +1,828 @@
+<!-- Portfolio Summary Section -->
+<div class="row mb-4" *ngIf="activePledges.length > 0">
+    <div class="col-12">
+        <app-card cardTitle="Merchant-wise Stock & Money Portfolio" [options]="false">
+            <div class="row g-3 align-items-center mb-4">
+                <div class="col-md-3">
+                    <div
+                        class="p-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 rounded-3 shadow-sm h-100">
+                        <div class="small text-primary text-uppercase fw-bold mb-1">Items with Merchants</div>
+                        <div class="h3 mb-0 fw-bold">{{overallPortfolioSummary.totalItems}} <small
+                                class="h6 text-muted">Stock</small></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div
+                        class="p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3 shadow-sm h-100">
+                        <div class="small text-danger text-uppercase fw-bold mb-1">Total Redemption Amt</div>
+                        <div class="h4 mb-0 fw-bold text-dark">₹ {{overallPortfolioSummary.totalOwed | number:'1.2-2'}}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div
+                        class="p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3 shadow-sm h-100">
+                        <div class="small text-success text-uppercase fw-bold mb-1">Total Security Value</div>
+                        <div class="h4 mb-0 fw-bold text-dark">₹ {{overallPortfolioSummary.totalAssetValue |
+                            number:'1.2-2'}}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div
+                        class="p-3 bg-info bg-opacity-10 border border-info border-opacity-25 rounded-3 shadow-sm h-100 border-2">
+                        <div class="small text-info text-uppercase fw-bold mb-1">Total Monthly Profit</div>
+                        <div class="h4 mb-0 fw-bold text-info">₹ {{overallPortfolioSummary.totalNetMargin |
+                            number:'1.2-2'}} <small class="small fw-normal">/ mo</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <h6 class="text-uppercase text-muted small fw-bolder mb-3 d-flex align-items-center">
+                <i class="feather icon-users me-2"></i>PARTNER-WISE BREAKDOWN
+                <span class="ms-auto badge bg-light text-muted fw-normal border">Live Exposure Analysis</span>
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle border-top mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Merchant Name</th>
+                            <th class="text-center">Stock</th>
+                            <th class="text-end">Principal</th>
+                            <th class="text-end">Redemption Owed</th>
+                            <th class="text-end">Collateral Value</th>
+                            <th class="text-end">Monthly Yield</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let m of merchantPortfolio">
+                            <td>
+                                <div class="fw-bold text-primary">{{m.merchantName}}</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border px-2">{{m.itemCount}} Qty</span>
+                            </td>
+                            <td class="text-end text-muted">₹ {{m.totalPrincipal | number:'1.2-2'}}</td>
+                            <td class="text-end fw-bold text-danger">₹ {{m.totalOwed | number:'1.2-2'}}</td>
+                            <td class="text-end text-success fw-bold">₹ {{m.totalAssetValue | number:'1.2-2'}}</td>
+                            <td class="text-end">
+                                <div class="fw-bolder" [class.text-success]="m.totalNetMargin > 0"
+                                    [class.text-danger]="m.totalNetMargin <= 0">
+                                    <i class="feather icon-trending-up me-1"></i>₹ {{m.totalNetMargin | number:'1.2-2'}}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </app-card>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <app-card cardTitle="Merchant Transfer (B2B)" [options]="false">
+            <!-- Helper text -->
+            <div class="alert alert-info">
+                Select items from the "Available Items" list to transfer them to a Merchant (Re-pledge).
+            </div>
+
+            <div class="row">
+                <!-- Selection Form -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="mb-0">Select Merchant</label>
+                            <div class="btn-group">
+                                <button class="btn btn-icon btn-sm btn-outline-info border-0"
+                                    (click)="openMerchantModal()" title="Add New Merchant">
+                                    <i class="feather icon-plus"></i>
+                                </button>
+                                <button *ngIf="targetMerchantId"
+                                    class="btn btn-icon btn-sm btn-outline-warning border-0 ms-1"
+                                    (click)="editSelectedMerchant()" title="Edit Merchant Profile">
+                                    <i class="feather icon-edit-2"></i>
+                                </button>
+                                <button *ngIf="canDeleteSelectedMerchant"
+                                    class="btn btn-icon btn-sm btn-outline-danger border-0 ms-1"
+                                    (click)="deleteSelectedMerchant()" title="Delete Merchant">
+                                    <i class="feather icon-trash-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <select class="form-control" [(ngModel)]="targetMerchantId" (change)="onMerchantChange()">
+                            <option [value]="null" disabled>-- Choose Partner --</option>
+                            <option *ngFor="let m of merchants" [value]="m.id">{{ m.merchantName }} ({{ m.merchantType
+                                }})</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Interest Rate (%)</label>
+                        <input type="number" class="form-control" [(ngModel)]="interestRate" step="0.1"
+                            [disabled]="!targetMerchantId">
+                    </div>
+                    <div class="form-group mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="mb-0">Principal Amount</label>
+                            <span class="badge bg-soft-success text-success border border-success border-opacity-25"
+                                *ngIf="selectedAssetValueTotal > 0">
+                                Total Asset: {{ selectedAssetValueTotal | number:'1.2-2' }}
+                            </span>
+                        </div>
+                        <input type="number" class="form-control" [disabled]="!hasSelectedItems"
+                            [class.is-invalid]="principalAmount > selectedAssetValueTotal && selectedAssetValueTotal > 0"
+                            [(ngModel)]="principalAmount" placeholder="Enter amount from merchant">
+                        <div class="invalid-feedback"
+                            *ngIf="principalAmount > selectedAssetValueTotal && selectedAssetValueTotal > 0">
+                            Principal amount cannot be higher than the total asset value.
+                        </div>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Entry Date</label>
+                        <input type="date" class="form-control" [(ngModel)]="entryDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea class="form-control" [(ngModel)]="notes" rows="3"
+                            placeholder="Additional details about this transaction..."></textarea>
+                    </div>
+                    <button class="btn btn-primary w-100 py-2 mt-2" (click)="submitTransfer()">
+                        <i class="feather icon-repeat me-1"></i> Transfer Selected Items
+                    </button>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5>Available Items (In Stock)</h5>
+                        <button *ngIf="depositFilterId" class="btn btn-sm btn-outline-secondary"
+                            (click)="clearFilter()">
+                            <i class="feather icon-x"></i> Clear Filter (#{{depositFilterId}})
+                        </button>
+                    </div>
+                    <div class="table-responsive scroll-table-container">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Select</th>
+                                    <th (click)="toggleAvailableSort('customerName')" style="cursor: pointer;">
+                                        Customer <i class="feather"
+                                            [ngClass]="availableSortColumn === 'customerName' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                                    </th>
+                                    <th (click)="toggleAvailableSort('itemName')" style="cursor: pointer;">
+                                        Item <i class="feather"
+                                            [ngClass]="availableSortColumn === 'itemName' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                                    </th>
+                                    <th (click)="toggleAvailableSort('weight')" style="cursor: pointer;">
+                                        Weight <i class="feather"
+                                            [ngClass]="availableSortColumn === 'weight' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                                    </th>
+                                    <th (click)="toggleAvailableSort('fineWeight')" style="cursor: pointer;">
+                                        Fine Wt <i class="feather"
+                                            [ngClass]="availableSortColumn === 'fineWeight' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                                    </th>
+                                    <th (click)="toggleAvailableSort('currentAssetValue')" style="cursor: pointer;">
+                                        Asset Value <i class="feather"
+                                            [ngClass]="availableSortColumn === 'currentAssetValue' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                                    </th>
+                                    <th>Status</th>
+                                </tr>
+                                <tr class="filter-row">
+                                    <td></td>
+                                    <td><input type="text" class="header-filter" placeholder="Filter..."
+                                            [(ngModel)]="itemFilters.customerName" (keyup)="applyItemFilters()"></td>
+                                    <td>
+                                        <select class="header-filter" [(ngModel)]="itemFilters.itemName"
+                                            (change)="applyItemFilters()">
+                                            <option value="">All Items</option>
+                                            <option *ngFor="let name of uniqueItemNames" [value]="name">{{ name }}
+                                            </option>
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="header-filter" placeholder="Min"
+                                            [(ngModel)]="itemFilters.weight" (keyup)="applyItemFilters()"></td>
+                                    <td><input type="number" class="header-filter" placeholder="Min"
+                                            [(ngModel)]="itemFilters.fineWeight" (keyup)="applyItemFilters()"></td>
+                                    <td><input type="number" class="header-filter" placeholder="Min"
+                                            [(ngModel)]="itemFilters.assetValue" (keyup)="applyItemFilters()"></td>
+                                    <td>
+                                        <select class="header-filter" [(ngModel)]="itemFilters.status"
+                                            (change)="applyItemFilters()">
+                                            <option value="">All</option>
+                                            <option value="DEPOSITED">DEPOSITED</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of filteredAvailableItems">
+                                    <td>
+                                        <input type="checkbox" [(ngModel)]="selectedItems[item.id]"
+                                            (change)="applyItemFilters()">
+                                    </td>
+                                    <td>{{ item.customerName }}</td>
+                                    <td>{{ item.itemName }}</td>
+                                    <td>{{ item.weight }}</td>
+                                    <td>{{ item.fineWeight }}</td>
+                                    <td>
+                                        <div class="fw-bold text-success">{{ item.currentAssetValue | number:'1.2-2' }}
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success">{{ item.itemStatus }}</span></td>
+                                </tr>
+                                <tr *ngIf="availableItems.length === 0">
+                                    <td colspan="7" class="text-center p-4">No and ready items found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </app-card>
+
+        <!-- Active Re-Pledges Card -->
+        <app-card cardTitle="Active Re-Pledges (With Merchants)" [options]="false">
+            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center">
+                <i class="feather icon-alert-triangle me-3 fs-4 text-warning"></i>
+                <div>
+                    These items are currently held by Merchants. Use <strong>"Redeem"</strong> to return them to your
+                    internal stock.
+                </div>
+            </div>
+            <div class="table-responsive scroll-table-container">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th (click)="togglePledgeSort('merchantName')" style="cursor: pointer;">
+                                Merchant <i class="feather"
+                                    [ngClass]="pledgeSortColumn === 'merchantName' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="togglePledgeSort('customerName')" style="cursor: pointer;">
+                                Customer <i class="feather"
+                                    [ngClass]="pledgeSortColumn === 'customerName' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="togglePledgeSort('itemName')" style="cursor: pointer;">
+                                Item Details <i class="feather"
+                                    [ngClass]="pledgeSortColumn === 'itemName' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="togglePledgeSort('weight')" style="cursor: pointer;">
+                                Gold Weight <i class="feather"
+                                    [ngClass]="pledgeSortColumn === 'weight' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="togglePledgeSort('interestRate')" style="cursor: pointer;">
+                                Int. Rate <i class="feather"
+                                    [ngClass]="pledgeSortColumn === 'interestRate' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th>Months</th>
+                            <th>Principal</th>
+                            <th>Paid Int.</th>
+                            <th>Accrued Int.</th>
+                            <th>Redemption Amt</th>
+                            <th>Asset Value</th>
+                            <th (click)="togglePledgeSort('profitLoss')" style="cursor: pointer;">
+                                Profit/Loss <i class="feather"
+                                    [ngClass]="pledgeSortColumn === 'profitLoss' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th>Entry Date</th>
+                            <th class="text-center" style="width: 140px">Action</th>
+                        </tr>
+                        <tr class="filter-row">
+                            <td><input type="text" class="header-filter" placeholder="Merchant..."
+                                    [(ngModel)]="pledgeFilters.merchantName" (keyup)="applyPledgeFilters()"></td>
+                            <td><input type="text" class="header-filter" placeholder="Customer..."
+                                    [(ngModel)]="pledgeFilters.customerName" (keyup)="applyPledgeFilters()"></td>
+                            <td><input type="text" class="header-filter" placeholder="Item..."
+                                    [(ngModel)]="pledgeFilters.itemName" (keyup)="applyPledgeFilters()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="pledgeFilters.weight" (keyup)="applyPledgeFilters()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="pledgeFilters.interestRate" (keyup)="applyPledgeFilters()"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="pledgeFilters.totalOwed" (keyup)="applyPledgeFilters()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="pledgeFilters.assetValue" (keyup)="applyPledgeFilters()"></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let p of filteredActivePledges"
+                            [class.table-danger]="(p.currentAssetValue - p.totalOwed) < 0">
+                            <td>
+                                <div class="fw-bold text-primary">{{ p.merchantName }}</div>
+                                <small class="text-muted">ID: {{ p.merchantId }}</small>
+                            </td>
+                            <td>{{ p.customerName }}</td>
+                            <td>
+                                <span class="badge bg-info text-dark me-1">{{ p.itemName }}</span>
+                                <small class="text-muted">#{{ p.depositItemId }}</small>
+                            </td>
+                            <td>
+                                <div>{{ p.weight | number:'1.3-3' }} g</div>
+                                <small class="text-muted">Fine: {{ p.fineWeight | number:'1.3-3' }} g</small>
+                            </td>
+                            <td>{{ p.interestRate }}%</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ p.monthsDuration | number:'1.0-0' }}
+                                    mos</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ p.principalAmount | number:'1.2-2' }}</div>
+                            </td>
+                            <td>
+                                <div class="small fw-bold text-success">
+                                    ₹ {{ p.totalInterestPaid | number:'1.2-2' }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-primary small fw-bold">+ ₹ {{ p.accruedInterest | number:'1.2-2' }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">₹ {{ p.totalOwed | number:'1.2-2' }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-success">{{ p.currentAssetValue | number:'1.2-2' }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold" [class.text-success]="(p.currentAssetValue - p.totalOwed) >= 0"
+                                    [class.text-danger]="(p.currentAssetValue - p.totalOwed) < 0"
+                                    title="Total Equity (Value - Owed)">
+                                    ₹ {{ (p.currentAssetValue - p.totalOwed) | number:'1.2-2' }}
+                                </div>
+                                <div class="small fw-bold mt-1" [class.text-success]="p.netMonthlyMargin > 0"
+                                    [class.text-danger]="p.netMonthlyMargin <= 0"
+                                    title="Monthly Interest Profit (Cust Int - Merch Int)">
+                                    <i class="feather icon-trending-up me-1"></i>₹ {{ p.netMonthlyMargin |
+                                    number:'1.2-2' }} <small class="fw-normal">/ mo</small>
+                                </div>
+                            </td>
+                            <td>{{ p.entryDate | date:'mediumDate' }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary"
+                                        (click)="toEditEntry=p; openEditEntryModal(p)" title="Edit Entry">
+                                        <i class="feather icon-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info" (click)="openDetailsModal(p)"
+                                        title="View Details">
+                                        <i class="feather icon-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary" (click)="openTransactionModal(p)"
+                                        title="Pay (Transaction)">
+                                        <i class="feather icon-credit-card"></i>
+                                    </button>
+                                    <button class="btn btn-success" (click)="openRedeemModal(p)"
+                                        title="Redeem Item (Pay Full & Close)">
+                                        Redeem
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr *ngIf="filteredActivePledges.length === 0">
+                            <td colspan="11" class="text-center p-5 text-muted">
+                                <i class="feather icon-package display-4 mb-2"></i>
+                                <p>No items are currently re-pledged to merchants.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </app-card>
+    </div>
+</div>
+
+<!-- Merchant Add/Edit Modal -->
+<div *ngIf="showMerchantModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title text-white">
+                    <i class="feather" [ngClass]="isEditingMerchant ? 'icon-edit' : 'icon-plus-circle'"></i>
+                    {{ isEditingMerchant ? 'Modify Merchant Details' : 'Register New Merchant' }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showMerchantModal = false"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Merchant Name</label>
+                        <input type="text" class="form-control" [(ngModel)]="merchantForm.merchantName"
+                            placeholder="e.g. Om Jewelers">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" [(ngModel)]="merchantForm.merchantType">
+                            <option value="JEWELLER">Jeweller</option>
+                            <option value="LENDER">Money Lender</option>
+                            <option value="BANK">Bank</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="text" class="form-control" [(ngModel)]="merchantForm.mobileNumber"
+                            placeholder="10 Digit Mobile">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Full Address</label>
+                        <textarea class="form-control" [(ngModel)]="merchantForm.address" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Default Int. Rate (%)</label>
+                        <input type="number" class="form-control" [(ngModel)]="merchantForm.defaultInterestRate">
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="merActive"
+                                [(ngModel)]="merchantForm.isActive">
+                            <label class="form-check-input-label" for="merActive">Active Merchant</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" (click)="showMerchantModal = false">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="saveMerchant()">
+                    {{ isEditingMerchant ? 'Update Profile' : 'Save Merchant' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Entry Modal -->
+<div class="modal fade show" *ngIf="showEditEntryModal" style="display: block; background: rgba(0,0,0,0.6);"
+    tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Edit Merchant Entry</h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showEditEntryModal = false"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Entry Date</label>
+                        <input type="date" class="form-control" [(ngModel)]="editEntryForm.entryDate">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Interest Rate (%)</label>
+                        <input type="number" class="form-control" step="0.1" [(ngModel)]="editEntryForm.interestRate">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Principal Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" [(ngModel)]="editEntryForm.principalAmount">
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Notes</label>
+                        <textarea class="form-control" rows="2" [(ngModel)]="editEntryForm.notes"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary" (click)="showEditEntryModal = false">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="saveEntryEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Get Back (Redemption) Modal -->
+<div class="modal fade show" *ngIf="showRedeemModal" style="display: block; background: rgba(0,0,0,0.6);" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="feather icon-download-cloud me-2"></i>Redeem from Merchant
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showRedeemModal = false"></button>
+            </div>
+            <div class="modal-body p-4" *ngIf="selectedPledgeForRedeem">
+                <div class="alert alert-info mb-4 border-0 shadow-sm">
+                    <div class="small text-uppercase fw-bold text-muted mb-1">Item Details</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="h6 mb-0">{{ selectedPledgeForRedeem.itemName }}</span>
+                        <span class="badge bg-primary">#{{ selectedPledgeForRedeem.depositItemId }}</span>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Merchant: <span class="fw-bold">{{ selectedPledgeForRedeem.merchantName }}</span>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Principal Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">₹</span>
+                            <input type="number" class="form-control" [(ngModel)]="redeemForm.principalPaid"
+                                (input)="calculateRedeemTotal()">
+                        </div>
+                        <small class="text-muted">Amount paid to merchant</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Interest Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">₹</span>
+                            <input type="number" class="form-control" [(ngModel)]="redeemForm.interestPaid"
+                                (input)="calculateRedeemTotal()">
+                        </div>
+                        <small class="text-muted">Interest paid to merchant</small>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="card bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                            <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark">Total Payment to Merchant</span>
+                                <span class="h5 mb-0 text-danger fw-bold">₹ {{ redeemForm.totalPaid | number:'1.2-2'
+                                    }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Notes</label>
+                        <textarea class="form-control" [(ngModel)]="redeemForm.notes" rows="2"
+                            placeholder="e.g. Account settled in full"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmReceived">
+                            <label class="form-check-label small text-muted" for="confirmReceived">
+                                I confirm payment has been made and item has been returned to our inventory.
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary px-4" (click)="showRedeemModal = false">Cancel</button>
+                <button type="button" class="btn btn-success px-4" (click)="confirmRedeem()">
+                    <i class="feather icon-check-circle me-1"></i> Confirm & Return to Stock
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade show" *ngIf="showDeleteConfirmModal" style="display: block; background: rgba(0,0,0,0.6);"
+    tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="feather icon-alert-triangle me-2"></i>Delete Merchant?
+                </h5>
+                <button type="button" class="btn-close btn-close-white"
+                    (click)="showDeleteConfirmModal = false"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <i class="feather icon-trash-2 text-danger display-4"></i>
+                </div>
+                <h5 class="mb-2">Are you sure you want to delete this merchant?</h5>
+                <p class="text-muted">This action will remove the merchant from your list of active partners. Historical
+                    data will be preserved but they won't appear in selection lists.</p>
+            </div>
+            <div class="modal-footer bg-light border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4"
+                    (click)="showDeleteConfirmModal = false">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" (click)="confirmDeleteMerchant()">
+                    <i class="feather icon-trash me-1"></i> Yes, Delete Merchant
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Modal -->
+<div class="modal fade show" *ngIf="showTransactionModal" style="display: block; background: rgba(0,0,0,0.6);"
+    tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="feather icon-credit-card me-2"></i>New Transaction
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showTransactionModal = false"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="card bg-light border-0 mb-4" *ngIf="selectedPledgeForTransaction">
+                    <div class="card-body p-3">
+                        <h6 class="card-subtitle mb-2 text-muted small text-uppercase">Current Balance ({{
+                            selectedPledgeForTransaction.itemName }})</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>Principal Owed:</span>
+                            <span class="fw-bold">{{ selectedPledgeForTransaction.principalAmount | number:'1.2-2'
+                                }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>Interest Owed:</span>
+                            <span class="fw-bold text-danger">
+                                {{ (selectedPledgeForTransaction.accruedInterest -
+                                (selectedPledgeForTransaction.totalInterestPaid || 0)) | number:'1.2-2' }}
+                            </span>
+                        </div>
+                        <div class="border-top my-2"></div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Total Owed:</strong>
+                            <strong class="text-primary fs-5">{{ selectedPledgeForTransaction.totalOwed | number:'1.2-2'
+                                }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label small text-uppercase text-muted">Payment Amount</label>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="payFullInterest"
+                                [(ngModel)]="transactionForm.payFullInterest" (change)="toggleFullInterest()">
+                            <label class="form-check-label small" for="payFullInterest">
+                                Pay Full Pending Interest Only
+                            </label>
+                        </div>
+
+                        <div class="alert alert-danger py-1 px-2 mb-2 small"
+                            *ngIf="transactionForm.amount > pendingInterestForTx">
+                            <i class="feather icon-alert-triangle me-1"></i>
+                            Exceeds pending interest ({{ pendingInterestForTx | number:'1.2-2' }})
+                        </div>
+
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"
+                                [class.border-danger]="transactionForm.amount > pendingInterestForTx"
+                                [class.text-danger]="transactionForm.amount > pendingInterestForTx">₹</span>
+                            <input type="number" class="form-control border-start-0 ps-0"
+                                [class.is-invalid]="transactionForm.amount > pendingInterestForTx"
+                                [class.border-danger]="transactionForm.amount > pendingInterestForTx"
+                                placeholder="Enter total amount to pay..." [(ngModel)]="transactionForm.amount"
+                                [disabled]="transactionForm.payFullInterest">
+                        </div>
+                        <small class="text-muted fst-italic mt-1 d-block">
+                            <i class="feather icon-info me-1"></i>Payment will be recorded as <strong>INTEREST
+                                PAYMENT</strong> only.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small text-uppercase text-muted">Notes</label>
+                    <textarea class="form-control" rows="2" [(ngModel)]="transactionForm.notes"
+                        placeholder="Transaction details..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary px-4"
+                    (click)="showTransactionModal = false">Cancel</button>
+                <button type="button" class="btn btn-success px-4" (click)="submitTransaction()"
+                    [disabled]="transactionForm.amount > pendingInterestForTx">
+                    <i class="feather icon-check-circle me-1"></i> Save Transaction
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade show" *ngIf="showDetailsModal" style="display: block; background: rgba(0,0,0,0.6);"
+    tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="feather icon-eye me-2"></i>Entry Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showDetailsModal = false"></button>
+            </div>
+            <div class="modal-body p-4 bg-light" *ngIf="selectedEntryDetails">
+                <!-- Detailed Summary -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title text-primary m-0">{{ selectedEntryDetails.summary.itemName }}</h5>
+                            <span class="badge bg-light text-dark border">
+                                {{ selectedEntryDetails.summary.merchantName }} <i
+                                    class="feather icon-arrow-right mx-1"></i> {{
+                                selectedEntryDetails.summary.customerName }}
+                            </span>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase">Principal</small>
+                                <div class="fw-bold fs-5">{{ selectedEntryDetails.summary.principalAmount |
+                                    number:'1.2-2' }}</div>
+                                <small class="text-muted"><i class="feather icon-calendar me-1"></i>{{
+                                    selectedEntryDetails.summary.entryDate | date:'mediumDate' }}</small>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase">Interest Rate</small>
+                                <span class="fw-bold fs-5">{{ selectedEntryDetails.summary.interestRate }}%</span>
+                                <small class="d-block text-muted">for {{ selectedEntryDetails.summary.monthsDuration }}
+                                    months</small>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase">Total Accrued</small>
+                                <span class="fw-bold text-danger fs-5">{{ selectedEntryDetails.summary.accruedInterest |
+                                    number:'1.2-2' }}</span>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <small class="text-muted d-block text-uppercase">Total Owed</small>
+                                <span class="fw-bold text-primary fs-5">{{ selectedEntryDetails.summary.totalOwed |
+                                    number:'1.2-2' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-light p-2 rounded" *ngIf="selectedEntryDetails.summary.notes">
+                            <small class="text-muted fw-bold text-uppercase d-block mb-1">Notes</small>
+                            <p class="mb-0 small fst-italic text-dark">{{ selectedEntryDetails.summary.notes }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified Ledger -->
+                <h6 class="text-uppercase text-muted small fw-bold mb-2">Ledger / Passbook</h6>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 small">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Particulars</th>
+                                    <th class="text-end">Principal</th>
+                                    <th class="text-end">Interest</th>
+                                    <th class="text-end">Total Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let row of ledger">
+                                    <td>{{ row.date | date:'mediumDate' }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ row.type }}</div>
+                                        <div class="text-muted fst-italic small">{{ row.desc }}</div>
+                                    </td>
+
+                                    <!-- Principal Column -->
+                                    <td class="text-end">
+                                        <span *ngIf="row.principalChange !== 0"
+                                            [class.text-danger]="row.principalChange > 0"
+                                            [class.text-success]="row.principalChange < 0">
+                                            {{ row.principalChange > 0 ? '+' : '' }}{{ row.principalChange |
+                                            number:'1.2-2' }}
+                                        </span>
+                                        <span *ngIf="row.principalChange === 0" class="text-muted">-</span>
+                                    </td>
+
+                                    <!-- Interest Column -->
+                                    <td class="text-end">
+                                        <div *ngIf="row.interestChange !== 0"
+                                            [class.text-danger]="row.interestChange > 0"
+                                            [class.text-success]="row.interestChange < 0">
+                                            {{ row.interestChange > 0 ? '+' : '' }}{{ row.interestChange |
+                                            number:'1.2-2' }}
+                                        </div>
+                                        <div *ngIf="row.interestChange === 0" class="text-muted">-</div>
+                                    </td>
+
+                                    <!-- Balance Column -->
+                                    <td class="text-end fw-bold text-primary">
+                                        {{ row.totalOwed | number:'1.2-2' }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-light border-top">
+                                <tr>
+                                    <td colspan="2" class="fw-bold text-uppercase">Final Summary</td>
+                                    <td class="text-end">
+                                        <small class="d-block text-muted">Principal Bal.</small>
+                                        <span class="fw-bold">{{ ledgerSummary.balPrincipal | number:'1.2-2' }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <small class="d-block text-muted">Interest Bal.</small>
+                                        <span class="fw-bold text-danger">{{ ledgerSummary.balInterest | number:'1.2-2'
+                                            }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <small class="d-block text-muted">Net Payable</small>
+                                        <span class="fw-bold text-primary fs-6">{{ ledgerSummary.totalOwed |
+                                            number:'1.2-2' }}</span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary px-4" (click)="showDetailsModal = false">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

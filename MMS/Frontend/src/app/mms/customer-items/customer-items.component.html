@@ -1,0 +1,280 @@
+<div class="row">
+
+    <!-- HERO SEARCH (When No Customer Selected) -->
+    <div class="col-12" *ngIf="!portfolio">
+        <app-card [hidHeader]="true" cardClass="border-0 shadow-none bg-transparent" [options]="false">
+            <div class="row align-items-center justify-content-center" style="min-height: 60vh;">
+                <div class="col-md-6 text-center">
+                    <i class="feather icon-users text-primary opacity-25" style="font-size: 5rem;"></i>
+                    <h3 class="mt-4 fw-bold text-dark">Customer Portfolio</h3>
+                    <p class="text-muted mb-4">Search for a customer to view their complete financial history and manage
+                        active pledges.</p>
+
+                    <div class="position-relative shadow-sm rounded-pill bg-white">
+                        <input type="text" class="form-control form-control-lg border-0 ps-5 py-3 rounded-pill"
+                            placeholder="Search by Name or Mobile..." [(ngModel)]="searchTerm"
+                            (keyup)="searchCustomers()" style="box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+                        <i
+                            class="feather icon-search position-absolute top-50 start-0 translate-middle-y ms-4 text-muted fs-5"></i>
+
+                        <!-- Search Results -->
+                        <div *ngIf="showResults"
+                            class="card position-absolute w-100 mt-2 shadow-lg border-0 rounded-3 overflow-hidden text-start"
+                            style="z-index: 1000;">
+                            <ul class="list-group list-group-flush">
+                                <li *ngFor="let customer of searchResults"
+                                    class="list-group-item list-group-item-action p-3 d-flex align-items-center justify-content-between"
+                                    style="cursor: pointer;" (click)="selectCustomer(customer)">
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ customer.customerName }}</div>
+                                        <div class="small text-muted"><i class="feather icon-phone me-1"></i> {{
+                                            customer.mobileNumber }}</div>
+                                    </div>
+                                    <i class="feather icon-chevron-right text-muted"></i>
+                                </li>
+                                <li *ngIf="searchResults.length === 0"
+                                    class="list-group-item p-3 text-center text-muted">
+                                    No customers found.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </app-card>
+    </div>
+
+    <!-- MAIN PORTFOLIO VIEW -->
+    <div class="col-12 fade-in-up" *ngIf="portfolio">
+
+        <!-- Top Compact Search Bar -->
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <div class="position-relative w-50">
+                <input type="text" class="form-control border-0 shadow-sm ps-4 rounded-pill"
+                    placeholder="Search another customer..." [(ngModel)]="searchTerm" (keyup)="searchCustomers()">
+                <i class="feather icon-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+
+                <div *ngIf="showResults"
+                    class="card position-absolute w-100 mt-1 shadow border-0 rounded-3 overflow-hidden"
+                    style="z-index: 1000;">
+                    <ul class="list-group list-group-flush">
+                        <li *ngFor="let customer of searchResults"
+                            class="list-group-item list-group-item-action p-2 smaller" style="cursor: pointer;"
+                            (click)="selectCustomer(customer)">
+                            <div class="fw-bold">{{ customer.customerName }}</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <button class="btn btn-dark rounded-pill px-4 shadow-sm" (click)="portfolio = null; searchTerm = ''">
+                <i class="feather icon-x me-2"></i> Clear
+            </button>
+        </div>
+
+        <!-- Customer Profile & Dashboard Card -->
+        <div class="card border-0 shadow-sm bg-white overflow-hidden mb-4">
+            <div class="card-body p-4 position-relative">
+                <div class="row align-items-center">
+                    <div class="col-md-6 d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center"
+                            style="width: 60px; height: 60px;">
+                            <span class="fs-4 fw-bold">{{ portfolio.customerName.charAt(0) }}</span>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-1 text-dark">{{ portfolio.customerName }}</h4>
+                            <div class="text-muted d-flex gap-3 small">
+                                <span><i class="feather icon-phone me-1"></i> {{ portfolio.mobileNumber }}</span>
+                                <span><i class="feather icon-map-pin me-1"></i> {{ portfolio.city || 'Local' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Stats -->
+                    <div class="col-md-6 d-flex gap-3 justify-content-end mt-3 mt-md-0">
+                        <div class="px-3 py-2 bg-light rounded-3 text-end border-start border-4 border-primary">
+                            <div class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">Active Loan</div>
+                            <div class="fs-5 fw-bold text-dark">{{ totalLoan | currency:'INR' }}</div>
+                        </div>
+                        <div class="px-3 py-2 bg-light rounded-3 text-end border-start border-4 border-success">
+                            <div class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">Asset Value</div>
+                            <div class="fs-5 fw-bold text-success">{{ totalAssetValue | currency:'INR' }}</div>
+                        </div>
+                        <div class="px-3 py-2 bg-light rounded-3 text-end border-start border-4 border-info">
+                            <div class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem;">NET EQUITY</div>
+                            <div class="fs-5 fw-bold text-info">{{ (totalAssetValue - totalLoan) | currency:'INR' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="mb-3">
+            <ul class="nav nav-pills nav-fill bg-white shadow-sm rounded-3 p-1">
+                <li class="nav-item">
+                    <a class="nav-link fw-bold" [class.active]="activeTab === 'ACTIVE'"
+                        [class.text-dark]="activeTab !== 'ACTIVE'" style="cursor: pointer;"
+                        (click)="activeTab = 'ACTIVE'">
+                        <i class="feather icon-layers me-2"></i> Active Pledges
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-bold" [class.active]="activeTab === 'HISTORY'"
+                        [class.text-dark]="activeTab !== 'HISTORY'" style="cursor: pointer;"
+                        (click)="activeTab = 'HISTORY'">
+                        <i class="feather icon-clock me-2"></i> History & Closed
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- DEPOSITS LIST -->
+        <ng-container *ngFor="let deposit of portfolio.deposits">
+            <!-- Filter Logic -->
+            <ng-container
+                *ngIf="(activeTab === 'ACTIVE' && deposit.status !== 'CLOSED') || (activeTab === 'HISTORY' && deposit.status === 'CLOSED')">
+                <div class="card border-0 shadow-sm mb-3 deposit-card" [ngClass]="deposit.status">
+                    <div class="card-body p-0">
+
+                        <!-- Header -->
+                        <div
+                            class="p-3 d-flex flex-wrap justify-content-between align-items-center border-bottom bg-opacity-10 bg-light">
+                            <div class="d-flex align-items-center gap-3">
+                                <h5 class="mb-0 fw-bold text-primary">Bill #{{ deposit.depositId }}</h5>
+                                <span class="badge rounded-pill px-3" [ngClass]="{
+                                    'bg-success': deposit.status === 'ACTIVE',
+                                    'bg-secondary': deposit.status === 'CLOSED',
+                                    'bg-danger': deposit.status === 'RISK'
+                                }">{{ deposit.status }}</span>
+
+                                <span class="text-muted small ms-2">
+                                    <i class="feather icon-calendar me-1"></i>
+                                    <span *ngIf="deposit.status !== 'CLOSED'">{{ deposit.depositDate | date:'mediumDate'
+                                        }}</span>
+                                    <span *ngIf="deposit.status === 'CLOSED'">{{ deposit.depositDate | date:'mediumDate'
+                                        }} - {{ deposit.endDate | date:'mediumDate' }}</span>
+                                </span>
+                            </div>
+
+                            <!-- Financials -->
+                            <div class="d-flex gap-4 text-end small fw-medium mt-2 mt-md-0">
+                                <div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Duration</div>
+                                    <div class="text-dark">{{ deposit.durationDisplay }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Rate</div>
+                                    <div class="text-dark">{{ deposit.interestRate }}%</div>
+                                </div>
+                                <div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.65rem;"
+                                        *ngIf="deposit.status !== 'CLOSED'">Interest (Est)</div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.65rem;"
+                                        *ngIf="deposit.status === 'CLOSED'">Interest Paid</div>
+                                    <div class="fw-bold" [class.text-warning]="deposit.status !== 'CLOSED'"
+                                        [class.text-success]="deposit.status === 'CLOSED'">
+                                        {{ (deposit.status === 'CLOSED' ? deposit.paidInterest :
+                                        deposit.accruedInterest) | currency:'INR' }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Loan Amount</div>
+                                    <div class="fw-bold text-danger fs-6">{{ (deposit.status === 'CLOSED' ?
+                                        deposit.initialLoanAmount : deposit.loanAmount) | currency:'INR' }}</div>
+                                </div>
+                                <div *ngIf="deposit.status === 'CLOSED'">
+                                    <div class="text-muted text-uppercase" style="font-size: 0.65rem;">Total Paid</div>
+                                    <div class="fw-bold text-success fs-6">{{ (deposit.paidPrincipal +
+                                        deposit.paidInterest) | currency:'INR' }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items Table -->
+                        <div class="p-3">
+                            <div class="table-responsive">
+                                <table class="table table-borderless table-sm align-middle mb-0">
+                                    <thead class="text-secondary text-uppercase small"
+                                        style="border-bottom: 1px dashed #eee;">
+                                        <tr>
+                                            <th class="ps-0">Item Details</th>
+                                            <th>Weight</th>
+                                            <th>Fine Wt</th>
+                                            <th class="text-end">Status</th>
+                                            <th class="text-end pe-0">Asset Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let item of deposit.items">
+                                            <td class="ps-0 fw-bold text-dark">{{ item.itemName }}</td>
+                                            <td>{{ item.weight }}g</td>
+                                            <td>{{ item.fineWeight }}g</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-light text-dark border small">{{ item.status
+                                                    }}</span>
+                                            </td>
+                                            <td class="text-end fw-bold text-success pe-0">{{ item.currentAssetValue |
+                                                currency:'INR' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Footer Stats & Drift Toggle -->
+                            <div class="border-top pt-2 mt-2 pb-2 d-flex justify-content-between align-items-center bg-light rounded-bottom px-3"
+                                *ngIf="deposit.status !== 'CLOSED'">
+                                <div class="d-flex align-items-center gap-3">
+
+
+                                    <!-- QUICK ACTIONS (MOVED HERE) -->
+                                    <app-deposit-detail-view [deposit]="deposit" [customerName]="portfolio.customerName"
+                                        (refresh)="loadPortfolio(portfolio.customerId)">
+                                    </app-deposit-detail-view>
+                                </div>
+
+                                <div class="d-flex gap-4 text-muted small">
+                                    <span>Total Paid: <span class="text-dark fw-bold">{{ (deposit.paidPrincipal +
+                                            deposit.paidInterest) | currency:'INR' }}</span></span>
+                                    <span>Pending Interest: <span class="text-danger fw-bold">{{
+                                            (deposit.accruedInterest - deposit.paidInterest) | currency:'INR'
+                                            }}</span></span>
+                                    <span>Total Unpaid: <span class="text-danger fw-bold">{{ (deposit.loanAmount +
+                                            (deposit.accruedInterest - deposit.paidInterest)) | currency:'INR'
+                                            }}</span></span>
+                                </div>
+                            </div>
+                            <!-- CLOSED Footer just for Drift Toggle -->
+                            <div class="border-top pt-2 mt-2 pb-2 bg-light rounded-bottom d-flex justify-content-between align-items-center px-3"
+                                *ngIf="deposit.status === 'CLOSED'">
+
+
+                                <!-- Net Profit Display -->
+                                <div>
+                                    <span class="text-uppercase small fw-bold me-2"
+                                        [ngClass]="deposit.netProfitLoss >= 0 ? 'text-success' : 'text-danger'">
+                                        {{ deposit.netProfitLoss >= 0 ? 'Net Profit' : 'Net Loss' }}:
+                                    </span>
+                                    <span class="fw-bold fs-6"
+                                        [ngClass]="deposit.netProfitLoss >= 0 ? 'text-success' : 'text-danger'">
+                                        {{ deposit.netProfitLoss | currency:'INR' }}
+                                    </span>
+                                </div>
+                            </div>
+
+
+
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+        </ng-container>
+
+        <!-- Empty State for Tab -->
+        <div class="text-center py-5"
+            *ngIf="portfolio.deposits?.length > 0 && ((activeTab === 'ACTIVE' && portfolio.activeDeposits === 0) || (activeTab === 'HISTORY' && portfolio.deposits.length === portfolio.activeDeposits))">
+            <i class="feather icon-folder-minus fs-1 text-muted opacity-25"></i>
+            <p class="mt-3 text-muted">No records found for this view.</p>
+        </div>
+
+    </div>
+</div>

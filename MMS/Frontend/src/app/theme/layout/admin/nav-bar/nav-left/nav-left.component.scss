@@ -1,0 +1,113 @@
+.market-ticker-container {
+    display: flex;
+    align-items: center;
+    background: #fdfdfd;
+    border-radius: 4px;
+    padding: 0 15px;
+    height: 45px;
+    width: auto;
+    min-width: 450px;
+    max-width: 100%;
+    overflow: hidden;
+    margin-left: 10px;
+    border: 1.5px solid #e0e6ed;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    position: relative;
+
+    .ticker-label {
+        font-weight: 800;
+        color: #3f4d67;
+        white-space: nowrap;
+        margin-right: 0;
+        font-size: 13px;
+        z-index: 10;
+        padding-right: 15px;
+        border-right: 2px solid #ddd;
+        display: flex;
+        align-items: center;
+        background: #fdfdfd;
+        position: relative;
+        height: 100%;
+
+        i {
+            font-size: 16px;
+            margin-right: 8px;
+        }
+    }
+
+    .ticker-content-wrapper {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding-left: 20px;
+    }
+
+    .ticker-content {
+        display: flex;
+        flex-direction: row;
+        white-space: nowrap;
+        animation: ticker-move 30s linear infinite;
+        will-change: transform;
+
+        &:hover {
+            animation-play-state: paused;
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 60px;
+            font-size: 17px;
+
+            .item-name {
+                font-weight: 700;
+                margin-right: 8px;
+                color: #1a252f;
+            }
+
+            .item-price {
+                color: #04a9f5;
+                font-weight: 800;
+                text-shadow: 0.5px 0.5px 0 rgba(4, 169, 245, 0.1);
+            }
+
+            .item-unit {
+                color: #6c757d;
+                font-size: 13px;
+                margin-left: 4px;
+                font-weight: 400;
+            }
+        }
+    }
+
+    .ticker-content-static {
+        padding-left: 10px;
+        font-weight: 600;
+        color: #888;
+    }
+}
+
+@keyframes ticker-move {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+// Ensure the header is fixed at the top
+:host-context(.pcoded-header) {
+    position: fixed !important;
+    top: 0;
+    width: 100%;
+    z-index: 1029;
+}
+
+@media (max-width: 991px) {
+    .market-ticker-container {
+        display: none !important;
+    }
+}

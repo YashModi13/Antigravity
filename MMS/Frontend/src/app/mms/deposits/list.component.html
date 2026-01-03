@@ -1,0 +1,1165 @@
+<div class="row">
+    <div class="col-xl-12">
+        <app-card cardTitle="All Active Deposits" cardClass="Recent-Users table-card" blockClass="p-0">
+            <div class="row m-3 align-items-center">
+                <div class="col-md-auto">
+                    <label class="me-2">Show</label>
+                    <select class="form-select form-select-sm d-inline-block w-auto" [(ngModel)]="pageSize"
+                        (change)="onPageSizeChange()">
+                        <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
+                    </select>
+                </div>
+                <div class="col-md text-end">
+                    <button class="btn btn-secondary me-2" (click)="resetFilter()"><i
+                            class="feather icon-refresh-cw"></i>
+                        Reset Filters</button>
+                    <button class="btn btn-info" (click)="addDemoData()">+ Add 10 Demo Entries</button>
+                </div>
+            </div>
+
+            <div class="table-responsive scroll-table-container">
+
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th (click)="toggleSort('depositId')" style="cursor: pointer;">
+                                ID <i class="feather"
+                                    [ngClass]="sortColumn === 'depositId' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('customerName')" style="cursor: pointer;">
+                                Customer <i class="feather"
+                                    [ngClass]="sortColumn === 'customerName' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('depositDate')" style="cursor: pointer;">
+                                Deposit Date <i class="feather"
+                                    [ngClass]="sortColumn === 'depositDate' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('depositedMonths')" style="cursor: pointer;">
+                                Months <i class="feather"
+                                    [ngClass]="sortColumn === 'depositedMonths' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('totalLoanAmount')" style="cursor: pointer;">
+                                Loan Amount <i class="feather"
+                                    [ngClass]="sortColumn === 'totalLoanAmount' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('totalInterestAccrued')" style="cursor: pointer;">
+                                Interest <i class="feather"
+                                    [ngClass]="sortColumn === 'totalInterestAccrued' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('unpaidInterest')" style="cursor: pointer;">
+                                Unpaid Int. <i class="feather"
+                                    [ngClass]="sortColumn === 'unpaidInterest' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('currentAssetValue')" style="cursor: pointer;">
+                                Asset Value <i class="feather"
+                                    [ngClass]="sortColumn === 'currentAssetValue' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('profitLoss')" style="cursor: pointer;">
+                                P/L <i class="feather"
+                                    [ngClass]="sortColumn === 'profitLoss' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('monthsWait')" style="cursor: pointer;">
+                                Months Wait <i class="feather"
+                                    [ngClass]="sortColumn === 'monthsWait' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('status')" style="cursor: pointer;">
+                                Status <i class="feather"
+                                    [ngClass]="sortColumn === 'status' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th>Action</th>
+                        </tr>
+                        <tr class="filter-row">
+                            <td><input type="text" class="header-filter" placeholder="#" [(ngModel)]="filters.id"
+                                    (keyup)="applyFilter()"></td>
+                            <td><input type="text" class="header-filter" placeholder="Name"
+                                    [(ngModel)]="filters.customerName" (keyup)="applyFilter()"></td>
+                            <td><input type="text" class="header-filter" placeholder="YYYY-MM"
+                                    [(ngModel)]="filters.depositDate" (keyup)="applyFilter()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="filters.months" (keyup)="applyFilter()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="filters.loanAmount" (keyup)="applyFilter()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="filters.interest" (keyup)="applyFilter()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="filters.unpaidInterest" (keyup)="applyFilter()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min"
+                                    [(ngModel)]="filters.assetValue" (keyup)="applyFilter()"></td>
+                            <td><input type="number" class="header-filter" placeholder="Min" [(ngModel)]="filters.pl"
+                                    (keyup)="applyFilter()"></td>
+                            <td></td>
+                            <td>
+                                <select class="header-filter" [(ngModel)]="filters.status" (change)="applyFilter()">
+                                    <option value="">All</option>
+                                    <option value="SAFE">SAFE</option>
+                                    <option value="RISK">RISK</option>
+                                </select>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let d of filteredDeposits" [ngClass]="{'table-danger': d.status === 'RISK'}">
+                            <td>{{ d.depositId }}</td>
+                            <td>
+                                <h6 class="mb-1">{{ d.customerName }}</h6>
+                            </td>
+                            <td>{{ d.depositDate }}</td>
+                            <td>{{ d.depositedTimeDisplay }}</td>
+
+                            <td>{{ d.totalLoanAmount | number:'1.2-2' }}</td>
+
+                            <td>{{ d.totalInterestAccrued | number:'1.2-2' }}</td>
+                            <td>
+                                <span [class.text-danger]="d.unpaidInterest > 0" [class.fw-bold]="d.unpaidInterest > 0">
+                                    {{ d.unpaidInterest | number:'1.2-2' }}
+                                </span>
+                            </td>
+                            <td>{{ d.currentAssetValue | number:'1.2-2' }}</td>
+                            <td>
+                                <span [ngStyle]="{'color': d.profitLoss < 0 ? 'red' : 'green'}">
+                                    {{ d.profitLoss | number:'1.2-2' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border" title="Months until equity runs out">
+                                    {{ d.monthlyInterest > 0 ? (d.profitLoss / d.monthlyInterest | number:'1.1-1') : '∞'
+                                    }}
+                                    <small class="text-muted">mos</small>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge" [ngClass]="d.status === 'RISK' ? 'bg-danger' : 'bg-success'">{{
+                                    d.status }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary"
+                                        (click)="editDeposit(d.depositId)" title="Edit">
+                                        <i class="feather icon-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary" (click)="viewDetails(d)"
+                                        title="View">
+                                        <i class="feather icon-eye"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-outline-primary" (click)="openPaymentModal(d)"
+                                        title="Pay Interest/Principal">
+                                        <i class="feather icon-credit-card"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-danger" (click)="saleDeposit(d.depositId)"
+                                        title="Sale / Liquidate">
+                                        <i class="feather icon-shopping-cart"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-dark" (click)="closeDeposit(d)"
+                                        title="Close Entry / Settled">
+                                        <i class="feather icon-check-circle"></i>
+                                    </button>
+                                </div>
+                            </td>
+
+                        </tr>
+                        <tr *ngIf="filteredDeposits.length === 0">
+                            <td colspan="10" class="text-center p-4">No records found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="p-3 d-flex justify-content-between align-items-center border-top">
+                <div class="text-muted small">
+                    Showing {{ (currentPage-1)*pageSize + 1 }} to {{ Math.min(currentPage*pageSize, totalItems) }} of {{
+                    totalItems }} records
+                </div>
+                <nav *ngIf="totalPages > 1">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" [class.disabled]="currentPage === 1">
+                            <a class="page-link" (click)="changePage(currentPage - 1)"
+                                style="cursor: pointer;">Previous</a>
+                        </li>
+                        <li class="page-item" *ngFor="let p of pages" [class.active]="p === currentPage">
+                            <a class="page-link" (click)="changePage(p)" style="cursor: pointer;">{{ p }}</a>
+                        </li>
+                        <li class="page-item" [class.disabled]="currentPage === totalPages">
+                            <a class="page-link" (click)="changePage(currentPage + 1)" style="cursor: pointer;">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </app-card>
+    </div>
+</div>
+
+<!-- Deposit Details Modal -->
+<div *ngIf="selectedDeposit" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 90%;">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Deposit Details - #{{selectedDeposit.depositId}}</h5>
+                <button type="button" class="btn-close btn-close-white" (click)="selectedDeposit = null"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+
+                <!-- Top Info Card -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <div class="col-md-4 border-end">
+                                <div class="text-muted small text-uppercase fw-bold mb-1">Customer</div>
+                                <div class="fs-5 text-dark fw-bold">{{selectedDeposit.customerName}} (ID:
+                                    {{selectedDeposit.customerId}})</div>
+                                <div *ngIf="selectedDeposit.customerMobileNumber" class="small text-muted mt-1">
+                                    <i class="feather icon-phone me-1"></i> {{selectedDeposit.customerMobileNumber}}
+                                </div>
+                                <div class="small text-muted mt-2"
+                                    *ngIf="selectedDeposit.customerCity || selectedDeposit.customerVillage">
+                                    <i class="feather icon-map-pin me-1"></i>
+                                    {{selectedDeposit.customerAddress}}
+                                    <br>
+                                    {{selectedDeposit.customerCity}} {{selectedDeposit.customerVillage}},
+                                    {{selectedDeposit.customerDistrict}}
+                                    <br>
+                                    {{selectedDeposit.customerState}}
+                                </div>
+                                <div class="small text-muted mt-2" *ngIf="selectedDeposit.customerReference">
+                                    <span class="fw-bold">Ref:</span> {{selectedDeposit.customerReference}}
+                                </div>
+                                <div class="mt-3">
+                                    <span class="text-muted small text-uppercase fw-bold">Status: </span>
+                                    <span class="badge rounded-pill"
+                                        [ngClass]="selectedDeposit.status === 'RISK' ? 'bg-danger' : 'bg-success'">{{selectedDeposit.status}}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 border-end">
+                                <div class="mb-3">
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Deposit Date</div>
+                                    <div class="fs-6">{{selectedDeposit.depositDate | date:'mediumDate'}}</div>
+                                </div>
+                                <div>
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Duration</div>
+                                    <div class="fs-6 fw-semibold text-primary">{{selectedDeposit.depositedTimeDisplay}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Interest Rate</div>
+                                    <div class="fs-6">{{selectedDeposit.interestRate}}%</div>
+                                </div>
+                                <div>
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Notes</div>
+                                    <div class="fs-6 text-muted fst-italic">{{selectedDeposit.notes || 'N/A'}}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pledged Items Section -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0 fw-bold text-uppercase text-secondary" style="letter-spacing: 0.5px;">Pledged
+                            Items</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Weight</th>
+                                    <th>Fine Weight</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of selectedDeposit.items">
+                                    <td>{{item.itemName}}</td>
+                                    <td>{{item.weight}}</td>
+                                    <td>{{item.fineWeight}}</td>
+                                    <td>{{item.description || '-'}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <!-- Financials -->
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3">
+                                <h6 class="mb-0 fw-bold text-uppercase text-secondary" style="letter-spacing: 0.5px;">
+                                    Financials</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Hero Initial Loan -->
+                                <div class="bg-light p-3 rounded border mb-3 text-center">
+                                    <div class="text-uppercase text-muted small fw-bold mb-1">Initial Loan Amount</div>
+                                    <div class="fs-4 fw-bold text-dark">₹ {{selectedDeposit.initialLoanAmount |
+                                        number:'1.2-2'}}</div>
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Interest Accrued</span>
+                                    <span class="fw-bold">{{selectedDeposit.totalInterestAccrued |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Interest Paid (-)</span>
+                                    <span class="fw-bold text-success">{{selectedDeposit.totalInterestPaid |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                                <hr class="my-2 text-muted">
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-bold text-dark">Net Unpaid Interest</span>
+                                    <span class="fw-bold text-danger">{{selectedDeposit.unpaidInterest |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Asset Status -->
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3">
+                                <h6 class="mb-0 fw-bold text-uppercase text-secondary" style="letter-spacing: 0.5px;">
+                                    Asset Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Current Asset Value</span>
+                                    <span class="fw-bold">{{selectedDeposit.currentAssetValue | number:'1.2-2'}}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Total Owed (Loan+Int)</span>
+                                    <span class="fw-bold">{{ (selectedDeposit.initialLoanAmount +
+                                        selectedDeposit.unpaidInterest) | number:'1.2-2' }}</span>
+                                </div>
+                                <hr class="my-2 text-muted">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-dark">Profit / Loss</span>
+                                    <span class="fw-bold fs-5"
+                                        [style.color]="selectedDeposit.profitLoss < 0 ? '#dc3545' : '#198754'">
+                                        {{selectedDeposit.profitLoss | number:'1.2-2'}}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="selectedDeposit = null">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Payment Modal -->
+<div *ngIf="showPaymentModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Record Payment - #{{selectedDepositForPayment?.depositId}}</h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showPaymentModal = false"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Summary Section -->
+                <div class="alert alert-secondary mb-4">
+                    <div class="row g-2 small">
+                        <div class="col-6">
+                            <strong>Loan Amount:</strong><br> ₹{{ selectedDepositForPayment?.totalLoanAmount |
+                            number:'1.2-2' }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Duration:</strong><br> {{ selectedDepositForPayment?.depositedTimeDisplay }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Total Interest:</strong><br> ₹{{ selectedDepositForPayment?.totalInterestAccrued
+                            |
+                            number:'1.2-2' }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Paid Interest:</strong><br> <span class="text-success">₹{{
+                                selectedDepositForPayment?.totalInterestPaid | number:'1.2-2' }}</span>
+                        </div>
+                        <div class="col-12 border-top mt-2 pt-2">
+                            <strong class="text-danger">Unpaid Interest (Due): ₹{{
+                                selectedDepositForPayment?.unpaidInterest | number:'1.2-2' }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Interest Payment</label>
+                    <div class="input-group">
+                        <span class="input-group-text"
+                            [class.border-danger]="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest">₹</span>
+                        <input type="number" class="form-control"
+                            [class.is-invalid]="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest"
+                            [(ngModel)]="paymentForm.interestPaid" placeholder="Amount" [disabled]="payFullInterest">
+                    </div>
+
+                    <!-- Checkbox for Full Payment -->
+                    <!-- Checkbox for Full Payment -->
+                    <div class="mt-2" *ngIf="selectedDepositForPayment?.unpaidInterest > 0">
+                        <label
+                            style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #333;">
+                            <input type="checkbox" [(ngModel)]="payFullInterest" (change)="toggleFullInterest()"
+                                style="width: 20px; height: 20px; cursor: pointer; accent-color: #04a9f5; margin: 0;">
+                            Pay Full Pending Interest Only (₹{{ selectedDepositForPayment?.unpaidInterest |
+                            number:'1.2-2' }})
+                        </label>
+                    </div>
+
+                    <!-- Warning if amount exceeds unpaid -->
+                    <div class="alert alert-danger mt-2 py-2 small"
+                        *ngIf="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest">
+                        <i class="feather icon-alert-triangle me-1"></i> Warning: Entered amount exceeds the pending
+                        Unpaid Interest.
+                    </div>
+
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" rows="2" [(ngModel)]="paymentForm.notes"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" (click)="showPaymentModal = false">Cancel</button>
+                <button type="button" class="btn btn-success" (click)="submitPayment()">Save Transaction</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settlement Confirmation Modal -->
+<div *ngIf="showSettlementModal && settlementData" class="modal fade show"
+    style="display: block; background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-success text-white" [class.bg-warning]="hasActivePledges"
+                [class.text-dark]="hasActivePledges">
+                <h5 class="modal-title fw-bold">Settlement & Closure</h5>
+                <button type="button" class="btn-close" [class.btn-close-white]="!hasActivePledges"
+                    (click)="showSettlementModal = false"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+
+                <!-- 1. Customer & Deposit Overview (Redesigned) -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <span
+                                class="badge bg-primary-subtle text-primary border border-primary-subtle text-uppercase mb-2 px-3 py-2">Deposit
+                                #{{settlementData.depositId}}</span>
+                            <h2 class="fw-bold text-dark mb-0">{{settlementData.customerName}} <span
+                                    class="text-muted fs-4">({{settlementData.customerCode || 'N/A'}})</span></h2>
+                        </div>
+                        <div *ngIf="settlementData.status">
+                            <span class="badge fs-6 px-4 py-2 text-uppercase shadow-sm" [ngClass]="{
+                                    'bg-success': settlementData.status === 'ACTIVE',
+                                    'bg-danger': settlementData.status === 'RISK',
+                                    'bg-secondary': settlementData.status === 'CLOSED',
+                                    'bg-warning text-dark': settlementData.status === 'OVERDUE'
+                                }">
+                                {{settlementData.status}}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="row row-cols-2 row-cols-md-5 g-3">
+                        <!-- Loan Amount (New) -->
+                        <div class="col">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="d-flex align-items-center mb-2 text-muted text-uppercase small fw-bold">
+                                    <i class="feather icon-briefcase me-2 fs-5"></i> Loan Amount
+                                </div>
+                                <div class="fs-4 fw-bold text-dark">₹ {{settlementData.initialLoanAmount |
+                                    number:'1.2-2'}}</div>
+                                <div class="small text-muted">Initial Principal</div>
+                            </div>
+                        </div>
+
+                        <!-- Deposit Date & Duration -->
+                        <div class="col">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="d-flex align-items-center mb-2 text-muted text-uppercase small fw-bold">
+                                    <i class="feather icon-calendar me-2 fs-5"></i> Deposit Date
+                                </div>
+                                <div class="fs-5 fw-bold text-dark mb-1">{{settlementData.depositDate |
+                                    date:'mediumDate'}}</div>
+                                <div class="small text-primary fw-medium">
+                                    <i class="feather icon-clock me-1"></i> {{settlementData.duration}}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interest Rate -->
+                        <div class="col">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="d-flex align-items-center mb-2 text-muted text-uppercase small fw-bold">
+                                    <i class="feather icon-percent me-2 fs-5"></i> Interest Rate
+                                </div>
+                                <div class="fs-4 fw-bold text-dark">{{settlementData.interestRate}}%</div>
+                                <div class="small text-muted">Annual Rate</div>
+                            </div>
+                        </div>
+
+                        <!-- Asset Value -->
+                        <div class="col">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="d-flex align-items-center mb-2 text-muted text-uppercase small fw-bold">
+                                    <i class="feather icon-package me-2 fs-5"></i> Asset Value
+                                </div>
+                                <div class="fs-4 fw-bold text-success">₹ {{settlementData.currentAssetValue |
+                                    number:'1.2-2'}}</div>
+                                <div class="small text-muted">Estimated Value</div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="col">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="d-flex align-items-center mb-2 text-muted text-uppercase small fw-bold">
+                                    <i class="feather icon-file-text me-2 fs-5"></i> Notes
+                                </div>
+                                <div class="fs-6 text-muted fst-italic text-truncate" title="{{settlementData.notes}}">
+                                    {{settlementData.notes || 'No notes'}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Information -->
+                <div *ngIf="settlementData.activeMerchantEntries?.length > 0"
+                    class="alert border-0 shadow-sm d-flex align-items-center mb-4 p-3 rounded-3"
+                    [class.alert-danger]="hasActivePledges" [class.alert-success]="!hasActivePledges">
+                    <i class="feather me-3 fs-3" [class.icon-alert-triangle]="hasActivePledges"
+                        [class.icon-check-circle]="!hasActivePledges"></i>
+                    <div>
+                        <strong class="fs-5">{{ hasActivePledges ? 'Cannot Close Deposit' : 'Merchant Items Cleared'
+                            }}</strong>
+                        <div class="mt-1">
+                            {{ hasActivePledges ? 'Items are currently pledged to merchants. Please settle these
+                            merchant transactions first.' : 'All items have been received back from merchants. You can
+                            now proceed with the final settlement.' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Deposit Items (Enhanced Table) -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center">
+                        <h5 class="mb-0 fw-bold text-dark"><i class="feather icon-layers me-2 text-primary"></i>Deposit
+                            Items</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-secondary text-uppercase small fw-bold">
+                                <tr>
+                                    <th class="py-3 ps-4">Item Name</th>
+                                    <th class="py-3">Description</th>
+                                    <th class="py-3 text-end">Gross Wt.</th>
+                                    <th class="py-3 text-end">Fine Wt.</th>
+                                    <th class="py-3 text-end pe-4">Est. Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of settlementData.items">
+                                    <td class="fw-bold text-dark py-3 ps-4 fs-6">{{item.itemName}}</td>
+                                    <td class="text-muted small py-3">{{item.description || '-'}}</td>
+                                    <td class="text-end text-muted py-3">{{item.weight}}g</td>
+                                    <td class="text-end fw-bold py-3">{{item.fineWeight}}g</td>
+                                    <td class="text-end fw-bold text-success py-3 pe-4">₹ {{item.estValue |
+                                        number:'1.2-2'}}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-light">
+                                <tr>
+                                    <td colspan="4" class="text-end fw-bold text-muted text-uppercase py-3">Total Asset
+                                        Value</td>
+                                    <td class="text-end fw-bold text-success fs-5 py-3 pe-4">₹
+                                        {{settlementData.currentAssetValue | number:'1.2-2'}}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. Transaction Log (Passbook) - Moved Here -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center">
+                        <h5 class="mb-0 fw-bold text-dark"><i
+                                class="feather icon-book me-2 text-primary"></i>Transaction Log (Passbook)</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-secondary text-uppercase small fw-bold">
+                                <tr>
+                                    <th class="py-3 ps-4">Date</th>
+                                    <th class="py-3">Particulars</th>
+                                    <th class="py-3 text-end">Principal</th>
+                                    <th class="py-3 text-end">Interest</th>
+                                    <th class="py-3 text-end pe-4">Total Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let entry of ledger">
+                                    <td class="text-nowrap text-muted py-3 ps-4">{{entry.date | date:'mediumDate'}}</td>
+                                    <td class="fw-bold text-dark py-3">{{entry.description}}</td>
+
+                                    <!-- Principal Column: Show '-' if value is 0 -->
+                                    <td class="text-end py-3">
+                                        <ng-container *ngIf="entry.principal !== 0; else zeroPrincipal">
+                                            <span
+                                                [ngClass]="entry.type === 'Cr' ? 'text-success' : 'text-danger fw-bold'">
+                                                <span *ngIf="entry.type === 'Cr'">+</span>{{entry.principal |
+                                                number:'1.2-2'}}
+                                            </span>
+                                        </ng-container>
+                                        <ng-template #zeroPrincipal>
+                                            <span class="text-muted">-</span>
+                                        </ng-template>
+                                    </td>
+
+                                    <td class="text-end py-3">
+                                        <ng-container *ngIf="entry.interest !== 0; else zeroInterest">
+                                            <span
+                                                [ngClass]="entry.interest > 0 ? 'text-danger' : 'text-success fw-bold'">
+                                                <span *ngIf="entry.interest > 0">+</span>{{entry.interest |
+                                                number:'1.2-2'}}
+                                            </span>
+                                        </ng-container>
+                                        <ng-template #zeroInterest>
+                                            <span class="text-muted">-</span>
+                                        </ng-template>
+                                    </td>
+                                    <td class="text-end fw-bold text-primary py-3 pe-4">{{entry.balance |
+                                        number:'1.2-2'}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Separator Line -->
+                <hr class="my-5 border-2 border-secondary-subtle opacity-25">
+
+                <!-- 4. Active Merchant Pledges (If Any) - Moved Below -->
+                <div *ngIf="settlementData.activeMerchantEntries?.length > 0"
+                    class="card border-0 shadow-sm mb-4 border-warning">
+                    <div class="card-header bg-warning-subtle fw-bold text-uppercase small text-dark-emphasis">
+                        <i class="feather icon-shield-off me-1"></i> Active Merchant Pledges
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-white text-muted text-uppercase small">
+                                <tr>
+                                    <th>Merchant</th>
+                                    <th>Item</th>
+                                    <th class="text-end">Int %</th>
+                                    <th class="text-end">Monthly Int.</th>
+                                    <th class="text-end">Principal</th>
+                                    <th class="text-end">Accrued Int.</th>
+                                    <th class="text-end">Redemption Amt</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ng-container *ngFor="let item of settlementData.activeMerchantEntries">
+                                    <tr (click)="item.expanded = !item.expanded" style="cursor: pointer;"
+                                        [class.table-active]="item.expanded" title="Click to view full log">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="feather text-muted me-2"
+                                                    [class.icon-chevron-right]="!item.expanded"
+                                                    [class.icon-chevron-down]="item.expanded"></i>
+                                                <div>
+                                                    <span class="fw-bold text-primary">{{item.merchantName}}</span>
+                                                    <span class="badge ms-2"
+                                                        [ngClass]="item.status === 'ACTIVE' ? 'bg-warning text-dark' : 'bg-info'">
+                                                        {{item.status === 'ACTIVE' ? 'PLEDGED' : 'REDEEMED'}}
+                                                    </span>
+                                                    <div class="small text-muted">{{item.entryDate | date:'mediumDate'}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{item.itemName}} <small
+                                                class="text-muted d-block">{{item.fineWeight}}g</small>
+                                        </td>
+                                        <td class="text-end text-muted">{{item.interestRate}}%</td>
+                                        <td class="text-end fw-semibold">₹ {{item.monthlyInterestAmount |
+                                            number:'1.2-2'}}</td>
+                                        <td class="text-end fw-bold">₹ {{item.principalAmount | number:'1.2-2'}}</td>
+                                        <td class="text-end text-danger">+ ₹ {{item.accruedInterest | number:'1.2-2'}}
+                                        </td>
+                                        <td class="text-end fw-bold text-dark">₹ {{item.totalOwed | number:'1.2-2'}}
+                                        </td>
+                                        <td class="text-center">
+                                            <button *ngIf="item.status === 'ACTIVE'" class="btn btn-sm btn-success"
+                                                (click)="$event.stopPropagation(); openRedeemModal(item)">
+                                                Redeem Item
+                                            </button>
+                                            <span *ngIf="item.status !== 'ACTIVE'"
+                                                class="text-muted small">Settled</span>
+                                        </td>
+                                    </tr>
+                                    <!-- EXPANDED DETAIL ROW (Transaction Log) -->
+                                    <tr *ngIf="item.expanded" class="bg-light animation-fade-in">
+                                        <td colspan="8" class="p-3">
+
+                                            <!-- Summary Stats for this Item -->
+                                            <div class="row g-2 mb-2">
+                                                <div class="col-md-3">
+                                                    <div class="card border shadow-none mb-0 bg-white border-primary">
+                                                        <div class="card-body p-2 text-center">
+                                                            <div class="small text-muted text-uppercase fw-bold mb-1"
+                                                                style="font-size: 0.7rem;">Interest Rate</div>
+                                                            <div class="fw-bold text-primary">{{item.interestRate}}%
+                                                                <small class="fw-normal">/ mo</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card border shadow-none mb-0 bg-white">
+                                                        <div class="card-body p-2 text-center">
+                                                            <div class="small text-muted text-uppercase fw-bold mb-1"
+                                                                style="font-size: 0.7rem;">Monthly Interest</div>
+                                                            <div class="fw-bold text-dark">₹
+                                                                {{item.monthlyInterestAmount | number:'1.2-2'}}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card border shadow-none mb-0 bg-white border-success">
+                                                        <div class="card-body p-2 text-center">
+                                                            <div class="small text-muted text-uppercase fw-bold mb-1"
+                                                                style="font-size: 0.7rem;">Duration</div>
+                                                            <div class="fw-bold text-dark">{{item.monthsDuration}}
+                                                                Month(s)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card border shadow-none mb-0 bg-white">
+                                                        <div class="card-body p-2 text-center">
+                                                            <div class="small text-muted text-uppercase fw-bold mb-1"
+                                                                style="font-size: 0.7rem;">Paid Interest</div>
+                                                            <div class="fw-bold text-success">₹ {{item.totalInterestPaid
+                                                                | number:'1.2-2'}}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- PROFIT MARGIN ANALYSIS (New Segment) -->
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-md-4">
+                                                    <div
+                                                        class="card border shadow-none mb-0 bg-success bg-opacity-10 border-success border-opacity-25">
+                                                        <div
+                                                            class="card-body p-2 px-3 d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <div class="small text-muted text-uppercase fw-bold"
+                                                                    style="font-size: 0.65rem;">Customer Earnings
+                                                                    ({{item.customerInterestRate}}%)</div>
+                                                                <div class="fw-bold text-success">+ ₹
+                                                                    {{item.customerMonthlyInterest | number:'1.2-2'}}
+                                                                    <small class="fw-normal text-muted">/ mo</small>
+                                                                </div>
+                                                            </div>
+                                                            <i
+                                                                class="feather icon-arrow-up-right text-success fs-4 opacity-50"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div
+                                                        class="card border shadow-none mb-0 bg-danger bg-opacity-10 border-danger border-opacity-25">
+                                                        <div
+                                                            class="card-body p-2 px-3 d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <div class="small text-muted text-uppercase fw-bold"
+                                                                    style="font-size: 0.65rem;">Merchant Expense
+                                                                    ({{item.interestRate}}%)</div>
+                                                                <div class="fw-bold text-danger">- ₹
+                                                                    {{item.monthlyInterestAmount | number:'1.2-2'}}
+                                                                    <small class="fw-normal text-muted">/ mo</small>
+                                                                </div>
+                                                            </div>
+                                                            <i
+                                                                class="feather icon-arrow-down-right text-danger fs-4 opacity-50"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div
+                                                        class="card border shadow-none mb-0 bg-primary bg-opacity-10 border-primary border-opacity-50 border-2">
+                                                        <div
+                                                            class="card-body p-2 px-3 d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <div class="small text-primary text-uppercase fw-bolder"
+                                                                    style="font-size: 0.65rem;">Net Monthly Profit</div>
+                                                                <div class="h5 mb-0 fw-bolder text-primary">₹
+                                                                    {{item.netMonthlyMargin | number:'1.2-2'}}</div>
+                                                            </div>
+                                                            <div
+                                                                class="bg-primary text-white rounded-circle p-1 px-2 small shadow-sm">
+                                                                <i class="feather icon-trending-up"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="card border mb-0">
+                                                <div
+                                                    class="card-header bg-white py-2 px-3 d-flex justify-content-between align-items-center">
+                                                    <small class="text-uppercase fw-bold text-muted"><i
+                                                            class="feather icon-list me-1"></i> Merchant Account
+                                                        Log</small>
+                                                    <span class="badge bg-light text-dark border">Entry ID:
+                                                        #{{item.entryId}}</span>
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm mb-0 table-bordered">
+                                                        <thead class="bg-light small">
+                                                            <tr>
+                                                                <th>Date</th>
+                                                                <th>Type</th>
+                                                                <th>Description</th>
+                                                                <th class="text-end">Principal</th>
+                                                                <th class="text-end">Interest</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr *ngFor="let tx of item.transactions">
+                                                                <td class="small">{{tx.transactionDate |
+                                                                    date:'mediumDate'}}</td>
+                                                                <td>
+                                                                    <span class="badge" [ngClass]="{
+                                                                            'bg-warning text-dark': tx.transactionType === 'PLEDGE',
+                                                                            'bg-danger': tx.transactionType === 'PRINCIPAL_PAYMENT',
+                                                                            'bg-success': tx.transactionType === 'INTEREST_PAYMENT',
+                                                                            'bg-info': tx.transactionType === 'RETURN',
+                                                                            'bg-primary': tx.transactionType === 'INTEREST_ACCRUED'
+                                                                        }">
+                                                                        {{tx.transactionType === 'INTEREST_ACCRUED' ?
+                                                                        'INT. CHARGE' : tx.transactionType}}
+                                                                    </span>
+                                                                </td>
+                                                                <td class="small text-muted">{{tx.description || '-'}}
+                                                                </td>
+
+                                                                <!-- Principal Column -->
+                                                                <td class="text-end fw-bold small">
+                                                                    <span *ngIf="tx.transactionType === 'PLEDGE'"
+                                                                        class="text-dark">+ ₹ {{tx.amount |
+                                                                        number:'1.2-2'}}</span>
+                                                                    <span
+                                                                        *ngIf="tx.transactionType === 'PRINCIPAL_PAYMENT'"
+                                                                        class="text-success">- ₹ {{tx.amount |
+                                                                        number:'1.2-2'}}</span>
+                                                                    <span *ngIf="tx.transactionType === 'RETURN'"
+                                                                        class="text-info">- ₹ {{tx.amount |
+                                                                        number:'1.2-2'}}</span>
+                                                                    <span
+                                                                        *ngIf="tx.transactionType !== 'PLEDGE' && tx.transactionType !== 'PRINCIPAL_PAYMENT' && tx.transactionType !== 'RETURN'"
+                                                                        class="text-muted">-</span>
+                                                                </td>
+
+                                                                <!-- Interest Column -->
+                                                                <td class="text-end fw-bold small">
+                                                                    <span
+                                                                        *ngIf="tx.transactionType === 'INTEREST_ACCRUED'"
+                                                                        class="text-primary">+ ₹ {{tx.amount |
+                                                                        number:'1.2-2'}}</span>
+                                                                    <span
+                                                                        *ngIf="tx.transactionType === 'INTEREST_PAYMENT'"
+                                                                        class="text-success">- ₹ {{tx.amount |
+                                                                        number:'1.2-2'}}</span>
+                                                                    <span
+                                                                        *ngIf="tx.transactionType !== 'INTEREST_PAYMENT' && tx.transactionType !== 'INTEREST_ACCRUED'"
+                                                                        class="text-muted">-</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr
+                                                                *ngIf="!item.transactions || item.transactions.length === 0">
+                                                                <td colspan="5"
+                                                                    class="text-center text-muted small p-2">
+                                                                    No transactions found for this Item.
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </ng-container>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Separator Line if Merchant Items Exist -->
+                <div *ngIf="settlementData.activeMerchantEntries?.length > 0" class="my-4">
+                    <hr class="border-secondary opacity-25 m-0" style="border-width: 2px;">
+                </div>
+
+                <!-- 3. Final Settlement (The "Real" Cash Part) -->
+                <div class="card border-0 shadow-sm overflow-hidden mb-0">
+                    <div
+                        class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                        <h5 class="mb-0 text-white fw-bold"><i class="feather icon-check-square me-2"></i>Final
+                            Settlement</h5>
+                        <div *ngIf="!hasActivePledges && settlementData.activeMerchantEntries?.length > 0"
+                            class="badge bg-success border border-white border-opacity-25 py-2 px-3 animation-pulse">
+                            <i class="feather icon-unlock me-1"></i> MERCHANT PART CLEARED - READY TO CLOSE
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- BUSINESS MARGIN SUMMARY (FULL BILL CALCULATION) -->
+                        <div *ngIf="settlementData.activeMerchantEntries?.length > 0"
+                            class="row g-2 mb-4 bg-light p-3 rounded-3 border mx-0">
+                            <div class="col-12 mb-2">
+                                <h6 class="text-uppercase text-muted small fw-bolder mb-0"><i
+                                        class="feather icon-pie-chart me-2"></i>Full Bill Profit Analysis (All Merged
+                                    Items)</h6>
+                            </div>
+                            <div class="col-md-4">
+                                <div
+                                    class="card border shadow-none mb-0 bg-success bg-opacity-10 border-success border-opacity-25">
+                                    <div class="card-body p-2 px-3">
+                                        <div class="small text-muted text-uppercase fw-bold"
+                                            style="font-size: 0.65rem;">
+                                            Customer Revenue (Total Int)</div>
+                                        <div class="fw-bold text-success">+ ₹ {{settlementMargin.totalCustInt |
+                                            number:'1.2-2'}}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div
+                                    class="card border shadow-none mb-0 bg-danger bg-opacity-10 border-danger border-opacity-25">
+                                    <div class="card-body p-2 px-3">
+                                        <div class="small text-muted text-uppercase fw-bold"
+                                            style="font-size: 0.65rem;">
+                                            Merchant Expense (Total Int)</div>
+                                        <div class="fw-bold text-danger">- ₹ {{settlementMargin.totalMerchInt |
+                                            number:'1.2-2'}}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div
+                                    class="card border shadow-none mb-0 bg-primary bg-opacity-10 border-primary border-opacity-50 border-2">
+                                    <div class="card-body p-2 px-3 d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-primary text-uppercase fw-bolder"
+                                                style="font-size: 0.65rem;">Net Bill Profit</div>
+                                            <div class="fw-bolder text-primary h5 mb-0">₹ {{settlementMargin.netProfit |
+                                                number:'1.2-2'}}</div>
+                                        </div>
+                                        <div class="bg-primary text-white rounded-circle p-1 px-2 small shadow-sm">
+                                            <i class="feather icon-trending-up"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-center">
+                            <!-- Left: Breakdown -->
+                            <div class="col-md-6 border-end">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="fs-6 text-muted fw-bold text-uppercase">Current Asset Value</span>
+                                    <span class="fs-5 fw-bold text-success">₹ {{settlementData.currentAssetValue |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                                <hr class="my-3 text-muted">
+
+                                <h6 class="text-uppercase text-muted small fw-bold mb-4">Breakdown</h6>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="fs-6">Principal Amount</span>
+                                    <span class="fs-6 fw-bold text-dark">{{ledgerSummary?.principal |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="fs-6">Total Interest Charged</span>
+                                    <span class="fs-6 fw-bold text-danger">{{ledgerSummary?.totalInterestAccrued |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3"
+                                    *ngIf="ledgerSummary?.totalInterestPaid > 0">
+                                    <span class="fs-6 text-success"><i
+                                            class="feather icon-check-circle me-1"></i>Interest Paid</span>
+                                    <span class="fs-6 fw-bold text-success">- {{ledgerSummary?.totalInterestPaid |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold fs-5 text-dark">Total Payable</span>
+                                    <span class="fw-bold fs-2 text-primary">₹ {{ledgerSummary?.total |
+                                        number:'1.2-2'}}</span>
+                                </div>
+                            </div>
+
+                            <!-- Right: Payment Action -->
+                            <div class="col-md-6 ps-md-5">
+                                <h6 class="text-uppercase text-muted small fw-bold mb-4">Payment</h6>
+
+                                <div class="mb-4">
+                                    <div class="form-check form-switch ps-0 mb-3">
+                                        <!-- Entire box is a Label for maximum clickability -->
+                                        <label
+                                            class="d-flex align-items-center justify-content-between border rounded p-3 bg-light w-100"
+                                            [class.border-primary]="isFullPayment"
+                                            [class.bg-primary-subtle]="isFullPayment" for="fullPaymentCheck"
+                                            style="cursor: pointer;">
+
+                                            <span class="form-check-label fw-bold text-dark">
+                                                Full Payment (₹ {{ledgerSummary?.total | number:'1.2-2'}})
+                                            </span>
+
+                                            <input class="form-check-input fs-4 m-0" type="checkbox" role="switch"
+                                                id="fullPaymentCheck" [(ngModel)]="isFullPayment"
+                                                (change)="updateSettlementAmount()">
+                                        </label>
+                                    </div>
+
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-light border-end-0 fw-bold text-muted">₹</span>
+                                        <input type="number" class="form-control fw-bold text-end fs-4"
+                                            [(ngModel)]="settlementAmount" [disabled]="isFullPayment"
+                                            [class.text-danger]="settlementValidationError" placeholder="0.00">
+                                    </div>
+
+                                    <div class="mt-2 text-danger fw-bold small" *ngIf="settlementValidationError">
+                                        <i class="feather icon-alert-triangle me-1"></i> {{settlementValidationError}}
+                                    </div>
+                                </div>
+
+                                <!-- Confirmation Text (Styled) -->
+                                <div class="mt-4">
+                                    <div class="d-flex align-items-center border rounded p-3 w-100"
+                                        [class.bg-warning-subtle]="!confirmPayment.checked"
+                                        [class.bg-success-subtle]="confirmPayment.checked"
+                                        [class.border-warning]="!confirmPayment.checked"
+                                        [class.border-success]="confirmPayment.checked">
+
+                                        <input class="form-check-input m-0 me-3 fs-3" type="checkbox"
+                                            id="confirmPayment" #confirmPayment
+                                            [disabled]="hasActivePledges || settlementValidationError"
+                                            style="flex-shrink: 0; cursor: pointer;">
+
+                                        <div class="small fw-bold lh-sm text-dark mb-0">
+                                            I confirm that the payment of <span
+                                                class="text-decoration-underline fw-bolder">₹ {{settlementAmount |
+                                                number:'1.2-2'}}</span> has been received from the customer.
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer bg-light border-top-0 d-flex justify-content-end p-3">
+                <button type="button" class="btn btn-lg btn-outline-secondary me-2 px-4"
+                    (click)="showSettlementModal = false">Cancel</button>
+                <button type="button" class="btn btn-lg btn-success fw-bold px-5 shadow-sm"
+                    [disabled]="hasActivePledges || settlementValidationError"
+                    (click)="confirmSettlement(confirmPayment.checked)">
+                    <i class="feather icon-check-circle me-2"></i> Settle & Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GET BACK (REDEMPTION) MODAL -->
+<div class="modal fade show" *ngIf="showRedeemModal" style="display: block; background: rgba(0,0,0,0.6); z-index: 2500;"
+    tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title text-white">
+                    <i class="feather icon-download-cloud me-2"></i>Redeem from Merchant
+                </h5>
+                <button type="button" class="btn-close btn-close-white" (click)="showRedeemModal = false"></button>
+            </div>
+            <div class="modal-body p-4" *ngIf="selectedPledgeForRedeem">
+                <div class="alert alert-info mb-4 border-0 shadow-sm">
+                    <div class="small text-uppercase fw-bold text-muted mb-1">Item Details</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="h6 mb-0">{{ selectedPledgeForRedeem.itemName }}</span>
+                        <span class="badge bg-primary">#{{ selectedPledgeForRedeem.depositItemId }}</span>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Merchant: <span class="fw-bold">{{ selectedPledgeForRedeem.merchantName }}</span>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Principal Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">₹</span>
+                            <input type="number" class="form-control" [(ngModel)]="redeemForm.principalPaid"
+                                (input)="calculateRedeemTotal()">
+                        </div>
+                        <small class="text-muted">Amount paid to merchant</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Interest Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">₹</span>
+                            <input type="number" class="form-control" [(ngModel)]="redeemForm.interestPaid"
+                                (input)="calculateRedeemTotal()">
+                        </div>
+                        <small class="text-muted">Interest paid to merchant</small>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="card bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                            <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark">Total Payment to Merchant</span>
+                                <span class="h5 mb-0 text-danger fw-bold">₹ {{ redeemForm.totalPaid | number:'1.2-2'
+                                    }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Notes</label>
+                        <textarea class="form-control" [(ngModel)]="redeemForm.notes" rows="2"
+                            placeholder="e.g. Account settled in full"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary px-4" (click)="showRedeemModal = false">Cancel</button>
+                <button type="button" class="btn btn-success px-4" (click)="confirmRedeem()">
+                    <i class="feather icon-check-circle me-1"></i> Confirm & Return to Stock
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
