@@ -453,6 +453,27 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         return Math.floor((this.totalAssetValue * (this.deposit.givingPercentage || 0)) / 100);
     }
 
+    get excessAmount(): number {
+        const loanAmt = this.deposit.initialLoanAmount || 0;
+        return (loanAmt > this.eligibleLoanAmount) ? (loanAmt - this.eligibleLoanAmount) : 0;
+    }
+
+    get netValuationSurplus(): number {
+        return this.totalAssetValue - (this.deposit.initialLoanAmount || 0);
+    }
+
+    get monthlyInterestAmount(): number {
+        const loan = this.deposit.initialLoanAmount || 0;
+        const rate = this.deposit.interestRate || 0;
+        return (loan * rate) / 100;
+    }
+
+    get interestCoverMonths(): number {
+        const interest = this.monthlyInterestAmount;
+        if (interest === 0) return 0;
+        return this.netValuationSurplus / interest;
+    }
+
     get isLoanAmountInvalid(): boolean {
         const amount = Number(this.deposit.initialLoanAmount);
         if (this.deposit.initialLoanAmount === null) return false;
