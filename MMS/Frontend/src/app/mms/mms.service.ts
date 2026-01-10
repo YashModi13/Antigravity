@@ -333,4 +333,21 @@ export class MmsService {
         return this.http.post(REST_URLS.REPORTS_GENERATE, { type }, { responseType: 'blob' });
     }
 
+    backupDatabase(): Observable<Blob> {
+        return this.http.post(REST_URLS.DATABASE_BACKUP, {}, { responseType: 'blob' });
+    }
+
+    restoreDatabase(file: File, params: any): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('host', params.host);
+        formData.append('port', params.port);
+        formData.append('user', params.user);
+        formData.append('pass', params.pass);
+        formData.append('db', params.db);
+        formData.append('schema', params.schema);
+        formData.append('psqlPath', params.psqlPath);
+        return this.http.post(REST_URLS.DATABASE_RESTORE, formData, { responseType: 'text' });
+    }
+
 }

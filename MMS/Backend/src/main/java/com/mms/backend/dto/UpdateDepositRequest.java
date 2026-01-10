@@ -12,5 +12,6 @@ public class UpdateDepositRequest {
     private String notes;
     // Full Edit Support
     private BigDecimal initialLoanAmount;
+    private Integer tokenNo;
     private List<DepositItemRequest> items;
 }

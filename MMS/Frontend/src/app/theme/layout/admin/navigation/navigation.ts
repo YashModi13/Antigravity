@@ -68,6 +68,14 @@ export const NavigationItems: NavigationItem[] = [
         url: '/mms/reports',
         icon: 'feather icon-file-text',
         classes: 'nav-item'
+      },
+      {
+        id: 'mms-backup',
+        title: 'Backup & Restore',
+        type: 'item',
+        url: '/mms/backup',
+        icon: 'feather icon-server',
+        classes: 'nav-item'
       }
     ]
   },

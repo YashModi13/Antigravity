@@ -348,6 +348,10 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 }
                 this.deposit.customerId = data.customerId;
                 this.deposit.depositDate = data.depositDate;
+                this.deposit.tokenNo = data.tokenNo?.toString() || '';
+                if (this.deposit.tokenNo) {
+                    this.tokenStatus = 'valid';
+                }
                 this.deposit.interestRate = data.interestRate;
                 this.deposit.notes = data.notes;
                 this.deposit.initialLoanAmount = data.initialLoanAmount || null;

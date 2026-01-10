@@ -16,6 +16,7 @@ import com.mms.backend.dto.AvailableItemDTO;
 import com.mms.backend.dto.MerchantItemDTO;
 import com.mms.backend.service.DashboardChartService;
 import com.mms.backend.service.ReportService;
+import com.mms.backend.service.DatabaseBackupService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import java.io.IOException;
@@ -65,6 +66,9 @@ public class MMSController {
     @Autowired
     private ReportService reportService;
 
+    @Autowired
+    private DatabaseBackupService backupService;
+
     @PostMapping("/configs/list")
     public ResponseEntity<List<ConfigProperty>> getAllConfigs() {
         return ResponseEntity.ok(configRepository.findAll());
@@ -72,7 +76,10 @@ public class MMSController {
 
     @PostMapping("/configs/details")
     public ResponseEntity<ConfigProperty> getConfigByKey(@RequestBody Map<String, String> payload) {
-        return configRepository.findByPropertyKey(payload.get("key"))
+        String key = payload.get("key");
+        if (key == null)
+            return ResponseEntity.badRequest().build();
+        return configRepository.findByPropertyKey(key)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -126,22 +133,42 @@ public class MMSController {
     }
 
     @PostMapping("/dashboard/paginated-v2")
-    public ResponseEntity<org.springframework.data.domain.Page<DepositSummaryDTO>> getDashboardDataPaginatedV2(
+    public ResponseEntity<?> getDashboardDataPaginatedV2(
             @RequestBody Map<String, Object> payload) {
         try {
-            int page = payload.get("page") != null ? (Integer) payload.get("page") : 0;
-            int size = payload.get("size") != null ? (Integer) payload.get("size") : 10;
+            Object pageObj = payload.get("page");
+            int page = (pageObj instanceof Number) ? ((Number) pageObj).intValue()
+                    : (pageObj != null ? Integer.parseInt(pageObj.toString()) : 0);
+
+            Object sizeObj = payload.get("size");
+            int size = (sizeObj instanceof Number) ? ((Number) sizeObj).intValue()
+                    : (sizeObj != null ? Integer.parseInt(sizeObj.toString()) : 10);
+
             String sort = payload.get("sort") != null ? payload.get("sort").toString() : "id";
             String dir = payload.get("dir") != null ? payload.get("dir").toString() : "asc";
 
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
             mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            com.mms.backend.dto.DepositFilterDTO filters = mapper.convertValue(payload,
+            mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT,
+                    true);
+
+            // Convert empty strings to null for numeric mapping safety
+            Map<String, Object> cleanedPayload = new java.util.HashMap<>(payload);
+            cleanedPayload.entrySet().forEach(entry -> {
+                if ("".equals(entry.getValue())) {
+                    entry.setValue(null);
+                }
+            });
+
+            com.mms.backend.dto.DepositFilterDTO filters = mapper.convertValue(cleanedPayload,
                     com.mms.backend.dto.DepositFilterDTO.class);
 
             return ResponseEntity.ok(depositService.getActiveDepositSummaryPaginated(page, size, sort, dir, filters));
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error fetching paginated data", e);
+            log.error("#### [SERVER] ERROR in paginated-v2: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching paginated data: " + e.getMessage());
         }
     }
 
@@ -151,15 +178,30 @@ public class MMSController {
     }
 
     @PostMapping("/items/calculate-value")
-    public ResponseEntity<BigDecimal> calculateAssetValue(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> calculateAssetValue(@RequestBody Map<String, Object> payload) {
         try {
-            Integer itemId = (Integer) payload.get("itemId");
+            if (!payload.containsKey("itemId") || !payload.containsKey("fineWeight")) {
+                log.error("#### [CALCULATE] Missing parameters. Received keys: {}", payload.keySet());
+                if (payload.containsKey("data")) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Encryption Error: Payload remained encrypted. Check system.encryption.secret-key.");
+                }
+                return ResponseEntity.badRequest().body("itemId and fineWeight are required");
+            }
+
+            Object itemObj = payload.get("itemId");
+            Integer itemId = (itemObj instanceof Number) ? ((Number) itemObj).intValue()
+                    : Integer.parseInt(itemObj.toString());
+
             Object weightObj = payload.get("fineWeight");
             BigDecimal fineWeight = new BigDecimal(weightObj.toString());
 
-            return ResponseEntity.ok(priceService.calculateAssetValue(itemId, fineWeight));
+            BigDecimal value = priceService.calculateAssetValue(itemId, fineWeight);
+            return ResponseEntity.ok(value);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("#### [CALCULATE] Calculation failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Calculation Error: " + e.getMessage());
         }
     }
 
@@ -253,7 +295,9 @@ public class MMSController {
             if (!payload.containsKey("itemId") || !payload.containsKey("price")) {
                 return ResponseEntity.badRequest().body("itemId and price are required");
             }
-            Integer itemId = (Integer) payload.get("itemId");
+            Object itemObj = payload.get("itemId");
+            Integer itemId = (itemObj instanceof Number) ? ((Number) itemObj).intValue()
+                    : Integer.parseInt(itemObj.toString());
             BigDecimal price = new BigDecimal(payload.get("price").toString());
 
             priceService.updatePrice(itemId, price);
@@ -322,11 +366,17 @@ public class MMSController {
     @PostMapping("/deposits/update")
     public ResponseEntity<String> updateDeposit(@RequestBody Map<String, Object> payload) {
         try {
-            Integer id = (Integer) payload.get("id");
-            if (id == null)
+            Object idObj = payload.get("id");
+            if (idObj == null)
                 return ResponseEntity.badRequest().body("ID required");
 
+            Integer id = (idObj instanceof Number) ? ((Number) idObj).intValue()
+                    : Integer.parseInt(idObj.toString());
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
             // Ensure UpdateDepositRequest is imported or fully qualified
             com.mms.backend.dto.UpdateDepositRequest req = mapper.convertValue(payload,
                     com.mms.backend.dto.UpdateDepositRequest.class);
@@ -344,11 +394,17 @@ public class MMSController {
     @PostMapping("/deposits/transactions/add")
     public ResponseEntity<String> addPaymentTransaction(@RequestBody Map<String, Object> payload) {
         try {
-            Integer id = (Integer) payload.get("depositId");
-            if (id == null)
+            Object idObj = payload.get("depositId");
+            if (idObj == null)
                 return ResponseEntity.badRequest().body("Deposit ID required");
 
+            Integer id = (idObj instanceof Number) ? ((Number) idObj).intValue()
+                    : Integer.parseInt(idObj.toString());
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
             // Ensure RedemptionRequest is imported or fully qualified
             com.mms.backend.dto.RedemptionRequest req = mapper.convertValue(payload,
                     com.mms.backend.dto.RedemptionRequest.class);
@@ -418,11 +474,17 @@ public class MMSController {
     @PostMapping("/merchant-entries/update")
     public ResponseEntity<String> updateMerchantEntry(@RequestBody Map<String, Object> payload) {
         try {
-            Integer id = (Integer) payload.get("id");
-            if (id == null)
+            Object idObj = payload.get("id");
+            if (idObj == null)
                 return ResponseEntity.badRequest().body("ID required");
 
+            Integer id = (idObj instanceof Number) ? ((Number) idObj).intValue()
+                    : Integer.parseInt(idObj.toString());
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
             B2BTransferRequest req = mapper.convertValue(payload, B2BTransferRequest.class);
 
             merchantService.updateMerchantEntry(id, req);
@@ -436,11 +498,17 @@ public class MMSController {
     public ResponseEntity<String> addMerchantTransaction(
             @RequestBody Map<String, Object> payload) {
         try {
-            Integer id = (Integer) payload.get("id"); // Entry ID
-            if (id == null)
+            Object idObj = payload.get("id"); // Entry ID
+            if (idObj == null)
                 return ResponseEntity.badRequest().body("Entry ID required");
 
+            Integer id = (idObj instanceof Number) ? ((Number) idObj).intValue()
+                    : Integer.parseInt(idObj.toString());
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
             com.mms.backend.dto.RedemptionRequest req = mapper.convertValue(payload,
                     com.mms.backend.dto.RedemptionRequest.class);
 
@@ -467,11 +535,17 @@ public class MMSController {
     public ResponseEntity<String> returnFromMerchant(
             @RequestBody Map<String, Object> payload) {
         try {
-            Integer id = (Integer) payload.get("id");
-            if (id == null)
+            Object idObj = payload.get("id");
+            if (idObj == null)
                 return ResponseEntity.badRequest().body("Entry ID required");
 
+            Integer id = (idObj instanceof Number) ? ((Number) idObj).intValue()
+                    : Integer.parseInt(idObj.toString());
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+            mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
             com.mms.backend.dto.RedemptionRequest req = mapper.convertValue(payload,
                     com.mms.backend.dto.RedemptionRequest.class);
 
@@ -559,10 +633,57 @@ public class MMSController {
         }
     }
 
+    @PostMapping("/database/backup")
+    public ResponseEntity<byte[]> backupDatabase() {
+        try {
+            byte[] backupData = backupService.generateBackup();
+            String timestamp = java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+            String fileName = "mms_schema_backup_" + timestamp + ".sql";
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(backupData);
+        } catch (Exception e) {
+            log.error("Database backup failed", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Database backup failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/database/restore")
+    public ResponseEntity<String> restoreDatabase(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam("host") String host,
+            @RequestParam("port") String port,
+            @RequestParam("user") String user,
+            @RequestParam("pass") String pass,
+            @RequestParam("db") String db,
+            @RequestParam("schema") String schema,
+            @RequestParam("psqlPath") String psqlPath) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("File is empty");
+            }
+            backupService.restoreBackup(file.getBytes(), host, port, user, pass, db, schema, psqlPath);
+            return ResponseEntity.ok("Database schema restored successfully. System reloaded.");
+        } catch (Exception e) {
+            log.error("Database restore failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Restore failed: " + e.getMessage());
+        }
+    }
+
+    // Global error handler for this controller
     // Global error handler for this controller
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(Exception e) {
         log.error("Unhandled Exception in MMSController", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        // Return JSON so frontend encryption service can parse it if it decrypts the
+        // error response
+        String jsonError = String.format("{\"error\": \"Internal Server Error\", \"message\": \"%s\"}",
+                e.getMessage() != null ? e.getMessage().replace("\"", "'") : "Unknown Error");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(jsonError);
     }
 }

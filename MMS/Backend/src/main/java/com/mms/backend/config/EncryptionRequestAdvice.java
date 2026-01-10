@@ -49,17 +49,21 @@ public class EncryptionRequestAdvice extends RequestBodyAdviceAdapter {
 
             if (payload != null && payload.getData() != null) {
                 log.info(">>> [SECURITY] Incoming Request: Encrypted Payload Detected. Status: LOCKED");
-                // Decrypt
-                String decrypted = encryptionService.decrypt(payload.getData());
-                log.info(">>> [SECURITY] Action: UNBLOCKING (Decryption) -> Success. Processing Request.");
-                // Optional: Log decrypted content for debug (Warning: Sensitive data)
-                // System.out.println(">>> [PAYLOAD]: " + decrypted);
-                return new ByteArrayInputMessage(decrypted.getBytes(StandardCharsets.UTF_8), inputMessage.getHeaders());
+                try {
+                    // Decrypt
+                    String decrypted = encryptionService.decrypt(payload.getData());
+                    log.info(">>> [SECURITY] Action: UNBLOCKING (Decryption) -> Success. Processing Request.");
+                    return new ByteArrayInputMessage(decrypted.getBytes(StandardCharsets.UTF_8),
+                            inputMessage.getHeaders());
+                } catch (Exception decryptEx) {
+                    log.error(">>> [SECURITY] FATAL ERROR: Decryption Failed. Check Secret Key.", decryptEx);
+                    throw new IOException("Security Error: Decryption Failed. Check system.encryption.secret-key.");
+                }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Security Error"))
+                throw e;
             log.info(">>> [SECURITY] Incoming Request: Raw/Plain Payload. Status: UNLOCKED");
-            // Not an encrypted payload (or malformed), treat as raw
-            // System.out.println("Processing raw request (not encrypted)");
         }
 
         return new ByteArrayInputMessage(bytes, inputMessage.getHeaders());

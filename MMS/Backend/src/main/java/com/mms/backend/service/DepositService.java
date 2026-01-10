@@ -70,6 +70,7 @@ public class DepositService {
         return (maxToken == null) ? 1 : maxToken + 1;
     }
 
+    @Transactional(readOnly = true)
     public List<com.mms.backend.dto.MerchantItemDTO> getActiveMerchantPledges(Long depositId) {
         return merchantEntryRepository.findActiveByDepositId(depositId).stream().map(entry -> {
             com.mms.backend.dto.MerchantItemDTO dto = new com.mms.backend.dto.MerchantItemDTO();
@@ -283,6 +284,7 @@ public class DepositService {
         // Pre-fetch latest prices for all items to avoid N+1 problem
         Map<Integer, ItemPriceHistory> latestPricesMap = priceRepository.findLatestPricePerItem()
                 .stream()
+                .filter(iph -> iph != null && iph.getItem() != null && iph.getItem().getId() != null)
                 .collect(Collectors.toMap(
                         iph -> iph.getItem().getId(),
                         iph -> iph,
@@ -293,13 +295,13 @@ public class DepositService {
                 .collect(Collectors.toMap(ConfigProperty::getPropertyKey, ConfigProperty::getPropertyValue,
                         (a, b) -> a));
 
-        boolean roundUp = "true".equalsIgnoreCase(getConfig(configs, "system.calendar.months.round_up"));
-        BigDecimal riskThreshold = new BigDecimal(getConfig(configs, "system.risk.threshold.percentage"));
+        boolean roundUp = "true".equalsIgnoreCase(getConfig(configs, "system.calendar.months.round_up", "false"));
+        BigDecimal riskThreshold = new BigDecimal(getConfig(configs, "system.risk.threshold.percentage", "100"));
 
         for (CustomerDepositEntry deposit : activeDeposits) {
             DepositSummaryDTO dto = new DepositSummaryDTO();
             dto.setDepositId(deposit.getId());
-            dto.setCustomerName(deposit.getCustomer().getCustomerName());
+            dto.setCustomerName(deposit.getCustomer() != null ? deposit.getCustomer().getCustomerName() : "Unknown");
             dto.setDepositDate(deposit.getDepositDate());
 
             // 1. Calculate Financials from Transactions
@@ -438,6 +440,7 @@ public class DepositService {
         return summaries;
     }
 
+    @Transactional(readOnly = true)
     public Page<DepositSummaryDTO> getActiveDepositSummaryPaginated(int page, int size, String sortBy, String direction,
             com.mms.backend.dto.DepositFilterDTO filters) {
         // 1. Get ALL data (Calculated)
@@ -510,7 +513,7 @@ public class DepositService {
                 return java.util.Comparator.comparing(DepositSummaryDTO::getDepositDate);
             case "months":
                 return java.util.Comparator.comparing(DepositSummaryDTO::getDepositedMonths,
-                        java.util.Comparator.nullsFirst(BigDecimal::compareTo));
+                        java.util.Comparator.nullsFirst(java.math.BigDecimal::compareTo));
             case "totalLoanAmount":
                 return java.util.Comparator.comparing(DepositSummaryDTO::getTotalLoanAmount);
             case "totalInterestAccrued":
@@ -525,11 +528,16 @@ public class DepositService {
                 return java.util.Comparator.comparing(DepositSummaryDTO::getStatus);
             case "monthsWait":
                 return (a, b) -> {
-                    double valA = (a.getMonthlyInterest() != null && a.getMonthlyInterest().doubleValue() > 0)
-                            ? (a.getProfitLoss().doubleValue() / a.getMonthlyInterest().doubleValue())
+                    BigDecimal plA = a.getProfitLoss() != null ? a.getProfitLoss() : BigDecimal.ZERO;
+                    BigDecimal plB = b.getProfitLoss() != null ? b.getProfitLoss() : BigDecimal.ZERO;
+                    BigDecimal miA = a.getMonthlyInterest();
+                    BigDecimal miB = b.getMonthlyInterest();
+
+                    double valA = (miA != null && miA.doubleValue() > 0)
+                            ? (plA.doubleValue() / miA.doubleValue())
                             : Double.MAX_VALUE;
-                    double valB = (b.getMonthlyInterest() != null && b.getMonthlyInterest().doubleValue() > 0)
-                            ? (b.getProfitLoss().doubleValue() / b.getMonthlyInterest().doubleValue())
+                    double valB = (miB != null && miB.doubleValue() > 0)
+                            ? (plB.doubleValue() / miB.doubleValue())
                             : Double.MAX_VALUE;
                     return Double.compare(valA, valB);
                 };
@@ -543,6 +551,7 @@ public class DepositService {
         CustomerDepositEntry entry = depositRepository.findById(id).orElseThrow();
         DepositDetailDTO dto = new DepositDetailDTO();
         dto.setDepositId(entry.getId());
+        dto.setTokenNo(entry.getTokenNo());
         dto.setCustomerId(entry.getCustomer().getId());
         dto.setCustomerName(entry.getCustomer().getCustomerName());
         dto.setCustomerMobileNumber(entry.getCustomer().getMobileNumber());
@@ -595,8 +604,8 @@ public class DepositService {
         Map<String, String> configs = configRepository.findAll().stream()
                 .collect(Collectors.toMap(ConfigProperty::getPropertyKey, ConfigProperty::getPropertyValue,
                         (a, b) -> a));
-        boolean roundUp = "true".equalsIgnoreCase(getConfig(configs, "system.calendar.months.round_up"));
-        BigDecimal riskThreshold = new BigDecimal(getConfig(configs, "system.risk.threshold.percentage"));
+        boolean roundUp = "true".equalsIgnoreCase(getConfig(configs, "system.calendar.months.round_up", "false"));
+        BigDecimal riskThreshold = new BigDecimal(getConfig(configs, "system.risk.threshold.percentage", "100"));
 
         // Round up logic
         int interestMonths = totalMonths;
@@ -726,6 +735,8 @@ public class DepositService {
 
             if (request.getInterestRate() != null)
                 entry.setTotalInterestRate(request.getInterestRate());
+            if (request.getTokenNo() != null)
+                entry.setTokenNo(request.getTokenNo());
             if (request.getNotes() != null)
                 entry.setNotes(request.getNotes());
 
@@ -1121,8 +1132,16 @@ public class DepositService {
 
     private String getConfig(Map<String, String> configs, String key) {
         String val = configs.get(key);
-        if (val == null) {
+        if (val == null || val.trim().isEmpty()) {
             throw new RuntimeException("Missing required system configuration: " + key);
+        }
+        return val;
+    }
+
+    private String getConfig(Map<String, String> configs, String key, String defaultValue) {
+        String val = configs.get(key);
+        if (val == null || val.trim().isEmpty()) {
+            return defaultValue;
         }
         return val;
     }

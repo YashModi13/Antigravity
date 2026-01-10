@@ -53,6 +53,10 @@ const routes: Routes = [
         path: 'mms/enc-test',
         loadComponent: () => import('./mms/settings/encryption-test.component').then((c) => c.EncryptionTestComponent)
       },
+      {
+        path: 'mms/backup',
+        loadComponent: () => import('./mms/backup-restore/backup-restore.component').then((c) => c.BackupRestoreComponent)
+      },
 
 
       {

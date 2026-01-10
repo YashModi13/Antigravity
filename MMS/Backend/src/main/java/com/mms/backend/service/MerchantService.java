@@ -39,6 +39,7 @@ public class MerchantService {
         return merchantRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<AvailableItemDTO> getAvailableItems() {
         Map<Integer, ItemPriceHistory> latestPricesMap = priceRepository.findLatestPricePerItem().stream()
                 .collect(Collectors.toMap(p -> p.getItem().getId(), p -> p));
@@ -177,6 +178,7 @@ public class MerchantService {
         merchantItemEntryRepository.save(entry);
     }
 
+    @Transactional(readOnly = true)
     public List<MerchantItemDTO> getActiveMerchantEntries() {
         Map<Integer, ItemPriceHistory> latestPricesMap = priceRepository.findLatestPricePerItem().stream()
                 .collect(Collectors.toMap(p -> p.getItem().getId(), p -> p));
@@ -351,6 +353,7 @@ public class MerchantService {
         itemsRepository.save(item);
     }
 
+    @Transactional(readOnly = true)
     public MerchantEntryDetailsDTO getMerchantEntryDetails(Integer entryId) {
         MerchantItemEntry e = merchantItemEntryRepository.findById(entryId)
                 .orElseThrow(() -> new RuntimeException("Entry not found"));

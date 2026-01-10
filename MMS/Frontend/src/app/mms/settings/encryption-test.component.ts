@@ -79,6 +79,9 @@ import { ENCRYPTION_UI_TEXTS } from '../shared/constant';
                                 <button class="btn btn-light btn-sm text-primary py-0" (click)="copyToInput()" title="Edit Result">
                                     <i class="feather icon-edit me-1"></i>Edit in Input
                                 </button>
+                                <button class="btn btn-light btn-sm text-dark ms-2 py-0" (click)="copyResult()" title="Copy Value">
+                                    <i class="feather icon-copy me-1"></i>Copy
+                                </button>
                             </div>
                         </div>
                         <div class="card-body bg-white p-0">
@@ -132,8 +135,36 @@ export class EncryptionTestComponent implements OnInit {
   doDecrypt() {
     if (!this.sharedInput) return;
     try {
-      const res = this.encryptionService.decrypt(this.sharedInput);
-      this.resultData = res ? JSON.stringify(res, null, 2) : 'Decryption Failed (Invalid Key or Format)';
+      let cipherText = this.sharedInput.trim();
+
+      // Smart extraction: If user pastes { "data": "..." }, extract the string
+      if (cipherText.startsWith('{') && cipherText.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(cipherText);
+          if (parsed && parsed.data) {
+            cipherText = parsed.data;
+            console.log('Smart Extract: Found ciphertext in JSON object');
+          }
+        } catch (e) {
+          // Not valid JSON, proceed as raw string
+        }
+      }
+
+      // Remove Quotes if user pasted "ciphertext"
+      if (cipherText.startsWith('"') && cipherText.endsWith('"')) {
+        cipherText = cipherText.substring(1, cipherText.length - 1);
+      }
+
+      const res = this.encryptionService.decrypt(cipherText);
+
+      if (typeof res === 'object' && res !== null) {
+        this.resultData = JSON.stringify(res, null, 2);
+      } else if (res) {
+        this.resultData = String(res);
+      } else {
+        this.resultData = 'Decryption Failed (Invalid Key or Format)';
+      }
+
       this.resultTitle = this.UI.RESULT_DECRYPTED_TITLE;
       this.resultInfo = res ? this.UI.RESULT_DECRYPTED_INFO : '';
     } catch (e) {
@@ -179,6 +210,14 @@ export class EncryptionTestComponent implements OnInit {
   copyToInput() {
     if (this.resultData) {
       this.sharedInput = this.resultData;
+    }
+  }
+
+  copyResult() {
+    if (this.resultData) {
+      navigator.clipboard.writeText(this.resultData).catch(err => {
+        console.error('Could not copy text: ', err);
+      });
     }
   }
 

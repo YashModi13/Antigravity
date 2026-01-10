@@ -52,6 +52,8 @@ export const REST_URLS = {
     MERCHANT_ENTRIES_TRANSACTION: `${BASE_API_URL}/merchant-entries/transaction`,
 
     REPORTS_GENERATE: `${BASE_API_URL}/reports/generate`,
+    DATABASE_BACKUP: `${BASE_API_URL}/database/backup`,
+    DATABASE_RESTORE: `${BASE_API_URL}/database/restore`,
 
     TEST_SEED: `${BASE_API_URL}/test/seed`
 };

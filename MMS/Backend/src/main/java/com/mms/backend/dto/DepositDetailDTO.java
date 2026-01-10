@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 public class DepositDetailDTO {
     private Integer depositId;
+    private Integer tokenNo;
     private Integer customerId;
     private String customerName;
     private String customerMobileNumber;
