@@ -411,10 +411,9 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
             district: '',
             state: this.defaultState,
             pincode: '',
-            referralName: '',
             referralCustomer: null,
             kycVerified: false
-        };
+        } as any;
         this.referralSearchTerm = '';
         this.showNewCustomerModal = true;
     }
@@ -425,7 +424,6 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
             // If they clear it, clear the linkage
             if (this.referralSearchTerm.length === 0) {
                 this.newCustomer.referralCustomer = null;
-                this.newCustomer.referralName = '';
             }
             return;
         }
@@ -438,7 +436,6 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
 
     selectReferral(customer: any) {
         this.newCustomer.referralCustomer = { id: customer.id };
-        this.newCustomer.referralName = customer.customerName; // Optional: keep name too
         this.referralSearchTerm = customer.customerName;
         this.showReferralResults = false;
     }

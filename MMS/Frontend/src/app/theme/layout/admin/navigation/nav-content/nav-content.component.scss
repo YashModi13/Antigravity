@@ -1,0 +1,23 @@
+.navbar-content {
+    height: 100%;
+    // Ensure the container allows children to fill space
+    display: flex;
+    flex-direction: column;
+}
+
+.pcoded-inner-navbar {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto; // Grow to fill available space
+    height: 100%;
+
+    // Push the last group to the bottom
+    // We use ::ng-deep because app-nav-group is a child component, 
+    // though strictly it is in this template so we might not need deep if we target the tag directly.
+    // But strictly speaking, it is an element in this component's template.
+
+    app-nav-group:last-child {
+        margin-top: auto;
+        padding-bottom: 20px; // Add some breathing room at the bottom
+    }
+}

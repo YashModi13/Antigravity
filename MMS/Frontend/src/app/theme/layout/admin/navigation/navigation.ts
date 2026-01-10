@@ -17,7 +17,7 @@ export interface NavigationItem {
 export const NavigationItems: NavigationItem[] = [
   {
     id: 'mms',
-    title: 'Jay Laxmi Jewellers',
+    title: 'Jay Laxmi Jewellers Dhiran System',
     type: 'group',
     icon: 'icon-navigation',
     children: [
@@ -39,7 +39,6 @@ export const NavigationItems: NavigationItem[] = [
       },
       {
         id: 'mms-entry',
-
         title: 'New Deposit Entry',
         type: 'item',
         url: '/mms/entry',
@@ -63,11 +62,35 @@ export const NavigationItems: NavigationItem[] = [
         classes: 'nav-item'
       },
       {
+        id: 'mms-reports',
+        title: 'Download Reports',
+        type: 'item',
+        url: '/mms/reports',
+        icon: 'feather icon-file-text',
+        classes: 'nav-item'
+      }
+    ]
+  },
+  {
+    id: 'settings-tools',
+    title: 'Settings & Testing',
+    type: 'group',
+    icon: 'icon-settings',
+    children: [
+      {
         id: 'mms-configs',
         title: 'System Settings',
         type: 'item',
         url: '/mms/configs',
         icon: 'feather icon-settings',
+        classes: 'nav-item'
+      },
+      {
+        id: 'mms-enc-test',
+        title: 'Encryption Tool',
+        type: 'item',
+        url: '/mms/enc-test',
+        icon: 'feather icon-shield',
         classes: 'nav-item'
       }
     ]

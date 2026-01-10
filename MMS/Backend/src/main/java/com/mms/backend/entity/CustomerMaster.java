@@ -36,13 +36,17 @@ public class CustomerMaster {
     @Column(length = 10)
     private String pincode;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "referral_customer_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler",
+            "referralCustomer" })
     private CustomerMaster referralCustomer;
 
-    @Column(name = "referral_name", length = 100)
-    private String referralName;
+    // Virtual getter to maintain frontend compatibility and ease of access
+    @com.fasterxml.jackson.annotation.JsonProperty("referralName")
+    public String getReferralName() {
+        return referralCustomer != null ? referralCustomer.getCustomerName() : null;
+    }
 
     @Column(name = "kyc_verified")
     private Boolean kycVerified = false;

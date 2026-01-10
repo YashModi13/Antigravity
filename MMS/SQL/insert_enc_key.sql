@@ -1,0 +1,1 @@
+﻿INSERT INTO mms.config_property (property_key, property_value, description, is_active) VALUES ('system.encryption.secret-key', 'AntigravitySecretKey2024Secure!!', 'Secret key for API payload encryption', true) ON CONFLICT (property_key) DO NOTHING;

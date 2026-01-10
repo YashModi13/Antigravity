@@ -42,8 +42,16 @@ const routes: Routes = [
         loadComponent: () => import('./mms/merchant/merchant.component').then((c) => c.MmsMerchantComponent)
       },
       {
+        path: 'mms/reports',
+        loadComponent: () => import('./mms/reports/reports.component').then((c) => c.ReportsComponent)
+      },
+      {
         path: 'mms/configs',
         loadComponent: () => import('./mms/settings/config-property.component').then((c) => c.ConfigPropertyComponent)
+      },
+      {
+        path: 'mms/enc-test',
+        loadComponent: () => import('./mms/settings/encryption-test.component').then((c) => c.EncryptionTestComponent)
       },
 
 

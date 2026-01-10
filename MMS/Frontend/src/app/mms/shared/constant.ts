@@ -41,3 +41,28 @@ export const RECOMMENDED_CONFIGS = [
     { key: CONFIG_KEYS.DEFAULT_STATE, val: 'Gujarat', desc: 'Default state for new customer creation' },
     { key: CONFIG_KEYS.DEFAULT_GIVING_PERCENTAGE, val: '60.0', desc: 'Default loan-to-value percentage for items' }
 ];
+
+export const SECRET_KEYS = {
+    APP_SECRET: 'AntigravitySecretKey2024Secure!!'
+};
+
+export const ENCRYPTION_UI_TEXTS = {
+    TITLE: 'Encryption & Security Testing Console',
+    SUBTITLE: 'Enter data below and choose an operation to test the security layer.',
+    INPUT_LABEL: 'Data Payload',
+    INPUT_PLACEHOLDER: 'Enter plain text (to encrypt/send) OR encrypted string (to decrypt)...',
+    BTN_ENCRYPT: 'Encrypt (Client)',
+    BTN_DECRYPT: 'Decrypt (Client)',
+    BTN_SEND: 'Send to Admin Server (Verify Traffic)',
+    BTN_RESET: 'Reset',
+    BTN_PRETTY: 'Format JSON',
+    BTN_COPY_INPUT: 'Copy to Input (Pretty)',
+    RESULT_ENCRYPTED_TITLE: 'Encrypted Payload',
+    RESULT_ENCRYPTED_INFO: 'This string can be sent over public networks safely.',
+    RESULT_DECRYPTED_TITLE: 'Decrypted Original Data',
+    RESULT_DECRYPTED_INFO: 'This is the original confidential information.',
+    RESULT_SERVER_TITLE: 'Server Response (Echo)',
+    RESULT_SERVER_INFO: 'The server received the encrypted payload, decrypted it, processed it, and sent it back encrypted.',
+    RESULT_ERROR_TITLE: 'Operation Failed',
+    RESULT_ERROR_INFO: 'Check console for details.'
+};

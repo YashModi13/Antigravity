@@ -110,7 +110,6 @@ CREATE TABLE mms.customer_master (
     state VARCHAR(50),
     pincode VARCHAR(10),
     referral_customer_id INTEGER REFERENCES mms.customer_master(id),
-    referral_name VARCHAR(100),
     kyc_verified BOOLEAN DEFAULT false,
     is_active BOOLEAN DEFAULT true,
     created_date TIMESTAMP,

@@ -1,0 +1,1 @@
+﻿INSERT INTO mms.config_property (property_key, property_value, description, is_active) VALUES ('system.pagination.default.size', '10', 'Default page size for pagination', true) ON CONFLICT (property_key) DO NOTHING;
