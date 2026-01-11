@@ -437,19 +437,6 @@ export class MmsDepositsListComponent implements OnInit {
         });
     }
 
-    addDemoData() {
-
-        this.mmsService.seedData(10).subscribe({
-            next: () => {
-                this.toastService.success('10 Demo Entries Added successfully!');
-                this.loadData();
-            },
-            error: () => {
-                this.toastService.error('Failed to add demo data.');
-            }
-        });
-    }
-
     generateLedger(deposit: any) {
         if (!deposit) return;
 

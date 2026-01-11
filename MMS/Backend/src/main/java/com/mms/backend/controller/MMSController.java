@@ -86,14 +86,14 @@ public class MMSController {
 
     @PostMapping("/configs/save")
     public ResponseEntity<ConfigProperty> saveConfig(@RequestBody ConfigProperty config) {
-        return ResponseEntity.ok(configRepository.save(config));
+        return ResponseEntity.ok(configRepository.save(java.util.Objects.requireNonNull(config)));
     }
 
     @PostMapping("/configs/update")
     public ResponseEntity<ConfigProperty> updateConfig(@RequestBody ConfigProperty config) {
         if (config.getId() == null)
             return ResponseEntity.badRequest().build();
-        return configRepository.findById(config.getId()).map(existing -> {
+        return configRepository.findById(java.util.Objects.requireNonNull(config.getId())).map(existing -> {
             existing.setPropertyKey(config.getPropertyKey());
             existing.setPropertyValue(config.getPropertyValue());
             existing.setDescription(config.getDescription());
@@ -104,7 +104,7 @@ public class MMSController {
 
     @PostMapping("/configs/delete")
     public ResponseEntity<Void> deleteConfig(@RequestBody com.mms.backend.dto.request.IdRequest request) {
-        configRepository.deleteById(request.getId());
+        configRepository.deleteById(java.util.Objects.requireNonNull(request.getId()));
         return ResponseEntity.ok().build();
     }
 
@@ -206,14 +206,20 @@ public class MMSController {
     }
 
     @PostMapping("/customers/search")
-    public ResponseEntity<List<com.mms.backend.entity.CustomerMaster>> searchCustomers(
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<List<com.mms.backend.dto.CustomerDTO>> searchCustomers(
             @RequestBody Map<String, String> payload) {
         String query = payload.get("q");
-        return ResponseEntity.ok(customerRepository.searchCustomers(query != null ? query : ""));
+        List<com.mms.backend.entity.CustomerMaster> results = customerRepository
+                .searchCustomers(query != null ? query : "");
+        return ResponseEntity.ok(results.stream()
+                .map(this::mapToCustomerDTO)
+                .collect(java.util.stream.Collectors.toList()));
     }
 
     @PostMapping("/customers/list")
-    public ResponseEntity<org.springframework.data.domain.Page<com.mms.backend.entity.CustomerMaster>> getAllCustomers(
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<org.springframework.data.domain.Page<com.mms.backend.dto.CustomerDTO>> getAllCustomers(
             @RequestBody com.mms.backend.dto.request.SearchRequest request) {
 
         int page = request.getPage() != null ? request.getPage() : 0;
@@ -237,11 +243,57 @@ public class MMSController {
         }
 
         org.springframework.data.domain.Sort sortOrder = org.springframework.data.domain.Sort.by(
-                org.springframework.data.domain.Sort.Direction.fromString(sortDir), sortBy);
+                org.springframework.data.domain.Sort.Direction.fromString(java.util.Objects.requireNonNull(sortDir)),
+                sortBy);
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page,
                 pageSize, sortOrder);
 
-        return ResponseEntity.ok(customerRepository.findAll(pageable));
+        return ResponseEntity.ok(customerRepository.findAll(pageable).map(this::mapToCustomerDTO));
+    }
+
+    private com.mms.backend.dto.CustomerDTO mapToCustomerDTO(com.mms.backend.entity.CustomerMaster entity) {
+        if (entity == null)
+            return null;
+        com.mms.backend.dto.CustomerDTO dto = new com.mms.backend.dto.CustomerDTO();
+        dto.setId(entity.getId());
+        dto.setCustomerName(entity.getCustomerName());
+        dto.setMobileNumber(entity.getMobileNumber());
+        dto.setEmail(entity.getEmail());
+        dto.setAddress(entity.getAddress());
+        dto.setVillage(entity.getVillage());
+        dto.setDistrict(entity.getDistrict());
+        dto.setState(entity.getState());
+        dto.setPincode(entity.getPincode());
+        dto.setKycVerified(entity.getKycVerified());
+        dto.setIsActive(entity.getIsActive());
+        dto.setCreatedDate(entity.getCreatedDate());
+        dto.setUpdatedDate(entity.getUpdatedDate());
+
+        // Handle referralName (computed in entity)
+        dto.setReferralName(entity.getReferralName());
+
+        // Handle referralCustomer (Lazy)
+        if (entity.getReferralCustomer() != null) {
+            com.mms.backend.entity.CustomerMaster ref = entity.getReferralCustomer();
+            com.mms.backend.dto.CustomerDTO refDto = new com.mms.backend.dto.CustomerDTO();
+            refDto.setId(ref.getId());
+            refDto.setCustomerName(ref.getCustomerName());
+            refDto.setMobileNumber(ref.getMobileNumber());
+            refDto.setEmail(ref.getEmail());
+            refDto.setAddress(ref.getAddress());
+            refDto.setVillage(ref.getVillage());
+            refDto.setDistrict(ref.getDistrict());
+            refDto.setState(ref.getState());
+            refDto.setPincode(ref.getPincode());
+            refDto.setKycVerified(ref.getKycVerified());
+            refDto.setIsActive(ref.getIsActive());
+            refDto.setCreatedDate(ref.getCreatedDate());
+            refDto.setUpdatedDate(ref.getUpdatedDate());
+            // Do not set nested referral to avoid recursion
+            dto.setReferralCustomer(refDto);
+        }
+
+        return dto;
     }
 
     @PostMapping("/customers/items")
@@ -272,7 +324,7 @@ public class MMSController {
     public ResponseEntity<?> updateCustomer(@RequestBody com.mms.backend.entity.CustomerMaster customer) {
         if (customer.getId() == null)
             return ResponseEntity.badRequest().body("ID Required");
-        return customerRepository.findById(customer.getId()).map(existing -> {
+        return customerRepository.findById(java.util.Objects.requireNonNull(customer.getId())).map(existing -> {
             existing.setCustomerName(customer.getCustomerName());
             existing.setMobileNumber(customer.getMobileNumber());
             existing.setEmail(customer.getEmail());
@@ -643,7 +695,7 @@ public class MMSController {
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .contentType(java.util.Objects.requireNonNull(MediaType.APPLICATION_OCTET_STREAM))
                     .body(backupData);
         } catch (Exception e) {
             log.error("Database backup failed", e);

@@ -24,14 +24,18 @@ public class EncryptionResponseAdvice implements ResponseBodyAdvice<Object> {
     private ObjectMapper objectMapper;
 
     @Override
-    public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
+    public boolean supports(@org.springframework.lang.NonNull MethodParameter returnType,
+            @org.springframework.lang.NonNull Class<? extends HttpMessageConverter<?>> converterType) {
         return true;
     }
 
     @Override
-    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
-            Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request,
-            ServerHttpResponse response) {
+    public Object beforeBodyWrite(@org.springframework.lang.Nullable Object body,
+            @org.springframework.lang.NonNull MethodParameter returnType,
+            @org.springframework.lang.NonNull MediaType selectedContentType,
+            @org.springframework.lang.NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType,
+            @org.springframework.lang.NonNull ServerHttpRequest request,
+            @org.springframework.lang.NonNull ServerHttpResponse response) {
 
         // Skip if body is null or already encrypted
         if (body == null || body instanceof EncryptedPayload) {

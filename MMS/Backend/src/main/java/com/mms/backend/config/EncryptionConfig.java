@@ -6,8 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class EncryptionConfig implements WebMvcConfigurer {
@@ -16,7 +14,7 @@ public class EncryptionConfig implements WebMvcConfigurer {
     private EncryptionService encryptionService;
 
     @Override
-    public void addFormatters(FormatterRegistry registry) {
+    public void addFormatters(@org.springframework.lang.NonNull FormatterRegistry registry) {
         System.out.println(">>> [CONFIG] Registering StringToIntegerConverter for Encryption");
         registry.addConverter(new StringToIntegerConverter(encryptionService));
     }
@@ -31,7 +29,7 @@ public class EncryptionConfig implements WebMvcConfigurer {
         }
 
         @Override
-        public Integer convert(String source) {
+        public Integer convert(@org.springframework.lang.NonNull String source) {
             String originalSource = source;
             if (source == null || source.isEmpty()) {
                 return null;
@@ -52,10 +50,10 @@ public class EncryptionConfig implements WebMvcConfigurer {
                     // or if double encoded.
                     // If source contains spaces, it might be a malformed base64 (space instead of
                     // +).
-                    if (source.contains(" ")) {
+                    if (source != null && source.contains(" ")) {
                         log.warn(
                                 ">>> [CONVERTER] Source contains spaces! Replacing with '+' (likely URL decoding artifact).");
-                        source = source.replace(" ", "+");
+                        source = java.util.Objects.requireNonNull(source.replace(" ", "+"));
                     }
 
                     String decrypted = encryptionService.decrypt(source);

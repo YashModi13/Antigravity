@@ -240,7 +240,8 @@ public class DepositService {
     public void createDeposit(CreateDepositRequest request) {
         // 1. Create Entry
         CustomerDepositEntry entry = new CustomerDepositEntry();
-        entry.setCustomer(customerRepository.findById(request.getCustomerId()).orElseThrow());
+        entry.setCustomer(
+                customerRepository.findById(java.util.Objects.requireNonNull(request.getCustomerId())).orElseThrow());
         entry.setDepositDate(request.getDepositDate());
         entry.setTotalInterestRate(request.getInterestRate());
         entry.setNotes(request.getNotes());
@@ -253,10 +254,12 @@ public class DepositService {
             for (var itemReq : request.getItems()) {
                 CustomerDepositItems item = new CustomerDepositItems();
                 item.setDepositEntry(entry);
-                item.setItem(itemRepository.findById(itemReq.getItemId()).orElseThrow());
+                item.setItem(
+                        itemRepository.findById(java.util.Objects.requireNonNull(itemReq.getItemId())).orElseThrow());
                 item.setItemDate(request.getDepositDate());
                 item.setWeightReceived(itemReq.getWeight());
-                item.setWeightUnit(unitRepository.findById(itemReq.getUnitId()).orElseThrow());
+                item.setWeightUnit(
+                        unitRepository.findById(java.util.Objects.requireNonNull(itemReq.getUnitId())).orElseThrow());
                 item.setFineWeight(itemReq.getFineWeight());
                 item.setItemDescription(itemReq.getDescription());
                 item.setCreatedDate(LocalDateTime.now());
@@ -500,7 +503,7 @@ public class DepositService {
         int end = Math.min((start + size), allData.size());
         List<DepositSummaryDTO> pagedList = allData.subList(start, end);
 
-        return new PageImpl<>(pagedList, PageRequest.of(page, size), allData.size());
+        return new PageImpl<>(java.util.Objects.requireNonNull(pagedList), PageRequest.of(page, size), allData.size());
     }
 
     private java.util.Comparator<DepositSummaryDTO> getComparator(String sortBy) {
@@ -548,7 +551,7 @@ public class DepositService {
 
     @Transactional(readOnly = true)
     public DepositDetailDTO getDepositDetails(Integer id) {
-        CustomerDepositEntry entry = depositRepository.findById(id).orElseThrow();
+        CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(id)).orElseThrow();
         DepositDetailDTO dto = new DepositDetailDTO();
         dto.setDepositId(entry.getId());
         dto.setTokenNo(entry.getTokenNo());
@@ -713,7 +716,7 @@ public class DepositService {
     @Transactional
     public void updateDeposit(Integer id, UpdateDepositRequest request) {
         try {
-            CustomerDepositEntry entry = depositRepository.findById(id).orElseThrow();
+            CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(id)).orElseThrow();
 
             if (request.getDepositDate() != null) {
                 entry.setDepositDate(request.getDepositDate());
@@ -743,7 +746,7 @@ public class DepositService {
             if (request.getNotes() != null)
                 entry.setNotes(request.getNotes());
 
-            depositRepository.save(entry);
+            depositRepository.save(java.util.Objects.requireNonNull(entry));
 
             // Update Initial Loan Amount
             if (request.getInitialLoanAmount() != null) {
@@ -829,7 +832,8 @@ public class DepositService {
                 for (var itemReq : itemsToCreate) {
                     CustomerDepositItems item = new CustomerDepositItems();
                     item.setDepositEntry(entry);
-                    item.setItem(itemRepository.findById(itemReq.getItemId()).orElseThrow());
+                    item.setItem(itemRepository.findById(java.util.Objects.requireNonNull(itemReq.getItemId()))
+                            .orElseThrow());
                     item.setItemDate(entry.getDepositDate());
                     item.setWeightReceived(itemReq.getWeight());
 
@@ -853,7 +857,7 @@ public class DepositService {
 
     @Transactional
     public void addPaymentTransaction(Integer depositId, com.mms.backend.dto.RedemptionRequest request) {
-        CustomerDepositEntry entry = depositRepository.findById(depositId)
+        CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(depositId))
                 .orElseThrow(() -> new RuntimeException("Deposit not found"));
 
         // 1. Principal Payment (Customer pays back loan) - reduces loan
@@ -886,7 +890,7 @@ public class DepositService {
 
     @Transactional
     public void closeDeposit(Integer id) {
-        CustomerDepositEntry entry = depositRepository.findById(id)
+        CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(id))
                 .orElseThrow(() -> new RuntimeException("Deposit not found"));
         // entry.setIsActive(false); // User requested NOT to update isActive
         entry.setEntryStatus("CLOSED");
@@ -902,6 +906,7 @@ public class DepositService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<com.mms.backend.dto.CustomerItemDTO> getCustomerItems(Integer customerId) {
         List<CustomerDepositEntry> deposits = depositRepository.findAll().stream()
                 .filter(d -> d.getCustomer().getId().equals(customerId))
@@ -944,8 +949,9 @@ public class DepositService {
         return items;
     }
 
+    @Transactional(readOnly = true)
     public com.mms.backend.dto.CustomerPortfolioDTO getCustomerPortfolio(Integer customerId) {
-        CustomerMaster customer = customerRepository.findById(customerId)
+        CustomerMaster customer = customerRepository.findById(java.util.Objects.requireNonNull(customerId))
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
         List<CustomerDepositEntry> deposits = depositRepository.findAll().stream()
@@ -1128,14 +1134,6 @@ public class DepositService {
 
         portfolio.setDeposits(depositDTOs);
         return portfolio;
-    }
-
-    private String getConfig(Map<String, String> configs, String key) {
-        String val = configs.get(key);
-        if (val == null || val.trim().isEmpty()) {
-            throw new RuntimeException("Missing required system configuration: " + key);
-        }
-        return val;
     }
 
     private String getConfig(Map<String, String> configs, String key, String defaultValue) {

@@ -26,7 +26,7 @@ public class PriceService {
 
     @Transactional
     public void updatePrice(Integer itemId, BigDecimal newPrice) {
-        ItemMaster item = itemRepository.findById(itemId)
+        ItemMaster item = itemRepository.findById(java.util.Objects.requireNonNull(itemId))
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
         ItemPriceHistory history = new ItemPriceHistory();
@@ -73,7 +73,7 @@ public class PriceService {
     }
 
     public BigDecimal calculateAssetValue(Integer itemId, BigDecimal fineWeight) {
-        ItemMaster item = itemRepository.findById(itemId)
+        ItemMaster item = itemRepository.findById(java.util.Objects.requireNonNull(itemId))
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
         Optional<ItemPriceHistory> priceOpt = priceRepository.findLatestByItemId(itemId);

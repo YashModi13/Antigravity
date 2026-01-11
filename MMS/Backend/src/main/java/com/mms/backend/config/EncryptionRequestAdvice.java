@@ -28,14 +28,19 @@ public class EncryptionRequestAdvice extends RequestBodyAdviceAdapter {
     private ObjectMapper objectMapper;
 
     @Override
-    public boolean supports(MethodParameter methodParameter, Type targetType,
-            Class<? extends HttpMessageConverter<?>> converterType) {
+    public boolean supports(@org.springframework.lang.NonNull MethodParameter methodParameter,
+            @org.springframework.lang.NonNull Type targetType,
+            @org.springframework.lang.NonNull Class<? extends HttpMessageConverter<?>> converterType) {
         return true;
     }
 
     @Override
-    public HttpInputMessage beforeBodyRead(HttpInputMessage inputMessage, MethodParameter parameter, Type targetType,
-            Class<? extends HttpMessageConverter<?>> converterType) throws IOException {
+    @org.springframework.lang.NonNull
+    public HttpInputMessage beforeBodyRead(@org.springframework.lang.NonNull HttpInputMessage inputMessage,
+            @org.springframework.lang.NonNull MethodParameter parameter,
+            @org.springframework.lang.NonNull Type targetType,
+            @org.springframework.lang.NonNull Class<? extends HttpMessageConverter<?>> converterType)
+            throws IOException {
         InputStream body = inputMessage.getBody();
         byte[] bytes = body.readAllBytes();
 
@@ -53,8 +58,9 @@ public class EncryptionRequestAdvice extends RequestBodyAdviceAdapter {
                     // Decrypt
                     String decrypted = encryptionService.decrypt(payload.getData());
                     log.info(">>> [SECURITY] Action: UNBLOCKING (Decryption) -> Success. Processing Request.");
-                    return new ByteArrayInputMessage(decrypted.getBytes(StandardCharsets.UTF_8),
-                            inputMessage.getHeaders());
+                    return new ByteArrayInputMessage(
+                            java.util.Objects.requireNonNull(decrypted.getBytes(StandardCharsets.UTF_8)),
+                            java.util.Objects.requireNonNull(inputMessage.getHeaders()));
                 } catch (Exception decryptEx) {
                     log.error(">>> [SECURITY] FATAL ERROR: Decryption Failed. Check Secret Key.", decryptEx);
                     throw new IOException("Security Error: Decryption Failed. Check system.encryption.secret-key.");
@@ -71,20 +77,25 @@ public class EncryptionRequestAdvice extends RequestBodyAdviceAdapter {
 
     // Helper class
     private static class ByteArrayInputMessage implements HttpInputMessage {
+        @org.springframework.lang.NonNull
         private final byte[] bytes;
+        @org.springframework.lang.NonNull
         private final HttpHeaders headers;
 
-        public ByteArrayInputMessage(byte[] bytes, HttpHeaders headers) {
+        public ByteArrayInputMessage(@org.springframework.lang.NonNull byte[] bytes,
+                @org.springframework.lang.NonNull HttpHeaders headers) {
             this.bytes = bytes;
             this.headers = headers;
         }
 
         @Override
+        @org.springframework.lang.NonNull
         public InputStream getBody() {
             return new ByteArrayInputStream(bytes);
         }
 
         @Override
+        @org.springframework.lang.NonNull
         public HttpHeaders getHeaders() {
             return headers;
         }

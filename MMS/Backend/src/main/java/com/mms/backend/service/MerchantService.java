@@ -89,7 +89,7 @@ public class MerchantService {
 
     @Transactional
     public MerchantMaster updateMerchant(Integer id, MerchantMaster merchantDetails) {
-        MerchantMaster merchant = merchantRepository.findById(id)
+        MerchantMaster merchant = merchantRepository.findById(java.util.Objects.requireNonNull(id))
                 .orElseThrow(() -> new RuntimeException("Merchant not found"));
 
         merchant.setMerchantName(merchantDetails.getMerchantName());
@@ -109,7 +109,7 @@ public class MerchantService {
 
     @Transactional
     public void deleteMerchant(Integer id) {
-        MerchantMaster merchant = merchantRepository.findById(id)
+        MerchantMaster merchant = merchantRepository.findById(java.util.Objects.requireNonNull(id))
                 .orElseThrow(() -> new RuntimeException("Merchant not found"));
 
         // Soft delete
@@ -120,10 +120,11 @@ public class MerchantService {
 
     @Transactional
     public void transferToMerchant(B2BTransferRequest request) {
-        CustomerDepositItems item = itemsRepository.findById(request.getDepositItemId())
+        CustomerDepositItems item = itemsRepository
+                .findById(java.util.Objects.requireNonNull(request.getDepositItemId()))
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
-        MerchantMaster merchant = merchantRepository.findById(request.getMerchantId())
+        MerchantMaster merchant = merchantRepository.findById(java.util.Objects.requireNonNull(request.getMerchantId()))
                 .orElseThrow(() -> new RuntimeException("Merchant not found"));
 
         // Update Item Status
@@ -156,11 +157,12 @@ public class MerchantService {
 
     @Transactional
     public void updateMerchantEntry(Integer entryId, B2BTransferRequest request) {
-        MerchantItemEntry entry = merchantItemEntryRepository.findById(entryId)
+        MerchantItemEntry entry = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
                 .orElseThrow(() -> new RuntimeException("Entry not found"));
 
         if (request.getMerchantId() != null) {
-            MerchantMaster merchant = merchantRepository.findById(request.getMerchantId())
+            MerchantMaster merchant = merchantRepository
+                    .findById(java.util.Objects.requireNonNull(request.getMerchantId()))
                     .orElseThrow(() -> new RuntimeException("Merchant not found"));
             entry.setMerchant(merchant);
         }
@@ -276,7 +278,7 @@ public class MerchantService {
 
     @Transactional
     public void addTransaction(Integer entryId, RedemptionRequest request) {
-        MerchantItemEntry entry = merchantItemEntryRepository.findById(entryId)
+        MerchantItemEntry entry = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
                 .orElseThrow(() -> new RuntimeException("Entry not found"));
 
         // 1. Handle Principal Payment
@@ -314,7 +316,7 @@ public class MerchantService {
 
     @Transactional
     public void returnFromMerchant(Integer entryId, RedemptionRequest request) {
-        MerchantItemEntry entry = merchantItemEntryRepository.findById(entryId)
+        MerchantItemEntry entry = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
                 .orElseThrow(() -> new RuntimeException("Entry not found"));
 
         // 1. Record Interest Payment if any
@@ -355,7 +357,7 @@ public class MerchantService {
 
     @Transactional(readOnly = true)
     public MerchantEntryDetailsDTO getMerchantEntryDetails(Integer entryId) {
-        MerchantItemEntry e = merchantItemEntryRepository.findById(entryId)
+        MerchantItemEntry e = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
                 .orElseThrow(() -> new RuntimeException("Entry not found"));
 
         MerchantEntryDetailsDTO details = new MerchantEntryDetailsDTO();
