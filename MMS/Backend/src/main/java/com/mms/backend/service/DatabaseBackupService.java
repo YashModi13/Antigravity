@@ -44,7 +44,23 @@ public class DatabaseBackupService {
         String dbName = getRequiredConfig("DB_NAME");
         String schema = getRequiredConfig("BACKUP_SCHEMA");
 
-        File tempFile = File.createTempFile("mms_backup_", ".sql");
+        // Define backup folder and ensure it exists
+        String backupFolderPath = "sqlbackup";
+        File backupFolder = new File(backupFolderPath);
+        if (!backupFolder.exists()) {
+            boolean created = backupFolder.mkdirs();
+            if (!created) {
+                log.error("Failed to create backup directory: {}", backupFolderPath);
+                throw new IOException("Could not create backup directory: " + backupFolderPath);
+            }
+        }
+
+        // Create a unique backup file
+        String fileName = "mms_backup_"
+                + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+                + ".sql";
+        File backupFile = new File(backupFolder, fileName);
+
         List<String> command = new ArrayList<>();
         command.add(executable);
         command.add("-h");
@@ -56,7 +72,7 @@ public class DatabaseBackupService {
         command.add("-n");
         command.add(schema);
         command.add("-f");
-        command.add(tempFile.getAbsolutePath());
+        command.add(backupFile.getAbsolutePath());
         command.add(dbName);
 
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -71,12 +87,14 @@ public class DatabaseBackupService {
 
         int exitCode = process.waitFor();
         if (exitCode == 0) {
-            byte[] data = Files.readAllBytes(tempFile.toPath());
-            tempFile.delete();
-            return data;
+            log.info("Backup created successfully at: {}", backupFile.getAbsolutePath());
+            // Return file bytes for download if needed, but file is now persisted on disk
+            return Files.readAllBytes(backupFile.toPath());
         } else {
-            tempFile.delete();
-            throw new IOException("Backup failed.");
+            // Cleanup on failure
+            if (backupFile.exists())
+                backupFile.delete();
+            throw new IOException("Backup failed. Process exit code: " + exitCode);
         }
     }
 
@@ -85,6 +103,17 @@ public class DatabaseBackupService {
      */
     public void restoreBackup(byte[] backupData, String host, String port, String user, String pass, String db,
             String schema, String psqlPath) throws IOException, InterruptedException {
+
+        log.info("Initiating Pre-Restore Backup...");
+        try {
+            generateBackup(); // Auto-backup before restore
+            log.info("Pre-Restore Backup completed.");
+        } catch (Exception e) {
+            log.error("Pre-Restore Backup failed: {}", e.getMessage());
+            // Proceed or halt? Usually better to fail safely if backup fails.
+            throw new IOException("Restore aborted: Failed to create safety backup. " + e.getMessage());
+        }
+
         log.info("Starting database restore process for schema: {} using parameters from UI", schema);
 
         // 1. Verify psql path
