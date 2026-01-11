@@ -77,7 +77,7 @@ public class EncryptionResponseAdvice implements ResponseBodyAdvice<Object> {
 
             return payload;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to encrypt response", e);
             throw new RuntimeException("Failed to encrypt response", e);
         }
     }

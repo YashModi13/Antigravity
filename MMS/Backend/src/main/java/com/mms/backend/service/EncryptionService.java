@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Service
+@lombok.extern.slf4j.Slf4j
 public class EncryptionService {
 
     @Autowired
@@ -24,7 +25,7 @@ public class EncryptionService {
         configRepository.findByPropertyKey("system.encryption.secret-key")
                 .ifPresent(config -> {
                     this.SECRET_KEY = config.getPropertyValue();
-                    System.out.println("Encryption Key Loaded from Database.");
+                    log.info("Encryption Key Loaded from Database.");
                 });
     }
 
@@ -38,7 +39,7 @@ public class EncryptionService {
             byte[] encryptedBytes = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encryptedBytes);
         } catch (Exception e) {
-            System.err.println("Error while encrypting: " + e.toString());
+            log.error("Error while encrypting: {}", e.toString());
             throw new RuntimeException("Encryption Error", e);
         }
     }
@@ -53,7 +54,7 @@ public class EncryptionService {
             byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
             return new String(decryptedBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            System.err.println("Error while decrypting: " + e.toString());
+            log.error("Error while decrypting: {}", e.toString());
             throw new RuntimeException("Decryption Error", e);
         }
     }

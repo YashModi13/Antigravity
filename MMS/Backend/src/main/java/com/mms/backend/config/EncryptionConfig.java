@@ -8,6 +8,7 @@ import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
+@lombok.extern.slf4j.Slf4j
 public class EncryptionConfig implements WebMvcConfigurer {
 
     @Autowired
@@ -15,7 +16,7 @@ public class EncryptionConfig implements WebMvcConfigurer {
 
     @Override
     public void addFormatters(@org.springframework.lang.NonNull FormatterRegistry registry) {
-        System.out.println(">>> [CONFIG] Registering StringToIntegerConverter for Encryption");
+        log.info(">>> [CONFIG] Registering StringToIntegerConverter for Encryption");
         registry.addConverter(new StringToIntegerConverter(encryptionService));
     }
 

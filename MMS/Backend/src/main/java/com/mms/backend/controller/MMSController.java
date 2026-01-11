@@ -91,6 +91,7 @@ public class MMSController {
 
     @PostMapping("/configs/update")
     public ResponseEntity<ConfigProperty> updateConfig(@RequestBody ConfigProperty config) {
+        log.info("[CONTROLLER] Request: Update Config. ID: {}", config.getId());
         if (config.getId() == null)
             return ResponseEntity.badRequest().build();
         return configRepository.findById(java.util.Objects.requireNonNull(config.getId())).map(existing -> {
@@ -98,6 +99,7 @@ public class MMSController {
             existing.setPropertyValue(config.getPropertyValue());
             existing.setDescription(config.getDescription());
             existing.setIsActive(config.getIsActive());
+            log.info("[CONTROLLER] Config updated successfully. Key: {}", existing.getPropertyKey());
             return ResponseEntity.ok(configRepository.save(existing));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -110,14 +112,17 @@ public class MMSController {
 
     @PostMapping("/units/list")
     public ResponseEntity<List<UnitMaster>> getAllUnits() {
+        log.info("[CONTROLLER] Request: Get All Units");
         return ResponseEntity.ok(unitRepository.findAll());
     }
 
     @PostMapping("/dashboard")
     public ResponseEntity<List<DepositSummaryDTO>> getDashboardData() {
+        log.info("[CONTROLLER] Request: Get Dashboard Data (Summary)");
         try {
             return ResponseEntity.ok(depositService.getActiveDepositSummary());
         } catch (Exception e) {
+            log.error("[CONTROLLER] Error fetching dashboard data: {}", e.getMessage(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error fetching dashboard data", e);
         }
     }
@@ -135,6 +140,7 @@ public class MMSController {
     @PostMapping("/dashboard/paginated-v2")
     public ResponseEntity<?> getDashboardDataPaginatedV2(
             @RequestBody Map<String, Object> payload) {
+        log.info("[CONTROLLER] Request: Get Dashboard Data V2 (Paginated). Payload: {}", payload);
         try {
             Object pageObj = payload.get("page");
             int page = (pageObj instanceof Number) ? ((Number) pageObj).intValue()
@@ -174,6 +180,7 @@ public class MMSController {
 
     @PostMapping("/items/list")
     public ResponseEntity<List<ItemMaster>> getAllItems() {
+        log.info("[CONTROLLER] Request: Get All Items");
         return ResponseEntity.ok(itemRepository.findAll());
     }
 
@@ -209,6 +216,7 @@ public class MMSController {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<List<com.mms.backend.dto.CustomerDTO>> searchCustomers(
             @RequestBody Map<String, String> payload) {
+        log.info("[CONTROLLER] Request: Search Customers. Payload: {}", payload);
         String query = payload.get("q");
         List<com.mms.backend.entity.CustomerMaster> results = customerRepository
                 .searchCustomers(query != null ? query : "");
@@ -221,6 +229,8 @@ public class MMSController {
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<org.springframework.data.domain.Page<com.mms.backend.dto.CustomerDTO>> getAllCustomers(
             @RequestBody com.mms.backend.dto.request.SearchRequest request) {
+        log.info("[CONTROLLER] Request: List Customers. Page: {}, Size: {}, Sort: {}", request.getPage(),
+                request.getSize(), request.getSortBy());
 
         int page = request.getPage() != null ? request.getPage() : 0;
         int size = request.getSize() != null ? request.getSize() : 10;
@@ -310,18 +320,23 @@ public class MMSController {
 
     @PostMapping("/customers/create")
     public ResponseEntity<?> createCustomer(@RequestBody com.mms.backend.entity.CustomerMaster customer) {
+        log.info("[CONTROLLER] Request: Create Customer. Name: {}, Mobile: {}", customer.getCustomerName(),
+                customer.getMobileNumber());
         try {
             customer.setCreatedDate(java.time.LocalDateTime.now());
             customer.setUpdatedDate(java.time.LocalDateTime.now());
             com.mms.backend.entity.CustomerMaster saved = customerRepository.save(customer);
+            log.info("[CONTROLLER] Customer created successfully. ID: {}", saved.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (Exception e) {
+            log.error("[CONTROLLER] Error creating customer", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating customer");
         }
     }
 
     @PostMapping("/customers/update")
     public ResponseEntity<?> updateCustomer(@RequestBody com.mms.backend.entity.CustomerMaster customer) {
+        log.info("[CONTROLLER] Request: Update Customer. ID: {}", customer.getId());
         if (customer.getId() == null)
             return ResponseEntity.badRequest().body("ID Required");
         return customerRepository.findById(java.util.Objects.requireNonNull(customer.getId())).map(existing -> {
@@ -337,12 +352,14 @@ public class MMSController {
             existing.setKycVerified(customer.getKycVerified());
             existing.setUpdatedDate(java.time.LocalDateTime.now());
 
+            log.info("[CONTROLLER] Customer updated successfully. ID: {}", existing.getId());
             return ResponseEntity.ok(customerRepository.save(existing));
         }).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/prices")
     public ResponseEntity<?> updatePrice(@RequestBody Map<String, Object> payload) {
+        log.info("[CONTROLLER] Request: Update Price. Payload: {}", payload);
         try {
             if (!payload.containsKey("itemId") || !payload.containsKey("price")) {
                 return ResponseEntity.badRequest().body("itemId and price are required");
@@ -353,10 +370,13 @@ public class MMSController {
             BigDecimal price = new BigDecimal(payload.get("price").toString());
 
             priceService.updatePrice(itemId, price);
+            log.info("[CONTROLLER] Price updated successfully for Item ID: {}", itemId);
             return ResponseEntity.ok(priceService.getLatestPrices());
         } catch (NumberFormatException e) {
+            log.error("[CONTROLLER] Invalid price format", e);
             return ResponseEntity.badRequest().body("Invalid price format");
         } catch (Exception e) {
+            log.error("[CONTROLLER] Error updating price", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating price");
         }
     }
@@ -368,12 +388,17 @@ public class MMSController {
 
     @PostMapping("/deposits/create")
     public ResponseEntity<String> createDeposit(@RequestBody com.mms.backend.dto.CreateDepositRequest request) {
+        log.info("[CONTROLLER] Request: Create Deposit. Token: {}, CustomerID: {}", request.getTokenNo(),
+                request.getCustomerId());
         try {
             depositService.createDeposit(request);
+            log.info("[CONTROLLER] Deposit created successfully. Token: {}", request.getTokenNo());
             return ResponseEntity.status(HttpStatus.CREATED).body("Deposit created successfully");
         } catch (IllegalArgumentException e) {
+            log.warn("[CONTROLLER] Bad Request in createDeposit: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
+            log.error("[CONTROLLER] Error creating deposit", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error creating deposit: " + e.getMessage());
         }
@@ -381,22 +406,27 @@ public class MMSController {
 
     @PostMapping("/deposits/details")
     public ResponseEntity<?> getDeposit(@RequestBody com.mms.backend.dto.request.IdRequest request) {
+        log.info("[CONTROLLER] Request: Get Deposit Details. ID: {}", request.getId());
         try {
             DepositDetailDTO detail = depositService.getDepositDetails(request.getId());
             if (detail == null) {
+                log.warn("[CONTROLLER] Deposit not found. ID: {}", request.getId());
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("Deposit not found with ID: " + request.getId());
             }
             return ResponseEntity.ok(detail);
         } catch (Exception e) {
+            log.error("[CONTROLLER] Error fetching deposit details", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching deposit details");
         }
     }
 
     @PostMapping("/deposits/close")
     public ResponseEntity<String> closeDeposit(@RequestBody com.mms.backend.dto.request.IdRequest request) {
+        log.info("[CONTROLLER] Request: Close Deposit. ID: {}", request.getId());
         try {
             depositService.closeDeposit(request.getId());
+            log.info("[CONTROLLER] Deposit closed successfully. ID: {}", request.getId());
             return ResponseEntity.ok("Deposit closed successfully");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -412,11 +442,13 @@ public class MMSController {
     @PostMapping("/deposits/active-merchant-entries")
     public ResponseEntity<List<com.mms.backend.dto.MerchantItemDTO>> getActiveMerchantEntries(
             @RequestBody com.mms.backend.dto.request.IdRequest request) {
+        log.info("[CONTROLLER] Request: Get Active Merchant Entries for Deposit ID: {}", request.getId());
         return ResponseEntity.ok(depositService.getActiveMerchantPledges(Long.valueOf(request.getId())));
     }
 
     @PostMapping("/deposits/update")
     public ResponseEntity<String> updateDeposit(@RequestBody Map<String, Object> payload) {
+        log.info("[CONTROLLER] Request: Update Deposit. Payload: {}", payload);
         try {
             Object idObj = payload.get("id");
             if (idObj == null)
@@ -434,10 +466,13 @@ public class MMSController {
                     com.mms.backend.dto.UpdateDepositRequest.class);
 
             depositService.updateDeposit(id, req);
+            log.info("[CONTROLLER] Deposit updated successfully. ID: {}", id);
             return ResponseEntity.ok("Deposit updated successfully");
         } catch (java.util.NoSuchElementException e) {
+            log.warn("[CONTROLLER] Deposit not found for update.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Deposit not found");
         } catch (Exception e) {
+            log.error("[CONTROLLER] Error updating deposit", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating deposit: " + e.getMessage());
         }
@@ -445,6 +480,7 @@ public class MMSController {
 
     @PostMapping("/deposits/transactions/add")
     public ResponseEntity<String> addPaymentTransaction(@RequestBody Map<String, Object> payload) {
+        log.info("[CONTROLLER] Request: Add Payment Transaction. Payload: {}", payload);
         try {
             Object idObj = payload.get("depositId");
             if (idObj == null)
@@ -462,8 +498,10 @@ public class MMSController {
                     com.mms.backend.dto.RedemptionRequest.class);
 
             depositService.addPaymentTransaction(id, req);
+            log.info("[CONTROLLER] Payment Transaction added successfully to Deposit ID: {}", id);
             return ResponseEntity.ok("Transaction added successfully");
         } catch (Exception e) {
+            log.error("[CONTROLLER] Error adding payment transaction", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error adding transaction: " + e.getMessage());
         }
@@ -490,6 +528,7 @@ public class MMSController {
 
     @PostMapping("/merchants/create")
     public ResponseEntity<MerchantMaster> createMerchant(@RequestBody MerchantMaster merchant) {
+        log.info("[CONTROLLER] Request: Create Merchant. Name: {}", merchant.getMerchantName());
         return ResponseEntity.ok(merchantService.saveMerchant(merchant));
     }
 
@@ -515,10 +554,13 @@ public class MMSController {
 
     @PostMapping("/merchant-entries/transfer")
     public ResponseEntity<String> transferToMerchant(@RequestBody B2BTransferRequest request) {
+        log.info("[CONTROLLER] Request: Transfer to Merchant. MerchantID: {}", request.getMerchantId());
         try {
             merchantService.transferToMerchant(request);
+            log.info("[CONTROLLER] Transfer successful.");
             return ResponseEntity.ok("Item transferred to merchant successfully");
         } catch (Exception e) {
+            log.error("[CONTROLLER] Transfer failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Transfer failed: " + e.getMessage());
         }
     }
@@ -586,6 +628,7 @@ public class MMSController {
     @PostMapping("/merchant-entries/return")
     public ResponseEntity<String> returnFromMerchant(
             @RequestBody Map<String, Object> payload) {
+        log.info("[CONTROLLER] Request: Return from Merchant. Payload: {}", payload);
         try {
             Object idObj = payload.get("id");
             if (idObj == null)
@@ -602,8 +645,10 @@ public class MMSController {
                     com.mms.backend.dto.RedemptionRequest.class);
 
             merchantService.returnFromMerchant(id, req);
+            log.info("[CONTROLLER] Item returned from merchant successfully. Entry ID: {}", id);
             return ResponseEntity.ok("Item returned from merchant successfully");
         } catch (Exception e) {
+            log.error("[CONTROLLER] Return from merchant failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Return failed: " + e.getMessage());
         }
     }

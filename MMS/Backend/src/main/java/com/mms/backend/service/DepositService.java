@@ -238,6 +238,8 @@ public class DepositService {
 
     @Transactional
     public void createDeposit(CreateDepositRequest request) {
+        logger.info("[SERVICE] Creating Deposit. Token: {}, CustomerID: {}", request.getTokenNo(),
+                request.getCustomerId());
         // 1. Create Entry
         CustomerDepositEntry entry = new CustomerDepositEntry();
         entry.setCustomer(
@@ -281,6 +283,7 @@ public class DepositService {
 
     @Transactional(readOnly = true)
     public List<DepositSummaryDTO> getActiveDepositSummary() {
+        logger.info("[SERVICE] Fetching Active Deposit Summaries.");
         List<CustomerDepositEntry> activeDeposits = depositRepository.findAllActiveWithCustomer();
         List<DepositSummaryDTO> summaries = new ArrayList<>();
 
@@ -446,6 +449,7 @@ public class DepositService {
     @Transactional(readOnly = true)
     public Page<DepositSummaryDTO> getActiveDepositSummaryPaginated(int page, int size, String sortBy, String direction,
             com.mms.backend.dto.DepositFilterDTO filters) {
+        logger.info("[SERVICE] Fetching Paginated Summaries. Page: {}, Size: {}, Sort: {}", page, size, sortBy);
         // 1. Get ALL data (Calculated)
         List<DepositSummaryDTO> allData = getActiveDepositSummary();
 
@@ -551,6 +555,7 @@ public class DepositService {
 
     @Transactional(readOnly = true)
     public DepositDetailDTO getDepositDetails(Integer id) {
+        logger.info("[SERVICE] Fetching Deposit Details. ID: {}", id);
         CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(id)).orElseThrow();
         DepositDetailDTO dto = new DepositDetailDTO();
         dto.setDepositId(entry.getId());
@@ -715,6 +720,7 @@ public class DepositService {
 
     @Transactional
     public void updateDeposit(Integer id, UpdateDepositRequest request) {
+        logger.info("[SERVICE] Updating Deposit. ID: {}", id);
         try {
             CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(id)).orElseThrow();
 
@@ -857,6 +863,7 @@ public class DepositService {
 
     @Transactional
     public void addPaymentTransaction(Integer depositId, com.mms.backend.dto.RedemptionRequest request) {
+        logger.info("[SERVICE] Adding Payment Transaction. Deposit ID: {}", depositId);
         CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(depositId))
                 .orElseThrow(() -> new RuntimeException("Deposit not found"));
 
@@ -890,6 +897,7 @@ public class DepositService {
 
     @Transactional
     public void closeDeposit(Integer id) {
+        logger.info("[SERVICE] Closing Deposit. ID: {}", id);
         CustomerDepositEntry entry = depositRepository.findById(java.util.Objects.requireNonNull(id))
                 .orElseThrow(() -> new RuntimeException("Deposit not found"));
         // entry.setIsActive(false); // User requested NOT to update isActive
@@ -908,6 +916,7 @@ public class DepositService {
 
     @Transactional(readOnly = true)
     public List<com.mms.backend.dto.CustomerItemDTO> getCustomerItems(Integer customerId) {
+        logger.info("[SERVICE] Fetching Items for Customer ID: {}", customerId);
         List<CustomerDepositEntry> deposits = depositRepository.findAll().stream()
                 .filter(d -> d.getCustomer().getId().equals(customerId))
                 .collect(Collectors.toList());
@@ -951,6 +960,7 @@ public class DepositService {
 
     @Transactional(readOnly = true)
     public com.mms.backend.dto.CustomerPortfolioDTO getCustomerPortfolio(Integer customerId) {
+        logger.info("[SERVICE] Fetching Portfolio for Customer ID: {}", customerId);
         CustomerMaster customer = customerRepository.findById(java.util.Objects.requireNonNull(customerId))
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
