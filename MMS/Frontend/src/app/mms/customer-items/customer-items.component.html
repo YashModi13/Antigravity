@@ -33,20 +33,22 @@
                                 placeholder="Search by Name, Mobile..." [(ngModel)]="searchTerm"
                                 (keyup)="searchCustomers()" style="box-shadow: none;">
 
-                            <span class="input-group-text bg-transparent border-0" *ngIf="searchTerm"
-                                (click)="searchTerm=''; searchCustomers()" style="cursor: pointer;">
+                            <button
+                                class="btn btn-link input-group-text bg-transparent border-0 text-decoration-none p-0 ps-1 pe-2"
+                                *ngIf="searchTerm" (click)="searchTerm=''; searchCustomers()" type="button"
+                                aria-label="Clear Search">
                                 <i class="feather icon-x-circle text-secondary"></i>
-                            </span>
+                            </button>
                         </div>
 
                         <!-- Dropdown Results (Absolute) -->
                         <div *ngIf="showResults"
                             class="card position-absolute w-100 mt-2 shadow-lg border-0 rounded-4 overflow-hidden text-start"
                             style="top: 100%; left: 0; z-index: 1050;">
-                            <ul class="list-group list-group-flush">
-                                <li *ngFor="let customer of searchResults"
-                                    class="list-group-item list-group-item-action p-2 px-3 d-flex align-items-center justify-content-between"
-                                    style="cursor: pointer;" (click)="selectCustomer(customer)">
+                            <div class="list-group list-group-flush">
+                                <button *ngFor="let customer of searchResults"
+                                    class="list-group-item list-group-item-action p-2 px-3 d-flex align-items-center justify-content-between border-0 text-start w-100"
+                                    type="button" style="cursor: pointer;" (click)="selectCustomer(customer)">
                                     <div class="d-flex align-items-center">
                                         <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2"
                                             style="width: 35px; height: 35px; font-size: 0.9rem; font-weight: bold;">
@@ -66,12 +68,12 @@
                                         </div>
                                     </div>
                                     <i class="feather icon-arrow-right-circle text-muted opacity-25"></i>
-                                </li>
-                                <li *ngIf="searchResults.length === 0"
+                                </button>
+                                <div *ngIf="searchResults.length === 0"
                                     class="list-group-item p-3 text-center text-muted small">
                                     No matching customers found.
-                                </li>
-                            </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -127,33 +129,48 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light text-uppercase small text-muted fw-bold border-bottom">
                             <tr>
-                                <th class="ps-4 py-3 border-0" style="width: 5%; cursor: pointer;"
-                                    (click)="onSort('id')">
-                                    ID <i class="feather"
-                                        [ngClass]="{'icon-chevron-up': sortBy === 'id' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'id' && sortDir === 'desc'}"></i>
+                                <th class="ps-4 py-3 border-0" style="width: 5%;">
+                                    <button
+                                        class="btn btn-link p-0 text-decoration-none text-muted fw-bold text-uppercase small"
+                                        (click)="onSort('id')">
+                                        ID <i class="feather"
+                                            [ngClass]="{'icon-chevron-up': sortBy === 'id' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'id' && sortDir === 'desc'}"></i>
+                                    </button>
                                 </th>
-                                <th class="border-0" style="width: 20%; cursor: pointer;"
-                                    (click)="onSort('customerName')">
-                                    Customer <i class="feather"
-                                        [ngClass]="{'icon-chevron-up': sortBy === 'customerName' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'customerName' && sortDir === 'desc'}"></i>
+                                <th class="border-0" style="width: 20%;">
+                                    <button
+                                        class="btn btn-link p-0 text-decoration-none text-muted fw-bold text-uppercase small"
+                                        (click)="onSort('customerName')">
+                                        Customer <i class="feather"
+                                            [ngClass]="{'icon-chevron-up': sortBy === 'customerName' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'customerName' && sortDir === 'desc'}"></i>
+                                    </button>
                                 </th>
-                                <th class="border-0" style="width: 12%; cursor: pointer;"
-                                    (click)="onSort('mobileNumber')">
-                                    Contact <i class="feather"
-                                        [ngClass]="{'icon-chevron-up': sortBy === 'mobileNumber' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'mobileNumber' && sortDir === 'desc'}"></i>
+                                <th class="border-0" style="width: 12%;">
+                                    <button
+                                        class="btn btn-link p-0 text-decoration-none text-muted fw-bold text-uppercase small"
+                                        (click)="onSort('mobileNumber')">
+                                        Contact <i class="feather"
+                                            [ngClass]="{'icon-chevron-up': sortBy === 'mobileNumber' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'mobileNumber' && sortDir === 'desc'}"></i>
+                                    </button>
                                 </th>
                                 <th class="border-0" style="width: 15%;">Address</th>
                                 <th class="border-0" style="width: 18%;">
                                     Location
                                 </th>
-                                <th class="border-0" style="width: 12%; cursor: pointer;"
-                                    (click)="onSort('referralName')">
-                                    Referral <i class="feather"
-                                        [ngClass]="{'icon-chevron-up': sortBy === 'referralName' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'referralName' && sortDir === 'desc'}"></i>
+                                <th class="border-0" style="width: 12%;">
+                                    <button
+                                        class="btn btn-link p-0 text-decoration-none text-muted fw-bold text-uppercase small"
+                                        (click)="onSort('referralName')">
+                                        Referral <i class="feather"
+                                            [ngClass]="{'icon-chevron-up': sortBy === 'referralName' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'referralName' && sortDir === 'desc'}"></i>
+                                    </button>
                                 </th>
-                                <th class="border-0 text-center" style="width: 5%; cursor: pointer;"
-                                    (click)="onSort('kycVerified')">
-                                    KYC
+                                <th class="border-0 text-center" style="width: 5%;">
+                                    <button
+                                        class="btn btn-link p-0 text-decoration-none text-muted fw-bold text-uppercase small"
+                                        (click)="onSort('kycVerified')">
+                                        KYC
+                                    </button>
                                 </th>
                                 <th class="text-end pe-4 border-0" style="width: 13%;">Action</th>
                             </tr>
@@ -193,11 +210,11 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span *ngIf="c.referralCustomer"
-                                        class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 clickable-badge"
+                                    <button *ngIf="c.referralCustomer" type="button"
+                                        class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 clickable-badge p-1 px-2 border-0"
                                         style="cursor: pointer;" (click)="selectCustomer(c.referralCustomer)">
                                         <i class="feather icon-user-check me-1"></i>{{ c.referralName }}
-                                    </span>
+                                    </button>
                                     <span *ngIf="!c.referralName" class="text-muted small">-</span>
                                 </td>
                                 <td class="text-center">
@@ -270,7 +287,7 @@
     </div>
 
     <!-- MAIN PORTFOLIO VIEW -->
-    <div class="col-12 fade-in-up" *ngIf="portfolio">
+    <div class="col-12" *ngIf="portfolio">
 
         <!-- Top Navigation & Search -->
         <div class="mb-4 d-flex gap-3 align-items-center">
@@ -291,19 +308,16 @@
                     class="card position-absolute w-100 mt-1 shadow border-0 rounded-3 overflow-hidden"
                     style="z-index: 1000;">
                     <ul class="list-group list-group-flush">
-                        <li *ngFor="let customer of searchResults"
-                            class="list-group-item list-group-item-action p-2 smaller" style="cursor: pointer;"
-                            (click)="selectCustomer(customer)">
+                        <button *ngFor="let customer of searchResults" type="button"
+                            class="list-group-item list-group-item-action p-2 smaller border-0 text-start"
+                            style="cursor: pointer;" (click)="selectCustomer(customer)">
                             <div class="fw-bold">{{ customer.customerName }}</div>
-                        </li>
+                        </button>
                     </ul>
                 </div>
             </div>
 
             <!-- Clear/Action Button (Optional, maybe specific actions later) -->
-            <!-- <button class="btn btn-dark rounded-pill px-4 shadow-sm" (click)="portfolio = null; searchTerm = ''">
-                <i class="feather icon-x me-2"></i> Close
-            </button> -->
         </div>
 
         <!-- Customer Profile & Dashboard Card -->
@@ -502,6 +516,12 @@
                             <div class="border-top pt-2 mt-2 pb-2 bg-light rounded-bottom d-flex justify-content-between align-items-center px-3"
                                 *ngIf="deposit.status === 'CLOSED'">
 
+                                <!-- ACTIONS (History Button) -->
+                                <div>
+                                    <app-deposit-detail-view [deposit]="deposit" [customerName]="portfolio.customerName"
+                                        (refresh)="loadPortfolio(portfolio.customerId)">
+                                    </app-deposit-detail-view>
+                                </div>
 
                                 <!-- Net Profit Display -->
                                 <div>
@@ -516,9 +536,6 @@
                                     </span>
                                 </div>
                             </div>
-
-
-
                         </div>
                     </div>
                 </div>
@@ -537,8 +554,8 @@
 
 <!-- Edit Customer Modal -->
 <div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" tabindex="-1"
-    role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    [attr.aria-hidden]="!showEditModal" aria-modal="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
             <div class="modal-header border-bottom bg-white rounded-top-4 p-4">
                 <h5 class="modal-title fw-bold text-dark"><i class="feather icon-edit me-2 text-primary"></i>Edit
@@ -550,26 +567,31 @@
                     <div class="row g-3">
                         <!-- Basic Info -->
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Customer Name <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-lg rounded-3 border-0 shadow-sm"
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editNameInput">Customer Name <span class="text-danger">*</span></label>
+                            <input type="text" id="editNameInput"
+                                class="form-control form-control-lg rounded-3 border-0 shadow-sm"
                                 [(ngModel)]="editingCustomer.customerName" name="editName" required
                                 placeholder="Enter full name">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Mobile Number <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-lg rounded-3 border-0 shadow-sm"
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editMobileInput">Mobile Number <span class="text-danger">*</span></label>
+                            <input type="text" id="editMobileInput"
+                                class="form-control form-control-lg rounded-3 border-0 shadow-sm"
                                 [(ngModel)]="editingCustomer.mobileNumber" name="editMobile" required
                                 placeholder="10-digit mobile number">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Email Address</label>
-                            <input type="email" class="form-control form-control-lg rounded-3 border-0 shadow-sm"
+                            <label class="form-label small fw-bold text-muted text-uppercase" for="editEmailInput">Email
+                                Address</label>
+                            <input type="email" id="editEmailInput"
+                                class="form-control form-control-lg rounded-3 border-0 shadow-sm"
                                 [(ngModel)]="editingCustomer.email" name="editEmail" placeholder="Optional">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">KYC Status</label>
+                            <label class="form-label small fw-bold text-muted text-uppercase" for="editKycVerified">KYC
+                                Status</label>
                             <div class="d-flex align-items-center mt-2">
                                 <div class="form-check form-switch custom-switch-lg">
                                     <input class="form-check-input" type="checkbox" id="editKycVerified"
@@ -587,30 +609,35 @@
                                 Location</h6>
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Full Address</label>
-                            <textarea class="form-control rounded-3 border-0 shadow-sm" rows="2"
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editAddressInput">Full Address</label>
+                            <textarea class="form-control rounded-3 border-0 shadow-sm" rows="2" id="editAddressInput"
                                 [(ngModel)]="editingCustomer.address" name="editAddress"
                                 placeholder="Street, landmark, etc."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Village/City</label>
-                            <input type="text" class="form-control rounded-3 border-0 shadow-sm"
-                                [(ngModel)]="editingCustomer.village" name="editVillage">
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editVillageInput">Village/City</label>
+                            <input type="text" class="form-control rounded-3 border-0 shadow-sm" id="editVillageInput"
+                                [(ngModel)]="editingCustomer.village" name="editVillage" placeholder="Village/City">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">District</label>
-                            <input type="text" class="form-control rounded-3 border-0 shadow-sm"
-                                [(ngModel)]="editingCustomer.district" name="editDistrict">
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editDistrictInput">District</label>
+                            <input type="text" class="form-control rounded-3 border-0 shadow-sm" id="editDistrictInput"
+                                [(ngModel)]="editingCustomer.district" name="editDistrict" placeholder="District">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">State</label>
-                            <input type="text" class="form-control rounded-3 border-0 shadow-sm"
-                                [(ngModel)]="editingCustomer.state" name="editState">
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editStateInput">State</label>
+                            <input type="text" class="form-control rounded-3 border-0 shadow-sm" id="editStateInput"
+                                [(ngModel)]="editingCustomer.state" name="editState" placeholder="State">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Pincode</label>
-                            <input type="text" class="form-control rounded-3 border-0 shadow-sm"
-                                [(ngModel)]="editingCustomer.pincode" name="editPincode">
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editPincodeInput">Pincode</label>
+                            <input type="text" class="form-control rounded-3 border-0 shadow-sm" id="editPincodeInput"
+                                [(ngModel)]="editingCustomer.pincode" name="editPincode" placeholder="Pincode">
                         </div>
 
                         <!-- Referral Section -->
@@ -618,16 +645,18 @@
                             <h6 class="text-primary fw-bold small text-uppercase mb-3 border-bottom pb-2">Referral</h6>
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Referred By</label>
+                            <label class="form-label small fw-bold text-muted text-uppercase"
+                                for="editReferralSearchInput">Referred By</label>
                             <div class="position-relative">
                                 <div class="input-group shadow-sm rounded-3 overflow-hidden">
                                     <span class="input-group-text bg-white border-0 ps-3"><i
                                             class="feather icon-search text-muted"></i></span>
-                                    <input type="text" class="form-control border-0 py-2"
+                                    <input type="text" id="editReferralSearchInput" class="form-control border-0 py-2"
                                         [(ngModel)]="editReferralSearchTerm" name="editReferralSearch"
                                         (keyup)="searchEditReferrals()" placeholder="Search existing customer..."
                                         autocomplete="off">
                                     <button class="btn btn-light border-0 text-muted" *ngIf="editReferralSearchTerm"
+                                        type="button"
                                         (click)="editReferralSearchTerm=''; editingCustomer.referralCustomer=null">
                                         <i class="feather icon-x"></i>
                                     </button>
@@ -637,13 +666,13 @@
                                     class="card position-absolute w-100 mt-1 shadow border-0 rounded-3 overflow-hidden"
                                     style="z-index: 1055; max-height: 200px; overflow-y: auto;">
                                     <ul class="list-group list-group-flush">
-                                        <li *ngFor="let ref of editReferralSearchResults"
-                                            class="list-group-item list-group-item-action p-2 small cursor-pointer"
+                                        <button *ngFor="let ref of editReferralSearchResults" type="button"
+                                            class="list-group-item list-group-item-action p-2 small cursor-pointer border-0 text-start"
                                             (click)="selectEditReferral(ref)">
                                             <div class="fw-bold text-dark">{{ ref.customerName }}</div>
                                             <div class="text-muted text-xs">{{ ref.mobileNumber }} | {{ ref.village }}
                                             </div>
-                                        </li>
+                                        </button>
                                     </ul>
                                 </div>
                             </div>

@@ -1,31 +1,26 @@
 package com.mms.backend.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.backend.dto.EncryptedPayload;
 import com.mms.backend.service.EncryptionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
-import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
 @Slf4j
+@lombok.RequiredArgsConstructor
 public class EncryptionResponseAdvice implements ResponseBodyAdvice<Object> {
 
-    @Autowired
-    private EncryptionService encryptionService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final EncryptionService encryptionService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Override
     public boolean supports(@org.springframework.lang.NonNull MethodParameter returnType,
-            @org.springframework.lang.NonNull Class<? extends HttpMessageConverter<?>> converterType) {
+            @org.springframework.lang.NonNull Class<? extends org.springframework.http.converter.HttpMessageConverter<?>> converterType) {
         return true;
     }
 
@@ -33,52 +28,36 @@ public class EncryptionResponseAdvice implements ResponseBodyAdvice<Object> {
     public Object beforeBodyWrite(@org.springframework.lang.Nullable Object body,
             @org.springframework.lang.NonNull MethodParameter returnType,
             @org.springframework.lang.NonNull MediaType selectedContentType,
-            @org.springframework.lang.NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType,
+            @org.springframework.lang.NonNull Class<? extends org.springframework.http.converter.HttpMessageConverter<?>> selectedConverterType,
             @org.springframework.lang.NonNull ServerHttpRequest request,
             @org.springframework.lang.NonNull ServerHttpResponse response) {
 
-        // Skip if body is null or already encrypted
-        if (body == null || body instanceof EncryptedPayload) {
+        if (body == null) {
+            return null;
+        }
+
+        // Skip encryption for specific types if needed, e.g. byte arrays (files) or
+        // already encrypted
+        if (body instanceof byte[] || body instanceof EncryptedPayload) {
             return body;
         }
 
-        // Only encrypt JSON responses
-        if (!MediaType.APPLICATION_JSON.isCompatibleWith(selectedContentType)) {
-            return body;
-        }
-
-        // Skip Swagger/OpenAPI endpoints if any (optional check)
+        // Also skip for Swagger/OpenAPI endpoints if applicable
         String path = request.getURI().getPath();
         if (path.contains("/v3/api-docs") || path.contains("/swagger-ui")) {
             return body;
         }
 
         try {
-            // Convert body to JSON string
-            String jsonString = (body instanceof String) ? (String) body : objectMapper.writeValueAsString(body);
-
-            log.info("<<< [SECURITY] Outgoing Response. Status: UNLOCKED (Raw Data)");
-            log.info("<<< [SECURITY] Action: BLOCKING (Encryption) -> In Progress...");
-
-            // Encrypt
-            String encryptedData = encryptionService.encrypt(jsonString);
-
-            log.info("<<< [SECURITY] Action: BLOCKED (Encryption Success). Response Secured.");
-
-            // Return wrapper
-            EncryptedPayload payload = new EncryptedPayload(encryptedData);
-
-            // SPECIAL CASE: If the selected converter is StringHttpMessageConverter,
-            // we must return a String, otherwise ClassCastException occurs.
-            if (org.springframework.http.converter.StringHttpMessageConverter.class
-                    .isAssignableFrom(selectedConverterType)) {
-                return objectMapper.writeValueAsString(payload);
-            }
-
-            return payload;
+            log.info(">>> [SECURITY] Outgoing Response: Encrypting Payload...");
+            String json = objectMapper.writeValueAsString(body);
+            String encryptedData = encryptionService.encrypt(json);
+            log.info(">>> [SECURITY] Encryption Success.");
+            return new EncryptedPayload(encryptedData);
         } catch (Exception e) {
-            log.error("Failed to encrypt response", e);
-            throw new RuntimeException("Failed to encrypt response", e);
+            log.error(">>> [SECURITY] Encryption Failed", e);
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Failed to encrypt response", e);
         }
     }
 }

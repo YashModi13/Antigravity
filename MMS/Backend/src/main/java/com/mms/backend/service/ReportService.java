@@ -6,29 +6,25 @@ import com.mms.backend.entity.CustomerMaster;
 import com.mms.backend.repository.CustomerMasterRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ReportService {
 
-    @Autowired
-    private DepositService depositService;
-
-    @Autowired
-    private MerchantService merchantService;
-
-    @Autowired
-    private CustomerMasterRepository customerRepository;
+    private final DepositQueryService depositQueryService;
+    private final MerchantService merchantService;
+    private final CustomerMasterRepository customerRepository;
 
     public byte[] generateDepositsReport() throws IOException {
-        List<DepositSummaryDTO> deposits = depositService.getActiveDepositSummary();
+        List<DepositSummaryDTO> deposits = depositQueryService.getActiveDepositSummary();
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Deposits");
+            Sheet sheet = workbook.createSheet(com.mms.backend.util.Constants.REPORT_SHEET_DEPOSITS);
 
             // Header
             Row headerRow = sheet.createRow(0);
@@ -74,7 +70,7 @@ public class ReportService {
     public byte[] generateCustomersReport() throws IOException {
         List<CustomerMaster> customers = customerRepository.findAll();
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Customers");
+            Sheet sheet = workbook.createSheet(com.mms.backend.util.Constants.REPORT_SHEET_CUSTOMERS);
 
             // Header
             Row headerRow = sheet.createRow(0);
@@ -113,7 +109,7 @@ public class ReportService {
     public byte[] generateMerchantsReport() throws IOException {
         List<MerchantItemDTO> merchantEntries = merchantService.getActiveMerchantEntries();
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Merchant Transfers");
+            Sheet sheet = workbook.createSheet(com.mms.backend.util.Constants.REPORT_SHEET_MERCHANT_TRANSFERS);
 
             // Header
             Row headerRow = sheet.createRow(0);

@@ -1,10 +1,13 @@
 <!-- Action Buttons -->
-<div class="d-flex gap-2" *ngIf="deposit?.status === 'ACTIVE'">
-    <button class="btn btn-outline-primary btn-sm" (click)="openPaymentModal()">
+<div class="d-flex gap-2">
+    <button class="btn btn-outline-primary btn-sm" (click)="openPaymentModal()" *ngIf="deposit?.status === 'ACTIVE'">
         <i class="feather icon-plus-circle me-2"></i> Pay Interest / Principal
     </button>
-    <button class="btn btn-outline-danger btn-sm" (click)="openSettlementModal()">
+    <button class="btn btn-outline-danger btn-sm" (click)="openSettlementModal()" *ngIf="deposit?.status === 'ACTIVE'">
         <i class="feather icon-check-square me-2"></i> Settle & Close
+    </button>
+    <button class="btn btn-primary btn-sm" (click)="openHistoryModal()">
+        <i class="feather icon-list me-2"></i> History
     </button>
 </div>
 
@@ -41,18 +44,20 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Interest Payment</label>
+                    <label class="form-label fw-bold" for="paymentInterestInput">Interest Payment</label>
                     <div class="input-group">
                         <span class="input-group-text">₹</span>
-                        <input type="number" class="form-control" [(ngModel)]="paymentForm.interestPaid"
-                            placeholder="Amount" [disabled]="payFullInterest">
+                        <input type="number" id="paymentInterestInput" class="form-control"
+                            [(ngModel)]="paymentForm.interestPaid" placeholder="Amount" [disabled]="payFullInterest">
                     </div>
 
                     <!-- Checkbox for Full Payment -->
                     <div class="mt-2" *ngIf="(deposit?.accruedInterest - deposit?.paidInterest) > 0">
                         <label
-                            style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #333;">
-                            <input type="checkbox" [(ngModel)]="payFullInterest" (change)="calculateInterest()"
+                            style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #333;"
+                            for="fullInterestCheckbox">
+                            <input type="checkbox" id="fullInterestCheckbox" [(ngModel)]="payFullInterest"
+                                (change)="calculateInterest()"
                                 style="width: 20px; height: 20px; cursor: pointer; accent-color: #04a9f5; margin: 0;">
                             Pay Full Pending Interest Only ({{ (deposit?.accruedInterest - deposit?.paidInterest) |
                             currency:'INR' }})
@@ -61,17 +66,18 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Principal Payment</label>
+                    <label class="form-label fw-bold" for="paymentPrincipalInput">Principal Payment</label>
                     <div class="input-group">
                         <span class="input-group-text">₹</span>
-                        <input type="number" class="form-control" [(ngModel)]="paymentForm.principalPaid"
-                            placeholder="Amount">
+                        <input type="number" id="paymentPrincipalInput" class="form-control"
+                            [(ngModel)]="paymentForm.principalPaid" placeholder="Amount">
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Notes</label>
-                    <textarea class="form-control" rows="2" [(ngModel)]="paymentForm.notes"></textarea>
+                    <label class="form-label" for="paymentNotesInput">Notes</label>
+                    <textarea id="paymentNotesInput" class="form-control" rows="2"
+                        [(ngModel)]="paymentForm.notes"></textarea>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -206,13 +212,14 @@
                                     </div>
 
                                     <div class="mb-4">
-                                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Final
+                                        <label class="form-label small fw-bold text-muted text-uppercase mb-2"
+                                            for="settlementAmountInput">Final
                                             Payment Received</label>
                                         <div
                                             class="input-group input-group-lg bg-light rounded-3 overflow-hidden border">
                                             <span
                                                 class="input-group-text bg-transparent border-0 pe-0 text-muted small">₹</span>
-                                            <input type="number"
+                                            <input type="number" id="settlementAmountInput"
                                                 class="form-control bg-transparent border-0 fw-bold fs-3 text-success ps-2"
                                                 [(ngModel)]="settlementAmount" [disabled]="isFullPayment">
                                         </div>
@@ -253,6 +260,114 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div *ngIf="showHistoryModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <div class="modal-header bg-white border-bottom p-4">
+                        <h5 class="modal-title fw-bold text-dark"><i
+                                class="feather icon-list me-2 text-primary"></i>Transaction History</h5>
+                        <button type="button" class="btn-close" (click)="showHistoryModal = false"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div *ngIf="isLoadingHistory" class="text-center py-5">
+                            <div class="spinner-border text-primary">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted small">Fetching records...</p>
+                        </div>
+
+                        <div *ngIf="!isLoadingHistory && historyData">
+                            <div class="px-4 py-3 bg-light border-bottom">
+                                <div class="row g-3">
+                                    <div class="col-6 col-md-4">
+                                        <small class="text-muted text-uppercase fw-bold d-block mb-1"
+                                            style="font-size: 0.7rem;">Deposit Date</small>
+                                        <div class="fw-bold text-dark small">{{ historyData.depositDate |
+                                            date:'mediumDate' }}</div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <small class="text-muted text-uppercase fw-bold d-block mb-1"
+                                            style="font-size: 0.7rem;">Status</small>
+                                        <span
+                                            class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 px-2"
+                                            *ngIf="historyData.status === 'ACTIVE'">ACTIVE</span>
+                                        <span
+                                            class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 px-2"
+                                            *ngIf="historyData.status !== 'ACTIVE'">{{ historyData.status }}</span>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <small class="text-muted text-uppercase fw-bold d-block mb-1"
+                                            style="font-size: 0.7rem;">Interest Rate</small>
+                                        <div class="fw-bold text-dark small">{{ historyData.interestRate }}% <span
+                                                class="text-muted fw-normal">/ mo</span></div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <small class="text-muted text-uppercase fw-bold d-block mb-1"
+                                            style="font-size: 0.7rem;">Original Loan</small>
+                                        <div class="fw-bold text-dark small">{{ historyData.initialLoanAmount |
+                                            currency:'INR' }}</div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <small class="text-muted text-uppercase fw-bold d-block mb-1"
+                                            style="font-size: 0.7rem;">Current Value</small>
+                                        <div class="fw-bold text-dark small">{{ historyData.currentAssetValue |
+                                            currency:'INR' }}</div>
+                                    </div>
+                                    <div class="col-12" *ngIf="historyData.notes">
+                                        <small class="text-muted text-uppercase fw-bold d-block mb-1"
+                                            style="font-size: 0.7rem;">Notes</small>
+                                        <div class="text-secondary small fst-italic">{{ historyData.notes }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="table-responsive" style="max-height: 400px;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-uppercase small text-muted fw-bold">
+                                        <tr>
+                                            <th class="ps-4 py-3">Date</th>
+                                            <th class="py-3">Type</th>
+                                            <th class="text-end py-3">Amount</th>
+                                            <th class="ps-4 py-3">Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let tx of historyData.transactions">
+                                            <td class="ps-4 text-nowrap text-secondary small">{{ tx.date |
+                                                date:'mediumDate' }}</td>
+                                            <td>
+                                                <span class="badge rounded-pill bg-light text-dark border fw-normal">{{
+                                                    tx.type }}</span>
+                                            </td>
+                                            <td class="text-end fw-bold">
+                                                <span [ngClass]="{
+                                        'text-success': tx.type === 'INITIAL_MONEY' || tx.type === 'PRINCIPAL_LOAN' || tx.type === 'INTEREST_RECEIVED', 
+                                        'text-danger': tx.type === 'PRINCIPAL_PAYMENT' || tx.type === 'INTEREST_PAYMENT' || tx.type === 'EXTRA_WITHDRAWAL'
+                                    }">
+                                                    {{ tx.amount | currency:'INR' }}
+                                                </span>
+                                            </td>
+                                            <td class="ps-4 text-muted small text-truncate" style="max-width: 200px;"
+                                                title="{{ tx.description }}">{{ tx.description || '-' }}</td>
+                                        </tr>
+                                        <tr *ngIf="!historyData.transactions?.length">
+                                            <td colspan="4" class="text-center py-5 text-muted">
+                                                No transactions found.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light p-3">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4"
+                            (click)="showHistoryModal = false">Close</button>
                     </div>
                 </div>
             </div>

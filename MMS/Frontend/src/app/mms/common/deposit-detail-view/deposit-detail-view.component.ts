@@ -33,9 +33,14 @@ export class DepositDetailViewComponent {
     settlementAmount: number = 0;
     isFullPayment = true;
 
+    // --- HISTORY MODAL STATE ---
+    showHistoryModal = false;
+    historyData: any = null;
+    isLoadingHistory = false;
+
     constructor(
-        private mmsService: MmsService,
-        private toastService: ToastService
+        private readonly mmsService: MmsService,
+        private readonly toastService: ToastService
     ) { }
 
     // --- PAYMENT ACTIONS ---
@@ -53,7 +58,7 @@ export class DepositDetailViewComponent {
     calculateInterest() {
         if (this.payFullInterest && this.deposit) {
             const pending = (this.deposit.accruedInterest || 0) - (this.deposit.paidInterest || 0);
-            this.paymentForm.interestPaid = pending > 0 ? pending : 0;
+            this.paymentForm.interestPaid = Math.max(0, pending);
         }
     }
 
@@ -124,7 +129,7 @@ export class DepositDetailViewComponent {
                 pPaid = this.settlementAmount - totalInt;
             } else {
                 iPaid = this.settlementAmount;
-                pPaid = 0;
+                // pPaid is already 0
             }
         }
 
@@ -147,6 +152,31 @@ export class DepositDetailViewComponent {
                 });
             },
             error: (err) => this.toastService.error('Failed to record settlement payment')
+        });
+    }
+
+    // --- HISTORY ACTIONS ---
+
+    openHistoryModal() {
+        console.log('Opening History Modal for Deposit:', this.deposit?.depositId);
+        if (!this.deposit) {
+            console.error('Deposit object is missing!');
+            return;
+        }
+        this.isLoadingHistory = true;
+        this.showHistoryModal = true;
+
+        this.mmsService.getDeposit(this.deposit.depositId).subscribe({
+            next: (data) => {
+                this.historyData = data;
+                this.isLoadingHistory = false;
+            },
+            error: (err) => {
+                console.error(err);
+                this.toastService.error('Failed to load history');
+                this.isLoadingHistory = false;
+                this.showHistoryModal = false;
+            }
         });
     }
 }

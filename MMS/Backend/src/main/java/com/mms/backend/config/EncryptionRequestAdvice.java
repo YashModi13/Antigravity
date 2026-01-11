@@ -3,7 +3,6 @@ package com.mms.backend.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.backend.dto.EncryptedPayload;
 import com.mms.backend.service.EncryptionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
@@ -19,13 +18,11 @@ import java.nio.charset.StandardCharsets;
 
 @RestControllerAdvice
 @lombok.extern.slf4j.Slf4j
+@lombok.RequiredArgsConstructor
 public class EncryptionRequestAdvice extends RequestBodyAdviceAdapter {
 
-    @Autowired
-    private EncryptionService encryptionService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final EncryptionService encryptionService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public boolean supports(@org.springframework.lang.NonNull MethodParameter methodParameter,
@@ -49,22 +46,9 @@ public class EncryptionRequestAdvice extends RequestBodyAdviceAdapter {
         }
 
         try {
-            // Try to parse as EncryptedPayload
             EncryptedPayload payload = objectMapper.readValue(bytes, EncryptedPayload.class);
-
             if (payload != null && payload.getData() != null) {
-                log.info(">>> [SECURITY] Incoming Request: Encrypted Payload Detected. Status: LOCKED");
-                try {
-                    // Decrypt
-                    String decrypted = encryptionService.decrypt(payload.getData());
-                    log.info(">>> [SECURITY] Action: UNBLOCKING (Decryption) -> Success. Processing Request.");
-                    return new ByteArrayInputMessage(
-                            java.util.Objects.requireNonNull(decrypted.getBytes(StandardCharsets.UTF_8)),
-                            java.util.Objects.requireNonNull(inputMessage.getHeaders()));
-                } catch (Exception decryptEx) {
-                    log.error(">>> [SECURITY] FATAL ERROR: Decryption Failed. Check Secret Key.", decryptEx);
-                    throw new IOException("Security Error: Decryption Failed. Check system.encryption.secret-key.");
-                }
+                return handleEncryptedPayload(payload, inputMessage);
             }
         } catch (IOException e) {
             if (e.getMessage() != null && e.getMessage().contains("Security Error"))
@@ -73,6 +57,22 @@ public class EncryptionRequestAdvice extends RequestBodyAdviceAdapter {
         }
 
         return new ByteArrayInputMessage(bytes, inputMessage.getHeaders());
+    }
+
+    @org.springframework.lang.NonNull
+    private HttpInputMessage handleEncryptedPayload(EncryptedPayload payload, HttpInputMessage inputMessage)
+            throws IOException {
+        log.info(">>> [SECURITY] Incoming Request: Encrypted Payload Detected. Status: LOCKED");
+        try {
+            String decrypted = encryptionService.decrypt(payload.getData());
+            log.info(">>> [SECURITY] Action: UNBLOCKING (Decryption) -> Success. Processing Request.");
+            return new ByteArrayInputMessage(
+                    java.util.Objects.requireNonNull(decrypted.getBytes(StandardCharsets.UTF_8)),
+                    java.util.Objects.requireNonNull(inputMessage.getHeaders()));
+        } catch (Exception decryptEx) {
+            log.error(">>> [SECURITY] FATAL ERROR: Decryption Failed. Check Secret Key.", decryptEx);
+            throw new IOException("Security Error: Decryption Failed. Check system.encryption.secret-key.");
+        }
     }
 
     // Helper class
