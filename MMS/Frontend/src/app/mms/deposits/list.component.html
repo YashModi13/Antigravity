@@ -472,10 +472,9 @@
                     <!-- Checkbox for Full Payment -->
                     <!-- Checkbox for Full Payment -->
                     <div class="mt-2" *ngIf="selectedDepositForPayment?.unpaidInterest > 0">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="fullInterestToggle" role="switch"
-                                [(ngModel)]="payFullInterest" [attr.aria-checked]="payFullInterest ? 'true' : 'false'"
-                                (change)="toggleFullInterest()"
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="fullInterestToggle"
+                                [(ngModel)]="payFullInterest" (change)="toggleFullInterest()"
                                 style="width: 20px; height: 20px; cursor: pointer; accent-color: #04a9f5;">
                             <label class="form-check-label ms-2 fw-bold text-dark" for="fullInterestToggle"
                                 style="cursor: pointer;">
@@ -1118,9 +1117,8 @@
                                                 Full Payment (₹ {{ledgerSummary?.total | number:'1.2-2'}})
                                             </span>
 
-                                            <input class="form-check-input fs-4 m-0" type="checkbox" role="switch"
+                                            <input class="form-check-input fs-4 m-0" type="checkbox"
                                                 id="fullPaymentCheck" [(ngModel)]="isFullPayment"
-                                                [attr.aria-checked]="isFullPayment ? 'true' : 'false'"
                                                 (change)="updateSettlementAmount()">
                                         </label>
                                     </div>

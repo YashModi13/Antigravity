@@ -87,9 +87,9 @@ export class MmsDashboardComponent implements OnInit {
     @ViewChild("chart") chart: ChartComponent;
 
     constructor(
-        private mmsService: MmsService,
-        private toastService: ToastService,
-        private cdr: ChangeDetectorRef
+        private readonly mmsService: MmsService,
+        private readonly toastService: ToastService,
+        private readonly cdr: ChangeDetectorRef
     ) { }
 
     ngOnInit() {
@@ -120,9 +120,9 @@ export class MmsDashboardComponent implements OnInit {
     priceDisplay: { [key: number]: string } = {};
 
     onPriceInput(itemId: number, event: any) {
-        let valueStr = event.target.value.replace(/,/g, '');
+        let valueStr = event.target.value.replaceAll(',', '');
         const value = Number(valueStr);
-        if (!isNaN(value) && valueStr !== '' && value > 0) {
+        if (!Number.isNaN(value) && valueStr !== '' && value > 0) {
             this.priceUpdates[itemId] = value;
             this.priceDisplay[itemId] = value.toLocaleString('en-IN');
         } else {

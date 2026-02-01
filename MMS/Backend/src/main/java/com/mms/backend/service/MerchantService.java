@@ -7,7 +7,6 @@ import com.mms.backend.dto.RedemptionRequest;
 import com.mms.backend.entity.*;
 import com.mms.backend.repository.*;
 import static com.mms.backend.util.Constants.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,20 +20,17 @@ import java.util.Map;
 import com.mms.backend.dto.MerchantEntryDetailsDTO;
 import com.mms.backend.dto.MerchantTransactionDTO;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class MerchantService {
 
-    @Autowired
-    private MerchantMasterRepository merchantRepository;
-    @Autowired
-    private CustomerDepositItemsRepository itemsRepository;
-    @Autowired
-    private MerchantItemEntryRepository merchantItemEntryRepository;
-    @Autowired
-    private ItemPriceHistoryRepository priceRepository;
-    @Autowired
-    private MerchantItemTransactionRepository transactionRepository;
+    private final MerchantMasterRepository merchantRepository;
+    private final CustomerDepositItemsRepository itemsRepository;
+    private final MerchantItemEntryRepository merchantItemEntryRepository;
+    private final ItemPriceHistoryRepository priceRepository;
+    private final MerchantItemTransactionRepository transactionRepository;
 
     public List<MerchantMaster> getAllMerchants() {
         return merchantRepository.findAll();
@@ -92,7 +88,7 @@ public class MerchantService {
     @Transactional
     public MerchantMaster updateMerchant(Integer id, MerchantMaster merchantDetails) {
         MerchantMaster merchant = merchantRepository.findById(java.util.Objects.requireNonNull(id))
-                .orElseThrow(() -> new RuntimeException("Merchant not found"));
+                .orElseThrow(() -> new RuntimeException(MSG_MERCHANT_NOT_FOUND));
 
         merchant.setMerchantName(merchantDetails.getMerchantName());
         merchant.setMerchantType(merchantDetails.getMerchantType());
@@ -112,7 +108,7 @@ public class MerchantService {
     @Transactional
     public void deleteMerchant(Integer id) {
         MerchantMaster merchant = merchantRepository.findById(java.util.Objects.requireNonNull(id))
-                .orElseThrow(() -> new RuntimeException("Merchant not found"));
+                .orElseThrow(() -> new RuntimeException(MSG_MERCHANT_NOT_FOUND));
 
         // Soft delete
         merchant.setIsActive(false);
@@ -127,7 +123,7 @@ public class MerchantService {
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
         MerchantMaster merchant = merchantRepository.findById(java.util.Objects.requireNonNull(request.getMerchantId()))
-                .orElseThrow(() -> new RuntimeException("Merchant not found"));
+                .orElseThrow(() -> new RuntimeException(MSG_MERCHANT_NOT_FOUND));
 
         // Update Item Status
         item.setItemStatus("PLEDGED_TO_MERCHANT");
@@ -160,12 +156,12 @@ public class MerchantService {
     @Transactional
     public void updateMerchantEntry(Integer entryId, B2BTransferRequest request) {
         MerchantItemEntry entry = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
-                .orElseThrow(() -> new RuntimeException("Entry not found"));
+                .orElseThrow(() -> new RuntimeException(MSG_ENTRY_NOT_FOUND));
 
         if (request.getMerchantId() != null) {
             MerchantMaster merchant = merchantRepository
                     .findById(java.util.Objects.requireNonNull(request.getMerchantId()))
-                    .orElseThrow(() -> new RuntimeException("Merchant not found"));
+                    .orElseThrow(() -> new RuntimeException(MSG_MERCHANT_NOT_FOUND));
             entry.setMerchant(merchant);
         }
 
@@ -188,104 +184,20 @@ public class MerchantService {
                 .collect(Collectors.toMap(p -> p.getItem().getId(), p -> p));
 
         return merchantItemEntryRepository.findByEntryStatus("ACTIVE").stream()
-                .map(e -> {
-                    MerchantItemDTO dto = new MerchantItemDTO();
-                    dto.setEntryId(e.getId());
-                    dto.setMerchantId(e.getMerchant().getId());
-                    dto.setMerchantName(e.getMerchant().getMerchantName());
-                    dto.setDepositItemId(e.getCustomerDepositItem().getId());
-                    dto.setTokenNo(e.getCustomerDepositItem().getDepositEntry().getTokenNo());
-                    dto.setCustomerName(e.getCustomerDepositItem().getDepositEntry().getCustomer().getCustomerName());
-                    dto.setItemName(e.getCustomerDepositItem().getItem().getItemName());
-                    dto.setWeight(e.getCustomerDepositItem().getWeightReceived());
-                    dto.setFineWeight(e.getCustomerDepositItem().getFineWeight());
-                    dto.setEntryDate(e.getEntryDate());
-                    dto.setInterestRate(e.getInterestRate());
-                    dto.setPrincipalAmount(e.getPrincipalAmount());
-                    dto.setStatus(e.getEntryStatus());
-
-                    // Fetch Transactions to calc totals
-                    List<MerchantItemTransaction> txns = transactionRepository.findByMerchantItemEntryId(e.getId());
-                    BigDecimal principalPaid = txns.stream()
-                            .filter(t -> "PRINCIPAL_PAYMENT".equals(t.getTransactionType()))
-                            .map(MerchantItemTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-                    BigDecimal interestPaid = txns.stream()
-                            .filter(t -> "INTEREST_PAYMENT".equals(t.getTransactionType()))
-                            .map(MerchantItemTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                    dto.setTotalPrincipalPaid(principalPaid);
-                    dto.setTotalInterestPaid(interestPaid);
-
-                    // Calculate Financials: Interest and Total
-                    BigDecimal amount = e.getPrincipalAmount() != null ? e.getPrincipalAmount() : BigDecimal.ZERO;
-                    BigDecimal rate = e.getInterestRate() != null ? e.getInterestRate() : BigDecimal.ZERO;
-
-                    // Days elapsed
-                    Period period = Period.between(e.getEntryDate(), LocalDate.now());
-                    int totalMonths = (period.getYears() * 12) + period.getMonths() + 1;
-
-                    BigDecimal interestAccrued = amount.multiply(rate)
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
-                            .multiply(BigDecimal.valueOf(totalMonths));
-
-                    dto.setMonthsDuration(totalMonths);
-                    dto.setAccruedInterest(interestAccrued);
-                    dto.setMonthlyInterestAmount(
-                            amount.multiply(rate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
-
-                    // Business Profitability (Interest Margin)
-                    BigDecimal custRate = e.getCustomerDepositItem().getDepositEntry().getTotalInterestRate();
-                    BigDecimal custMonthlyInt = amount.multiply(custRate != null ? custRate : BigDecimal.ZERO)
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                    dto.setCustomerInterestRate(custRate);
-                    dto.setCustomerMonthlyInterest(custMonthlyInt);
-                    dto.setNetMonthlyMargin(custMonthlyInt.subtract(dto.getMonthlyInterestAmount()));
-
-                    // Total Owed = (Current Principal + Accrued Interest) - Interest Paid
-                    // Usually "Owed" means what is left to pay to clear the debt.
-                    // If principal was already reduced, 'amount' is current principal.
-                    // So we just need to subtract Paid Interest from Accrued Interest?
-                    // Yes: Remaining Owed = Current Principal + (Total Accrued - Total Paid)
-
-                    BigDecimal netInterest = interestAccrued.subtract(interestPaid);
-                    if (netInterest.compareTo(BigDecimal.ZERO) < 0)
-                        netInterest = BigDecimal.ZERO; // Should not happen ideally unless overpaid
-
-                    dto.setTotalOwed(amount.add(netInterest));
-
-                    // Calculate Value
-                    ItemPriceHistory latestPrice = latestPricesMap.get(e.getCustomerDepositItem().getItem().getId());
-                    if (latestPrice != null) {
-                        BigDecimal unitQty = e.getCustomerDepositItem().getItem().getUnitQuantity();
-                        BigDecimal unitInGram = (e.getCustomerDepositItem().getItem().getUnit() != null)
-                                ? e.getCustomerDepositItem().getItem().getUnit().getUnitInGram()
-                                : BigDecimal.ONE;
-
-                        BigDecimal baseWeightInGrams = unitQty.multiply(unitInGram);
-
-                        if (baseWeightInGrams.compareTo(BigDecimal.ZERO) > 0) {
-                            BigDecimal itemValue = e.getCustomerDepositItem().getFineWeight()
-                                    .divide(baseWeightInGrams, 6, RoundingMode.HALF_UP)
-                                    .multiply(latestPrice.getPrice());
-                            dto.setCurrentAssetValue(itemValue.setScale(2, RoundingMode.HALF_UP));
-                        }
-                    }
-
-                    return dto;
-                })
+                .map(e -> mapToMerchantItemDTO(e, latestPricesMap.get(e.getCustomerDepositItem().getItem().getId())))
                 .toList();
     }
 
     @Transactional
     public void addTransaction(Integer entryId, RedemptionRequest request) {
         MerchantItemEntry entry = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
-                .orElseThrow(() -> new RuntimeException("Entry not found"));
+                .orElseThrow(() -> new RuntimeException(MSG_ENTRY_NOT_FOUND));
 
         // 1. Handle Principal Payment
         if (request.getPrincipalPaid() != null && request.getPrincipalPaid().compareTo(BigDecimal.ZERO) > 0) {
             MerchantItemTransaction txn = new MerchantItemTransaction();
             txn.setMerchantItemEntry(entry);
-            txn.setTransactionType("PRINCIPAL_PAYMENT");
+            txn.setTransactionType(TX_PRINCIPAL_PAYMENT);
             txn.setAmount(request.getPrincipalPaid());
             txn.setTransactionDate(LocalDate.now());
             txn.setDescription(request.getNotes());
@@ -302,7 +214,7 @@ public class MerchantService {
         if (request.getInterestPaid() != null && request.getInterestPaid().compareTo(BigDecimal.ZERO) > 0) {
             MerchantItemTransaction txn = new MerchantItemTransaction();
             txn.setMerchantItemEntry(entry);
-            txn.setTransactionType("INTEREST_PAYMENT");
+            txn.setTransactionType(TX_INTEREST_PAYMENT);
             txn.setAmount(request.getInterestPaid());
             txn.setTransactionDate(LocalDate.now());
             txn.setDescription(request.getNotes());
@@ -317,13 +229,13 @@ public class MerchantService {
     @Transactional
     public void returnFromMerchant(Integer entryId, RedemptionRequest request) {
         MerchantItemEntry entry = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
-                .orElseThrow(() -> new RuntimeException("Entry not found"));
+                .orElseThrow(() -> new RuntimeException(MSG_ENTRY_NOT_FOUND));
 
         // 1. Record Interest Payment if any
         if (request.getInterestPaid() != null && request.getInterestPaid().compareTo(BigDecimal.ZERO) > 0) {
             MerchantItemTransaction txn = new MerchantItemTransaction();
             txn.setMerchantItemEntry(entry);
-            txn.setTransactionType("INTEREST_PAYMENT");
+            txn.setTransactionType(TX_INTEREST_PAYMENT);
             txn.setAmount(request.getInterestPaid());
             txn.setTransactionDate(LocalDate.now());
             txn.setDescription(request.getNotes() != null ? request.getNotes() : "Interest Settled on Return");
@@ -358,11 +270,34 @@ public class MerchantService {
     @Transactional(readOnly = true)
     public MerchantEntryDetailsDTO getMerchantEntryDetails(Integer entryId) {
         MerchantItemEntry e = merchantItemEntryRepository.findById(java.util.Objects.requireNonNull(entryId))
-                .orElseThrow(() -> new RuntimeException("Entry not found"));
+                .orElseThrow(() -> new RuntimeException(MSG_ENTRY_NOT_FOUND));
 
         MerchantEntryDetailsDTO details = new MerchantEntryDetailsDTO();
 
-        // 1. Build Summary (Same logic as list view)
+        // Asset Value (Simplified: fetch latest price for this item only)
+        ItemPriceHistory latestPrice = priceRepository
+                .findTopByItem_IdOrderByEffectiveDateDesc(e.getCustomerDepositItem().getItem().getId());
+
+        details.setSummary(mapToMerchantItemDTO(e, latestPrice));
+
+        // 2. Map Transactions
+        List<MerchantTransactionDTO> txnDtos = transactionRepository.findByMerchantItemEntryId(e.getId()).stream()
+                .map(t -> {
+                    MerchantTransactionDTO td = new MerchantTransactionDTO();
+                    td.setId(t.getId());
+                    td.setTransactionType(t.getTransactionType());
+                    td.setAmount(t.getAmount());
+                    td.setTransactionDate(t.getTransactionDate());
+                    td.setDescription(t.getDescription());
+                    return td;
+                }).toList();
+
+        details.setTransactions(txnDtos);
+
+        return details;
+    }
+
+    private MerchantItemDTO mapToMerchantItemDTO(MerchantItemEntry e, ItemPriceHistory latestPrice) {
         MerchantItemDTO dto = new MerchantItemDTO();
         dto.setEntryId(e.getId());
         dto.setMerchantId(e.getMerchant().getId());
@@ -379,19 +314,19 @@ public class MerchantService {
         dto.setStatus(e.getEntryStatus());
         dto.setNotes(e.getNotes());
 
-        // Transactions
+        // Fetch Transactions to calc totals
         List<MerchantItemTransaction> txns = transactionRepository.findByMerchantItemEntryId(e.getId());
         BigDecimal principalPaid = txns.stream()
-                .filter(t -> "PRINCIPAL_PAYMENT".equals(t.getTransactionType()))
+                .filter(t -> TX_PRINCIPAL_PAYMENT.equals(t.getTransactionType()))
                 .map(MerchantItemTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal interestPaid = txns.stream()
-                .filter(t -> "INTEREST_PAYMENT".equals(t.getTransactionType()))
+                .filter(t -> TX_INTEREST_PAYMENT.equals(t.getTransactionType()))
                 .map(MerchantItemTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         dto.setTotalPrincipalPaid(principalPaid);
         dto.setTotalInterestPaid(interestPaid);
 
-        // Financials
+        // Calculate Financials: Interest and Total
         BigDecimal amount = e.getPrincipalAmount() != null ? e.getPrincipalAmount() : BigDecimal.ZERO;
         BigDecimal rate = e.getInterestRate() != null ? e.getInterestRate() : BigDecimal.ZERO;
 
@@ -404,16 +339,24 @@ public class MerchantService {
 
         dto.setMonthsDuration(totalMonths);
         dto.setAccruedInterest(interestAccrued);
+        dto.setMonthlyInterestAmount(
+                amount.multiply(rate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+
+        // Business Profitability (Interest Margin)
+        BigDecimal custRate = e.getCustomerDepositItem().getDepositEntry().getTotalInterestRate();
+        BigDecimal custMonthlyInt = amount.multiply(custRate != null ? custRate : BigDecimal.ZERO)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        dto.setCustomerInterestRate(custRate);
+        dto.setCustomerMonthlyInterest(custMonthlyInt);
+        dto.setNetMonthlyMargin(custMonthlyInt.subtract(dto.getMonthlyInterestAmount()));
 
         BigDecimal netInterest = interestAccrued.subtract(interestPaid);
         if (netInterest.compareTo(BigDecimal.ZERO) < 0)
             netInterest = BigDecimal.ZERO;
+
         dto.setTotalOwed(amount.add(netInterest));
 
-        // Asset Value (Simplified: fetch latest price for this item only)
-        ItemPriceHistory latestPrice = priceRepository
-                .findTopByItem_IdOrderByEffectiveDateDesc(e.getCustomerDepositItem().getItem().getId());
-
+        // Asset Value
         if (latestPrice != null) {
             BigDecimal unitQty = e.getCustomerDepositItem().getItem().getUnitQuantity();
             BigDecimal unitInGram = (e.getCustomerDepositItem().getItem().getUnit() != null)
@@ -427,22 +370,6 @@ public class MerchantService {
                 dto.setCurrentAssetValue(itemValue.setScale(2, RoundingMode.HALF_UP));
             }
         }
-
-        details.setSummary(dto);
-
-        // 2. Map Transactions
-        List<MerchantTransactionDTO> txnDtos = txns.stream().map(t -> {
-            MerchantTransactionDTO td = new MerchantTransactionDTO();
-            td.setId(t.getId());
-            td.setTransactionType(t.getTransactionType());
-            td.setAmount(t.getAmount());
-            td.setTransactionDate(t.getTransactionDate());
-            td.setDescription(t.getDescription());
-            return td;
-        }).collect(Collectors.toList());
-
-        details.setTransactions(txnDtos);
-
-        return details;
+        return dto;
     }
 }

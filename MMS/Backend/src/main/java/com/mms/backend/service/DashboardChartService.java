@@ -73,11 +73,11 @@ public class DashboardChartService {
 
         if (com.mms.backend.util.Constants.PERIOD_MONTH.equals(period)) {
             int months = duration != null ? duration : 12;
-            startDate = endDate.minusMonths(months - 1).withDayOfMonth(1);
+            startDate = endDate.minusMonths(months - 1L).withDayOfMonth(1);
             format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_MONTH;
         } else if (com.mms.backend.util.Constants.PERIOD_YEAR.equals(period)) {
             int years = duration != null ? duration : 5;
-            startDate = endDate.minusYears(years - 1).withDayOfYear(1);
+            startDate = endDate.minusYears(years - 1L).withDayOfYear(1);
             format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_YEAR;
         } else if (com.mms.backend.util.Constants.PERIOD_TILL_DATE.equals(period)) {
             startDate = depositRepository.findMinDepositDateByEntryStatus(com.mms.backend.util.Constants.STATUS_ACTIVE);
@@ -86,7 +86,7 @@ public class DashboardChartService {
             format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_MONTH;
         } else {
             int days = duration != null ? duration : 7;
-            startDate = endDate.minusDays(days - 1);
+            startDate = endDate.minusDays(days - 1L);
             format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_LABEL;
         }
 

@@ -108,7 +108,7 @@ export class MmsMerchantComponent implements OnInit {
     }
 
     get hasSelectedItems(): boolean {
-        return Object.values(this.selectedItems).some(isSelected => isSelected);
+        return Object.values(this.selectedItems).some(Boolean);
     }
 
     get canDeleteSelectedMerchant(): boolean {
@@ -169,10 +169,10 @@ export class MmsMerchantComponent implements OnInit {
     ledgerSummary: any = {};
 
     constructor(
-        private mmsService: MmsService,
-        private route: ActivatedRoute,
-        private router: Router,
-        private toastService: ToastService
+        private readonly mmsService: MmsService,
+        private readonly route: ActivatedRoute,
+        private readonly router: Router,
+        private readonly toastService: ToastService
     ) { }
 
     ngOnInit() {
@@ -206,9 +206,9 @@ export class MmsMerchantComponent implements OnInit {
             const matchName = this.itemFilters.customerName ? i.customerName.toLowerCase().includes(this.itemFilters.customerName.toLowerCase()) : true;
             const matchToken = this.itemFilters.tokenNo ? i.tokenNo?.toString().includes(this.itemFilters.tokenNo) : true;
             const matchItem = this.itemFilters.itemName ? i.itemName === this.itemFilters.itemName : true;
-            const matchWeight = this.itemFilters.weight ? (i.weight || 0) >= parseFloat(this.itemFilters.weight) : true;
-            const matchFine = this.itemFilters.fineWeight ? (i.fineWeight || 0) >= parseFloat(this.itemFilters.fineWeight) : true;
-            const matchAsset = this.itemFilters.assetValue ? (i.currentAssetValue || 0) >= parseFloat(this.itemFilters.assetValue) : true;
+            const matchWeight = this.itemFilters.weight ? (i.weight || 0) >= Number.parseFloat(this.itemFilters.weight) : true;
+            const matchFine = this.itemFilters.fineWeight ? (i.fineWeight || 0) >= Number.parseFloat(this.itemFilters.fineWeight) : true;
+            const matchAsset = this.itemFilters.assetValue ? (i.currentAssetValue || 0) >= Number.parseFloat(this.itemFilters.assetValue) : true;
             const matchStatus = this.itemFilters.status ? i.itemStatus.includes(this.itemFilters.status) : true;
             return matchName && matchToken && matchItem && matchWeight && matchFine && matchAsset && matchStatus;
         });
@@ -243,10 +243,10 @@ export class MmsMerchantComponent implements OnInit {
             const matchMerchant = this.pledgeFilters.merchantName ? p.merchantName.toLowerCase().includes(this.pledgeFilters.merchantName.toLowerCase()) : true;
             const matchCustomer = this.pledgeFilters.customerName ? p.customerName.toLowerCase().includes(this.pledgeFilters.customerName.toLowerCase()) : true;
             const matchItem = this.pledgeFilters.itemName ? p.itemName.toLowerCase().includes(this.pledgeFilters.itemName.toLowerCase()) : true;
-            const matchWeight = this.pledgeFilters.weight ? (p.weight || 0) >= parseFloat(this.pledgeFilters.weight) : true;
-            const matchRate = this.pledgeFilters.interestRate ? (p.interestRate || 0) >= parseFloat(this.pledgeFilters.interestRate) : true;
-            const matchAsset = this.pledgeFilters.assetValue ? (p.currentAssetValue || 0) >= parseFloat(this.pledgeFilters.assetValue) : true;
-            const matchOwed = this.pledgeFilters.totalOwed ? (p.totalOwed || 0) >= parseFloat(this.pledgeFilters.totalOwed) : true;
+            const matchWeight = this.pledgeFilters.weight ? (p.weight || 0) >= Number.parseFloat(this.pledgeFilters.weight) : true;
+            const matchRate = this.pledgeFilters.interestRate ? (p.interestRate || 0) >= Number.parseFloat(this.pledgeFilters.interestRate) : true;
+            const matchAsset = this.pledgeFilters.assetValue ? (p.currentAssetValue || 0) >= Number.parseFloat(this.pledgeFilters.assetValue) : true;
+            const matchOwed = this.pledgeFilters.totalOwed ? (p.totalOwed || 0) >= Number.parseFloat(this.pledgeFilters.totalOwed) : true;
             return matchToken && matchMerchant && matchCustomer && matchItem && matchWeight && matchRate && matchAsset && matchOwed;
         });
 
@@ -392,8 +392,8 @@ export class MmsMerchantComponent implements OnInit {
         }
 
         const itemIds = Object.keys(this.selectedItems)
-            .filter(id => this.selectedItems[parseInt(id)])
-            .map(id => parseInt(id));
+            .filter(id => this.selectedItems[Number.parseInt(id)])
+            .map(id => Number.parseInt(id));
 
         if (itemIds.length === 0) {
             this.toastService.error('Please select at least one item');
@@ -455,8 +455,8 @@ export class MmsMerchantComponent implements OnInit {
 
         // Calculate exact required amounts with proper rounding (Same to Same fix)
         this.redeemForm = {
-            principalPaid: parseFloat((pledge.principalAmount || 0).toFixed(2)),
-            interestPaid: parseFloat((Math.max(0, (pledge.accruedInterest || 0) - (pledge.totalInterestPaid || 0))).toFixed(2)),
+            principalPaid: Number.parseFloat((pledge.principalAmount || 0).toFixed(2)),
+            interestPaid: Number.parseFloat((Math.max(0, (pledge.accruedInterest || 0) - (pledge.totalInterestPaid || 0))).toFixed(2)),
             totalPaid: 0,
             notes: 'Full Redemption of pledged item'
         };
@@ -495,7 +495,6 @@ export class MmsMerchantComponent implements OnInit {
     submitTransaction() {
         if (!this.selectedPledgeForTransaction) return;
 
-        const pledge = this.selectedPledgeForTransaction;
         const amount = Number(this.transactionForm.amount) || 0;
 
         if (amount <= 0 && !this.transactionForm.notes) { // Allow 0 if just notes? No, payment usually requires amount.
@@ -546,7 +545,6 @@ export class MmsMerchantComponent implements OnInit {
         const rate = data.summary.interestRate;
         const transactions = data.transactions || [];
         // Determine duration: either explicit or until today
-        const today = new Date();
         const months = data.summary.monthsDuration || 1;
 
         // 1. Create Event Stream

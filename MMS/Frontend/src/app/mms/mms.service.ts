@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import { REST_URLS } from './shared/resturl';
 
@@ -95,19 +95,21 @@ export interface DashboardStats {
     totalInterestAccrued: number;
     todayPurchase: number;
     todaySell: number;
+    oldestActiveEntryDate?: string;
+    latestActiveEntryDate?: string;
 }
 
 @Injectable({
     providedIn: 'root'
 })
 export class MmsService {
-    private pricesSubject = new BehaviorSubject<any[]>([]);
+    private readonly pricesSubject = new BehaviorSubject<any[]>([]);
     public prices$ = this.pricesSubject.asObservable();
 
-    private configsSubject = new BehaviorSubject<ConfigProperty[]>([]);
+    private readonly configsSubject = new BehaviorSubject<ConfigProperty[]>([]);
     public configs$ = this.configsSubject.asObservable();
 
-    constructor(private http: HttpClient) {
+    constructor(private readonly http: HttpClient) {
         this.refreshLatestPrices();
         this.refreshConfigs();
     }

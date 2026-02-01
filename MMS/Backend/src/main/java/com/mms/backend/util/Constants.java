@@ -64,4 +64,7 @@ public final class Constants {
     public static final String PERIOD_YEAR = "YEAR";
     public static final String PERIOD_DAY = "DAY";
     public static final String PERIOD_TILL_DATE = "TILL_DATE";
+
+    public static final String MSG_MERCHANT_NOT_FOUND = "Merchant not found";
+    public static final String MSG_ENTRY_NOT_FOUND = "Entry not found";
 }
