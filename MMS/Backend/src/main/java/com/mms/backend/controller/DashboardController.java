@@ -117,8 +117,9 @@ public class DashboardController {
     @PostMapping("/chart")
     public ResponseEntity<Object> getChartData(@RequestBody CommonRequest request) {
         try {
-            String period = request.getPeriod() != null ? request.getPeriod() : "DAY";
-            return ResponseEntity.ok(chartService.getChartData(period));
+            String period = request.getPeriod() != null ? request.getPeriod() : "WEEK";
+            Integer duration = request.getDuration();
+            return ResponseEntity.ok(chartService.getChartData(period, duration));
         } catch (Exception e) {
             log.error("Error fetching chart data", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching chart data");

@@ -322,8 +322,8 @@ export class MmsService {
         return this.http.post<any>(REST_URLS.MERCHANT_ENTRIES_DETAILS, { id: entryId });
     }
 
-    getChartData(period: string): Observable<any[]> {
-        return this.http.post<any[]>(REST_URLS.DASHBOARD_CHART, { period });
+    getChartData(period: string, duration?: number): Observable<any[]> {
+        return this.http.post<any[]>(REST_URLS.DASHBOARD_CHART, { period, duration });
     }
 
     seedData(count: number): Observable<any> {

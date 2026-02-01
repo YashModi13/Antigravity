@@ -17,4 +17,6 @@ public class DashboardStatsDTO {
     private BigDecimal totalInterestAccrued;
     private BigDecimal todayPurchase;
     private BigDecimal todaySell;
+    private java.time.LocalDate oldestActiveEntryDate;
+    private java.time.LocalDate latestActiveEntryDate;
 }

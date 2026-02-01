@@ -55,10 +55,13 @@ public final class Constants {
     // Date Formats
     public static final String DATE_FORMAT_FILE_NAME = "yyyy-MM-dd_HH-mm-ss";
     public static final String DATE_FORMAT_CHART_LABEL = "dd MMM";
+    public static final String DATE_FORMAT_CHART_MONTH = "MMM yy";
+    public static final String DATE_FORMAT_CHART_YEAR = "yyyy";
 
     // Chart Periods
     public static final String PERIOD_WEEK = "WEEK";
     public static final String PERIOD_MONTH = "MONTH";
     public static final String PERIOD_YEAR = "YEAR";
     public static final String PERIOD_DAY = "DAY";
+    public static final String PERIOD_TILL_DATE = "TILL_DATE";
 }

@@ -30,4 +30,10 @@ public interface CustomerDepositEntryRepository extends JpaRepository<CustomerDe
 
         @Query("SELECT MAX(c.tokenNo) FROM CustomerDepositEntry c")
         Integer findMaxTokenNo();
+
+        @Query("SELECT MIN(c.depositDate) FROM CustomerDepositEntry c WHERE c.entryStatus = :status")
+        java.time.LocalDate findMinDepositDateByEntryStatus(String status);
+
+        @Query("SELECT MAX(c.depositDate) FROM CustomerDepositEntry c WHERE c.entryStatus = :status")
+        java.time.LocalDate findMaxDepositDateByEntryStatus(String status);
 }

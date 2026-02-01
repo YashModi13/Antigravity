@@ -397,9 +397,6 @@ public class MerchantService {
 
         Period period = Period.between(e.getEntryDate(), LocalDate.now());
         int totalMonths = (period.getYears() * 12) + period.getMonths() + 1;
-        // if (period.getDays() > 0 || (totalMonths == 0)) {
-        // totalMonths++;
-        // }
 
         BigDecimal interestAccrued = amount.multiply(rate)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)

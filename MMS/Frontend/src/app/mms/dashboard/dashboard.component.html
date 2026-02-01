@@ -84,10 +84,59 @@
     </div>
 
     <!-- Chart Section -->
+    <div class="col-xl-12" *ngIf="stats.oldestActiveEntryDate || stats.latestActiveEntryDate">
+        <div class="alert alert-light border border-primary shadow-sm mb-3 py-2 d-flex align-items-center">
+            <i class="feather icon-calendar f-20 text-primary me-3"></i>
+            <div>
+                <span class="small fw-bold text-muted text-uppercase me-2">Active Timeline:</span>
+                <span class="fw-bold text-primary">
+                    {{ stats.oldestActiveEntryDate | date:'mediumDate' }}
+                </span>
+                <span class="mx-2 text-muted">to</span>
+                <span class="fw-bold text-primary">
+                    {{ (stats.latestActiveEntryDate | date:'mediumDate') || 'Today' }}
+                </span>
+            </div>
+        </div>
+    </div>
+
     <div class="col-xl-12">
         <app-card cardTitle="Business Trends: Active vs Closed" [options]="false">
             <!-- Controls -->
-            <div class="mb-3 d-flex justify-content-end">
+            <div class="mb-3 d-flex justify-content-end align-items-center">
+                <!-- Sub Filter -->
+                <div class="me-3 d-flex align-items-center" *ngIf="selectedPeriod !== 'TILL_DATE'">
+                    <span class="small fw-bold text-muted me-2" [ngSwitch]="selectedPeriod">
+                        <span *ngSwitchCase="'WEEK'">Days:</span>
+                        <span *ngSwitchCase="'MONTH'">Months:</span>
+                        <span *ngSwitchCase="'YEAR'">Years:</span>
+                    </span>
+                    <select class="form-select form-select-sm" style="width: auto;" [(ngModel)]="selectedDuration"
+                        (change)="loadChart()">
+                        <ng-container [ngSwitch]="selectedPeriod">
+                            <ng-container *ngSwitchCase="'WEEK'">
+                                <option [value]="7">7 Days</option>
+                                <option [value]="15">15 Days (2 Weeks)</option>
+                                <option [value]="30">30/31 Days (1 Month)</option>
+                                <option [value]="60">60 Days (2 Months)</option>
+                                <option [value]="90">90 Days (3 Months)</option>
+                            </ng-container>
+                            <ng-container *ngSwitchCase="'MONTH'">
+                                <option [value]="12">12 Months (1 Year)</option>
+                                <option [value]="24">24 Months (2 Years)</option>
+                                <option [value]="36">36 Months (3 Years)</option>
+                            </ng-container>
+                            <ng-container *ngSwitchCase="'YEAR'">
+                                <option [value]="5">5 Years</option>
+                                <option [value]="10">10 Years</option>
+                                <option [value]="15">15 Years</option>
+                                <option [value]="20">20 Years</option>
+                                <option [value]="25">25 Years</option>
+                            </ng-container>
+                        </ng-container>
+                    </select>
+                </div>
+
                 <fieldset class="btn-group border-0 p-0" aria-label="Select chart timeframe">
                     <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='WEEK'"
                         (click)="setPeriod('WEEK')">Week</button>
@@ -95,6 +144,9 @@
                         (click)="setPeriod('MONTH')">Month</button>
                     <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='YEAR'"
                         (click)="setPeriod('YEAR')">Year</button>
+                    <button type="button" class="btn btn-outline-secondary"
+                        [class.active]="selectedPeriod==='TILL_DATE'" (click)="setPeriod('TILL_DATE')">Till
+                        Date</button>
                 </fieldset>
             </div>
 

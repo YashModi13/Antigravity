@@ -36,6 +36,7 @@ export class MmsDashboardComponent implements OnInit {
     stats: any = {};
 
     selectedPeriod: string = 'WEEK';
+    selectedDuration: number = 7;
     chartOptions: Partial<ApexOptions> = {
         series: [],
         chart: {
@@ -152,11 +153,17 @@ export class MmsDashboardComponent implements OnInit {
 
     setPeriod(period: string) {
         this.selectedPeriod = period;
+        // Set Defaults
+        if (period === 'WEEK') this.selectedDuration = 7;
+        else if (period === 'MONTH') this.selectedDuration = 12;
+        else if (period === 'YEAR') this.selectedDuration = 5;
+        else if (period === 'TILL_DATE') this.selectedDuration = null;
+
         this.loadChart();
     }
 
     loadChart() {
-        this.mmsService.getChartData(this.selectedPeriod).subscribe((data) => {
+        this.mmsService.getChartData(this.selectedPeriod, this.selectedDuration).subscribe((data) => {
             this.updateChart(data);
         });
     }

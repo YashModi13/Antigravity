@@ -49,6 +49,11 @@ public class DashboardChartService {
 
         long closedCount = depositRepository.countByEntryStatus(com.mms.backend.util.Constants.STATUS_CLOSED);
 
+        LocalDate minDate = depositRepository
+                .findMinDepositDateByEntryStatus(com.mms.backend.util.Constants.STATUS_ACTIVE);
+        LocalDate maxDate = depositRepository
+                .findMaxDepositDateByEntryStatus(com.mms.backend.util.Constants.STATUS_ACTIVE);
+
         return DashboardStatsDTO.builder()
                 .totalActiveDeposits((long) summaries.size())
                 .totalClosedDeposits(closedCount)
@@ -56,35 +61,76 @@ public class DashboardChartService {
                 .totalInterestAccrued(totalInterest)
                 .todayPurchase(todayActiveBD) // Hijacking for Count
                 .todaySell(todayClosedBD) // Hijacking for Count
+                .oldestActiveEntryDate(minDate)
+                .latestActiveEntryDate(maxDate)
                 .build();
     }
 
-    public List<ChartDataDTO> getChartData(String period) {
+    public List<ChartDataDTO> getChartData(String period, Integer duration) {
         LocalDate endDate = LocalDate.now();
-        LocalDate startDate = calculateStartDate(period, endDate);
+        LocalDate startDate;
+        String format;
 
+        if (com.mms.backend.util.Constants.PERIOD_MONTH.equals(period)) {
+            int months = duration != null ? duration : 12;
+            startDate = endDate.minusMonths(months - 1).withDayOfMonth(1);
+            format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_MONTH;
+        } else if (com.mms.backend.util.Constants.PERIOD_YEAR.equals(period)) {
+            int years = duration != null ? duration : 5;
+            startDate = endDate.minusYears(years - 1).withDayOfYear(1);
+            format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_YEAR;
+        } else if (com.mms.backend.util.Constants.PERIOD_TILL_DATE.equals(period)) {
+            startDate = depositRepository.findMinDepositDateByEntryStatus(com.mms.backend.util.Constants.STATUS_ACTIVE);
+            if (startDate == null)
+                startDate = endDate.minusMonths(11).withDayOfMonth(1);
+            format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_MONTH;
+        } else {
+            int days = duration != null ? duration : 7;
+            startDate = endDate.minusDays(days - 1);
+            format = com.mms.backend.util.Constants.DATE_FORMAT_CHART_LABEL;
+        }
+
+        Map<String, ChartDataDTO> map = initializeBuckets(startDate, endDate, period, format);
+        populateChartData(map, startDate, endDate, format);
+
+        return new ArrayList<>(map.values());
+    }
+
+    private Map<String, ChartDataDTO> initializeBuckets(LocalDate startDate, LocalDate endDate, String period,
+            String format) {
+        Map<String, ChartDataDTO> map = new LinkedHashMap<>();
+        LocalDate current = startDate;
+        while (!current.isAfter(endDate)) {
+            String label = current.format(DateTimeFormatter.ofPattern(format));
+            map.computeIfAbsent(label, k -> {
+                ChartDataDTO dto = new ChartDataDTO();
+                dto.setLabel(k);
+                dto.setPurchaseAmount(BigDecimal.ZERO);
+                dto.setSellAmount(BigDecimal.ZERO);
+                return dto;
+            });
+
+            if (com.mms.backend.util.Constants.PERIOD_MONTH.equals(period) ||
+                    com.mms.backend.util.Constants.PERIOD_TILL_DATE.equals(period)) {
+                current = current.plusMonths(1).withDayOfMonth(1);
+            } else if (com.mms.backend.util.Constants.PERIOD_YEAR.equals(period)) {
+                current = current.plusYears(1).withDayOfYear(1);
+            } else {
+                current = current.plusDays(1);
+            }
+        }
+        return map;
+    }
+
+    private void populateChartData(Map<String, ChartDataDTO> map, LocalDate startDate, LocalDate endDate,
+            String format) {
         List<com.mms.backend.entity.CustomerDepositTransaction> depositTxs = depositTxRepository
                 .findByTransactionDateBetween(startDate, endDate);
 
-        Map<LocalDate, ChartDataDTO> map = new TreeMap<>();
-
-        // Initialize Buckets
-        LocalDate current = startDate;
-        while (!current.isAfter(endDate)) {
-            ChartDataDTO dto = new ChartDataDTO();
-            dto.setLabel(current
-                    .format(DateTimeFormatter.ofPattern(com.mms.backend.util.Constants.DATE_FORMAT_CHART_LABEL)));
-            dto.setPurchaseAmount(BigDecimal.ZERO);
-            dto.setSellAmount(BigDecimal.ZERO);
-            map.put(current, dto);
-            current = current.plusDays(1);
-        }
-
-        // Fill Data from Deposit Transactions
         for (var tx : depositTxs) {
-            LocalDate date = tx.getTransactionDate();
-            if (map.containsKey(date)) {
-                ChartDataDTO dto = map.get(date);
+            String label = tx.getTransactionDate().format(DateTimeFormatter.ofPattern(format));
+            if (map.containsKey(label)) {
+                ChartDataDTO dto = map.get(label);
 
                 if (com.mms.backend.util.Constants.TX_INITIAL_MONEY.equals(tx.getTransactionType())) {
                     dto.setPurchaseAmount(dto.getPurchaseAmount().add(tx.getAmount()));
@@ -94,19 +140,6 @@ public class DashboardChartService {
                 }
             }
         }
-
-        return new ArrayList<>(map.values());
     }
 
-    private LocalDate calculateStartDate(String period, LocalDate endDate) {
-        if (com.mms.backend.util.Constants.PERIOD_WEEK.equals(period)) {
-            return endDate.minusWeeks(1);
-        } else if (com.mms.backend.util.Constants.PERIOD_MONTH.equals(period)) {
-            return endDate.minusMonths(1);
-        } else if (com.mms.backend.util.Constants.PERIOD_YEAR.equals(period)) {
-            return endDate.minusYears(1);
-        } else {
-            return endDate.minusDays(7);
-        }
-    }
 }
