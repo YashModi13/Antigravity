@@ -10,4 +10,6 @@ public interface CustomerDepositItemsRepository extends JpaRepository<CustomerDe
     List<CustomerDepositItems> findByDepositEntry_Id(Integer depositEntryId);
 
     List<CustomerDepositItems> findByItemStatus(String itemStatus);
+
+    List<CustomerDepositItems> findByItemStatusIn(List<String> statuses);
 }

@@ -594,8 +594,9 @@
                                 Status</label>
                             <div class="d-flex align-items-center mt-2">
                                 <div class="form-check form-switch custom-switch-lg">
-                                    <input class="form-check-input" type="checkbox" id="editKycVerified"
-                                        [(ngModel)]="editingCustomer.kycVerified" name="editKycVerified">
+                                    <input class="form-check-input" type="checkbox" id="editKycVerified" role="switch"
+                                        [(ngModel)]="editingCustomer.kycVerified" name="editKycVerified"
+                                        [attr.aria-checked]="editingCustomer.kycVerified">
                                     <label class="form-check-label fw-bold text-dark ms-2" for="editKycVerified">
                                         {{ editingCustomer.kycVerified ? 'Verified' : 'Pending Verification' }}
                                     </label>

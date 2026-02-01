@@ -1,5 +1,6 @@
 package com.mms.backend.entity;
 
+import static com.mms.backend.util.Constants.STATUS_ACTIVE;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -36,7 +37,7 @@ public class CustomerDepositItems {
     private BigDecimal fineWeight;
 
     @Column(name = "item_status", nullable = false, length = 30)
-    private String itemStatus = "DEPOSITED";
+    private String itemStatus = STATUS_ACTIVE;
 
     @Column(name = "item_description", columnDefinition = "TEXT")
     private String itemDescription;

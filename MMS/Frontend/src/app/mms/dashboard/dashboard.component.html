@@ -68,12 +68,14 @@
         <app-card cardTitle="Update Market Prices" [options]="false">
             <div class="row">
                 <div class="col-md-4 mb-3" *ngFor="let item of items">
-                    <label>{{ item.itemName }} Price (per {{ +item.unitQuantity === 1 ? '' :
+                    <label [for]="'priceInput_' + item.id">{{ item.itemName }} Price (per {{ +item.unitQuantity === 1 ?
+                        '' :
                         (+item.unitQuantity) }} {{
                         item.unit.unitName }})</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" [ngModel]="priceDisplay[item.id]"
-                            (input)="onPriceInput(item.id, $event)" placeholder="Enter new price">
+                        <input type="text" [id]="'priceInput_' + item.id" class="form-control"
+                            [ngModel]="priceDisplay[item.id]" (input)="onPriceInput(item.id, $event)"
+                            placeholder="Enter new price">
                         <button class="btn btn-primary" (click)="updatePrice(item.id)">Update</button>
                     </div>
                 </div>
@@ -86,14 +88,14 @@
         <app-card cardTitle="Business Trends: Active vs Closed" [options]="false">
             <!-- Controls -->
             <div class="mb-3 d-flex justify-content-end">
-                <div class="btn-group" role="group">
+                <fieldset class="btn-group border-0 p-0" aria-label="Select chart timeframe">
                     <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='WEEK'"
                         (click)="setPeriod('WEEK')">Week</button>
                     <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='MONTH'"
                         (click)="setPeriod('MONTH')">Month</button>
                     <button type="button" class="btn btn-outline-secondary" [class.active]="selectedPeriod==='YEAR'"
                         (click)="setPeriod('YEAR')">Year</button>
-                </div>
+                </fieldset>
             </div>
 
             <!-- Chart Container -->
@@ -105,9 +107,9 @@
                     [tooltip]="chartOptions.tooltip" [xaxis]="chartOptions.xaxis"></apx-chart>
             </div>
             <div *ngIf="!isChartLoaded" class="text-center p-4">
-                <div class="spinner-border text-primary" role="status">
+                <output class="spinner-border text-primary">
                     <span class="sr-only">Loading...</span>
-                </div>
+                </output>
             </div>
         </app-card>
     </div>

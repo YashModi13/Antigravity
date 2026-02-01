@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
-import { MmsService, DepositSummary, ItemMaster } from '../mms.service';
+import { MmsService, DepositSummary } from '../mms.service';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastService } from 'src/app/theme/shared/components/toast/toast.service';
 import { forkJoin, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 
 @Component({
@@ -45,6 +45,7 @@ export class MmsDepositsListComponent implements OnInit {
     // Filter Model
     filters = {
         id: '',
+        tokenNo: '',
         customerName: '',
         depositDate: '',
         months: '',
@@ -140,6 +141,7 @@ export class MmsDepositsListComponent implements OnInit {
     resetFilter() {
         this.filters = {
             id: '',
+            tokenNo: '',
             customerName: '',
             depositDate: '',
             months: '',
@@ -311,8 +313,8 @@ export class MmsDepositsListComponent implements OnInit {
         this.selectedPledgeForRedeem = pledge;
         // Default calculate: remaining principal and pending interest (Rounded to 2 decimals)
         this.redeemForm = {
-            principalPaid: parseFloat((pledge.principalAmount || 0).toFixed(2)),
-            interestPaid: parseFloat((Math.max(0, (pledge.accruedInterest || 0) - (pledge.totalInterestPaid || 0))).toFixed(2)),
+            principalPaid: Number.parseFloat((pledge.principalAmount || 0).toFixed(2)),
+            interestPaid: Number.parseFloat((Math.max(0, (pledge.accruedInterest || 0) - (pledge.totalInterestPaid || 0))).toFixed(2)),
             totalPaid: 0,
             notes: 'Redeemed during final settlement'
         };
@@ -348,7 +350,7 @@ export class MmsDepositsListComponent implements OnInit {
     updateSettlementAmount() {
         if (this.isFullPayment && this.ledgerSummary) {
             // Round to 2 decimal places to match UI display (Same to Same)
-            this.settlementAmount = parseFloat(this.ledgerSummary.total.toFixed(2));
+            this.settlementAmount = Number.parseFloat(this.ledgerSummary.total.toFixed(2));
         }
     }
 

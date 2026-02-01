@@ -85,25 +85,29 @@
             <div class="modal-body p-4 bg-light">
                 <div class="row g-3">
                     <div class="col-12">
-                        <label class="form-label small fw-bold text-muted text-uppercase">Property Key *</label>
-                        <input type="text" class="form-control" [(ngModel)]="currentConfig.propertyKey"
-                            [disabled]="isEdit" placeholder="e.g., business.name">
+                        <label class="form-label small fw-bold text-muted text-uppercase"
+                            for="propertyKeyInput">Property Key *</label>
+                        <input type="text" id="propertyKeyInput" class="form-control"
+                            [(ngModel)]="currentConfig.propertyKey" [disabled]="isEdit"
+                            placeholder="e.g., business.name">
                         <small class="text-muted" *ngIf="!isEdit">Unique identifier for this setting.</small>
                     </div>
                     <div class="col-12">
-                        <label class="form-label small fw-bold text-muted text-uppercase">Property Value *</label>
-                        <textarea class="form-control" rows="3" [(ngModel)]="currentConfig.propertyValue"
-                            placeholder="Enter value here..."></textarea>
+                        <label class="form-label small fw-bold text-muted text-uppercase"
+                            for="propertyValueInput">Property Value *</label>
+                        <textarea id="propertyValueInput" class="form-control" rows="3"
+                            [(ngModel)]="currentConfig.propertyValue" placeholder="Enter value here..."></textarea>
                     </div>
                     <div class="col-12">
-                        <label class="form-label small fw-bold text-muted text-uppercase">Description</label>
-                        <textarea class="form-control" rows="2" [(ngModel)]="currentConfig.description"
-                            placeholder="What is this setting for?"></textarea>
+                        <label class="form-label small fw-bold text-muted text-uppercase"
+                            for="propertyDescInput">Description</label>
+                        <textarea id="propertyDescInput" class="form-control" rows="2"
+                            [(ngModel)]="currentConfig.description" placeholder="What is this setting for?"></textarea>
                     </div>
                     <div class="col-12">
                         <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" id="isActiveSwitch"
-                                [(ngModel)]="currentConfig.isActive">
+                            <input class="form-check-input" type="checkbox" id="isActiveSwitch" role="switch"
+                                [(ngModel)]="currentConfig.isActive" [attr.aria-checked]="!!currentConfig.isActive">
                             <label class="form-check-label fw-bold" for="isActiveSwitch">Active Status</label>
                         </div>
                     </div>
@@ -153,7 +157,8 @@
                             <tr *ngFor="let item of differenceConfigs">
                                 <td class="ps-4">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" [(ngModel)]="item.selected">
+                                        <input class="form-check-input" type="checkbox" [(ngModel)]="item.selected"
+                                            [attr.aria-label]="'Select ' + item.key">
                                     </div>
                                 </td>
                                 <td>

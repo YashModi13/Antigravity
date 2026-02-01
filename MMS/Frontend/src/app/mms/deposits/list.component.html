@@ -3,9 +3,9 @@
         <app-card cardTitle="All Active Deposits" cardClass="Recent-Users table-card" blockClass="p-0">
             <div class="row m-3 align-items-center">
                 <div class="col-md-auto">
-                    <label class="me-2">Show</label>
-                    <select class="form-select form-select-sm d-inline-block w-auto" [(ngModel)]="pageSize"
-                        (change)="onPageSizeChange()">
+                    <label class="me-2" for="pageSizeSelect">Show</label>
+                    <select id="pageSizeSelect" class="form-select form-select-sm d-inline-block w-auto"
+                        [(ngModel)]="pageSize" (change)="onPageSizeChange()">
                         <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
                     </select>
                 </div>
@@ -21,47 +21,64 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th (click)="toggleSort('depositId')" style="cursor: pointer;">
+                            <th (click)="toggleSort('depositId')" (keydown.enter)="toggleSort('depositId')" tabindex="0"
+                                style="cursor: pointer;">
                                 ID <i class="feather"
                                     [ngClass]="sortColumn === 'depositId' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('customerName')" style="cursor: pointer;">
+                            <th (click)="toggleSort('tokenNumber')" (keydown.enter)="toggleSort('tokenNumber')"
+                                tabindex="0" style="cursor: pointer;">
+                                Token No <i class="feather"
+                                    [ngClass]="sortColumn === 'tokenNumber' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
+                            <th (click)="toggleSort('customerName')" (keydown.enter)="toggleSort('customerName')"
+                                tabindex="0" style="cursor: pointer;">
                                 Customer <i class="feather"
                                     [ngClass]="sortColumn === 'customerName' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('depositDate')" style="cursor: pointer;">
+                            <th (click)="toggleSort('depositDate')" (keydown.enter)="toggleSort('depositDate')"
+                                tabindex="0" style="cursor: pointer;">
                                 Deposit Date <i class="feather"
                                     [ngClass]="sortColumn === 'depositDate' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('depositedMonths')" style="cursor: pointer;">
+                            <th (click)="toggleSort('depositedMonths')" (keydown.enter)="toggleSort('depositedMonths')"
+                                tabindex="0" style="cursor: pointer;">
                                 Months <i class="feather"
                                     [ngClass]="sortColumn === 'depositedMonths' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('totalLoanAmount')" style="cursor: pointer;">
+                            <th (click)="toggleSort('totalLoanAmount')" (keydown.enter)="toggleSort('totalLoanAmount')"
+                                tabindex="0" style="cursor: pointer;">
                                 Loan Amount <i class="feather"
                                     [ngClass]="sortColumn === 'totalLoanAmount' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('totalInterestAccrued')" style="cursor: pointer;">
+                            <th (click)="toggleSort('totalInterestAccrued')"
+                                (keydown.enter)="toggleSort('totalInterestAccrued')" tabindex="0"
+                                style="cursor: pointer;">
                                 Interest <i class="feather"
                                     [ngClass]="sortColumn === 'totalInterestAccrued' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('unpaidInterest')" style="cursor: pointer;">
+                            <th (click)="toggleSort('unpaidInterest')" (keydown.enter)="toggleSort('unpaidInterest')"
+                                tabindex="0" style="cursor: pointer;">
                                 Unpaid Int. <i class="feather"
                                     [ngClass]="sortColumn === 'unpaidInterest' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('currentAssetValue')" style="cursor: pointer;">
+                            <th (click)="toggleSort('currentAssetValue')"
+                                (keydown.enter)="toggleSort('currentAssetValue')" tabindex="0" style="cursor: pointer;">
                                 Asset Value <i class="feather"
                                     [ngClass]="sortColumn === 'currentAssetValue' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('profitLoss')" style="cursor: pointer;">
+                            <th (click)="toggleSort('profitLoss')" (keydown.enter)="toggleSort('profitLoss')"
+                                tabindex="0" style="cursor: pointer;">
                                 P/L <i class="feather"
                                     [ngClass]="sortColumn === 'profitLoss' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('monthsWait')" style="cursor: pointer;">
+                            <th (click)="toggleSort('monthsWait')" (keydown.enter)="toggleSort('monthsWait')"
+                                tabindex="0" style="cursor: pointer;">
                                 Months Wait <i class="feather"
                                     [ngClass]="sortColumn === 'monthsWait' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="toggleSort('status')" style="cursor: pointer;">
+                            <th (click)="toggleSort('status')" (keydown.enter)="toggleSort('status')" tabindex="0"
+                                style="cursor: pointer;">
                                 Status <i class="feather"
                                     [ngClass]="sortColumn === 'status' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
@@ -69,26 +86,37 @@
                         </tr>
                         <tr class="filter-row">
                             <td><input type="text" class="header-filter" placeholder="#" [(ngModel)]="filters.id"
-                                    (keyup)="applyFilter()"></td>
+                                    (keyup)="applyFilter()" aria-label="Filter by ID"></td>
+                            <td><input type="text" class="header-filter" placeholder="Token"
+                                    [(ngModel)]="filters.tokenNo" (keyup)="applyFilter()"
+                                    aria-label="Filter by Token No"></td>
                             <td><input type="text" class="header-filter" placeholder="Name"
-                                    [(ngModel)]="filters.customerName" (keyup)="applyFilter()"></td>
+                                    [(ngModel)]="filters.customerName" (keyup)="applyFilter()"
+                                    aria-label="Filter by Customer Name"></td>
                             <td><input type="text" class="header-filter" placeholder="YYYY-MM"
-                                    [(ngModel)]="filters.depositDate" (keyup)="applyFilter()"></td>
+                                    [(ngModel)]="filters.depositDate" (keyup)="applyFilter()"
+                                    aria-label="Filter by Deposit Date"></td>
                             <td><input type="number" class="header-filter" placeholder="Min"
-                                    [(ngModel)]="filters.months" (keyup)="applyFilter()"></td>
+                                    [(ngModel)]="filters.months" (keyup)="applyFilter()"
+                                    aria-label="Filter by Months (Min)"></td>
                             <td><input type="number" class="header-filter" placeholder="Min"
-                                    [(ngModel)]="filters.loanAmount" (keyup)="applyFilter()"></td>
+                                    [(ngModel)]="filters.loanAmount" (keyup)="applyFilter()"
+                                    aria-label="Filter by Loan Amount (Min)"></td>
                             <td><input type="number" class="header-filter" placeholder="Min"
-                                    [(ngModel)]="filters.interest" (keyup)="applyFilter()"></td>
+                                    [(ngModel)]="filters.interest" (keyup)="applyFilter()"
+                                    aria-label="Filter by Interest (Min)"></td>
                             <td><input type="number" class="header-filter" placeholder="Min"
-                                    [(ngModel)]="filters.unpaidInterest" (keyup)="applyFilter()"></td>
+                                    [(ngModel)]="filters.unpaidInterest" (keyup)="applyFilter()"
+                                    aria-label="Filter by Unpaid Interest (Min)"></td>
                             <td><input type="number" class="header-filter" placeholder="Min"
-                                    [(ngModel)]="filters.assetValue" (keyup)="applyFilter()"></td>
+                                    [(ngModel)]="filters.assetValue" (keyup)="applyFilter()"
+                                    aria-label="Filter by Asset Value (Min)"></td>
                             <td><input type="number" class="header-filter" placeholder="Min" [(ngModel)]="filters.pl"
-                                    (keyup)="applyFilter()"></td>
+                                    (keyup)="applyFilter()" aria-label="Filter by P/L (Min)"></td>
                             <td></td>
                             <td>
-                                <select class="header-filter" [(ngModel)]="filters.status" (change)="applyFilter()">
+                                <select class="header-filter" [(ngModel)]="filters.status" (change)="applyFilter()"
+                                    aria-label="Filter by Status">
                                     <option value="">All</option>
                                     <option value="SAFE">SAFE</option>
                                     <option value="RISK">RISK</option>
@@ -98,8 +126,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let d of filteredDeposits" [ngClass]="{'table-danger': d.status === 'RISK'}">
+                        <tr *ngFor="let d of filteredDeposits" [ngClass]="{'table-danger': d.status === 'RISK'}"
+                            (click)="viewDetails(d)" (keydown.enter)="viewDetails(d)" tabindex="0"
+                            style="cursor: pointer;" title="Click to view details">
                             <td>{{ d.depositId }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ d.tokenNumber }}</span></td>
                             <td>
                                 <h6 class="mb-1">{{ d.customerName }}</h6>
                             </td>
@@ -132,26 +163,31 @@
                                     d.status }}</span>
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm" role="group">
+                                <div class="btn-group btn-group-sm">
                                     <button type="button" class="btn btn-outline-primary"
-                                        (click)="editDeposit(d.depositId)" title="Edit">
+                                        (click)="editDeposit(d.depositId); $event.stopPropagation()"
+                                        (keydown.enter)="$event.stopPropagation()" title="Edit">
                                         <i class="feather icon-edit"></i>
                                     </button>
-                                    <button type="button" class="btn btn-outline-primary" (click)="viewDetails(d)"
-                                        title="View">
+                                    <button type="button" class="btn btn-outline-primary"
+                                        (click)="viewDetails(d); $event.stopPropagation()"
+                                        (keydown.enter)="$event.stopPropagation()" title="View">
                                         <i class="feather icon-eye"></i>
                                     </button>
 
-                                    <button type="button" class="btn btn-outline-primary" (click)="openPaymentModal(d)"
-                                        title="Pay Interest/Principal">
+                                    <button type="button" class="btn btn-outline-primary"
+                                        (click)="openPaymentModal(d); $event.stopPropagation()"
+                                        (keydown.enter)="$event.stopPropagation()" title="Pay Interest/Principal">
                                         <i class="feather icon-credit-card"></i>
                                     </button>
-                                    <button type="button" class="btn btn-danger" (click)="saleDeposit(d.depositId)"
-                                        title="Sale / Liquidate">
+                                    <button type="button" class="btn btn-danger"
+                                        (click)="saleDeposit(d.depositId); $event.stopPropagation()"
+                                        (keydown.enter)="$event.stopPropagation()" title="Sale / Liquidate">
                                         <i class="feather icon-shopping-cart"></i>
                                     </button>
-                                    <button type="button" class="btn btn-dark" (click)="closeDeposit(d)"
-                                        title="Close Entry / Settled">
+                                    <button type="button" class="btn btn-dark"
+                                        (click)="closeDeposit(d); $event.stopPropagation()"
+                                        (keydown.enter)="$event.stopPropagation()" title="Close Entry / Settled">
                                         <i class="feather icon-check-circle"></i>
                                     </button>
                                 </div>
@@ -175,13 +211,17 @@
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item" [class.disabled]="currentPage === 1">
                             <a class="page-link" (click)="changePage(currentPage - 1)"
+                                (keydown.enter)="changePage(currentPage - 1)" tabindex="0"
                                 style="cursor: pointer;">Previous</a>
                         </li>
                         <li class="page-item" *ngFor="let p of pages" [class.active]="p === currentPage">
-                            <a class="page-link" (click)="changePage(p)" style="cursor: pointer;">{{ p }}</a>
+                            <a class="page-link" (click)="changePage(p)" (keydown.enter)="changePage(p)" tabindex="0"
+                                style="cursor: pointer;">{{ p }}</a>
                         </li>
                         <li class="page-item" [class.disabled]="currentPage === totalPages">
-                            <a class="page-link" (click)="changePage(currentPage + 1)" style="cursor: pointer;">Next</a>
+                            <a class="page-link" (click)="changePage(currentPage + 1)"
+                                (keydown.enter)="changePage(currentPage + 1)" tabindex="0"
+                                style="cursor: pointer;">Next</a>
                         </li>
                     </ul>
                 </nav>
@@ -194,9 +234,19 @@
 <div *ngIf="selectedDeposit" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 90%;">
         <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold">Deposit Details - #{{selectedDeposit.depositId}}</h5>
-                <button type="button" class="btn-close btn-close-white" (click)="selectedDeposit = null"></button>
+            <div class="modal-header premium-modal-header bg-primary text-white">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <h3 class="modal-title fw-bolder text-white mb-0 me-3" style="font-size: 1.8rem;">
+                            TOKEN #{{selectedDeposit.tokenNo || 'N/A'}}
+                        </h3>
+                        <span
+                            class="badge bg-white bg-opacity-25 text-white fw-normal border border-white border-opacity-25">
+                            Ref ID: #{{selectedDeposit.depositId}}
+                        </span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" (click)="selectedDeposit = null"></button>
+                </div>
             </div>
             <div class="modal-body p-4 bg-light">
 
@@ -211,16 +261,16 @@
                                 <div *ngIf="selectedDeposit.customerMobileNumber" class="small text-muted mt-1">
                                     <i class="feather icon-phone me-1"></i> {{selectedDeposit.customerMobileNumber}}
                                 </div>
-                                <div class="small text-muted mt-2"
+                                <address class="small text-muted mt-2 mb-0"
                                     *ngIf="selectedDeposit.customerCity || selectedDeposit.customerVillage">
                                     <i class="feather icon-map-pin me-1"></i>
                                     {{selectedDeposit.customerAddress}}
                                     <br>
-                                    {{selectedDeposit.customerCity}} {{selectedDeposit.customerVillage}},
+                                    {{selectedDeposit.customerVillage || selectedDeposit.customerCity}},
                                     {{selectedDeposit.customerDistrict}}
                                     <br>
                                     {{selectedDeposit.customerState}}
-                                </div>
+                                </address>
                                 <div class="small text-muted mt-2" *ngIf="selectedDeposit.customerReference">
                                     <span class="fw-bold">Ref:</span> {{selectedDeposit.customerReference}}
                                 </div>
@@ -231,6 +281,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4 border-end">
+
                                 <div class="mb-3">
                                     <div class="text-muted small text-uppercase fw-bold mb-1">Deposit Date</div>
                                     <div class="fs-6">{{selectedDeposit.depositDate | date:'mediumDate'}}</div>
@@ -366,10 +417,20 @@
 <!-- Payment Modal -->
 <div *ngIf="showPaymentModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">Record Payment - #{{selectedDepositForPayment?.depositId}}</h5>
-                <button type="button" class="btn-close btn-close-white" (click)="showPaymentModal = false"></button>
+        <div class="modal-content border-0">
+            <div class="modal-header premium-modal-header bg-primary text-white">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <h3 class="modal-title fw-bolder text-white mb-0 me-3" style="font-size: 1.8rem;">
+                            TOKEN #{{selectedDepositForPayment?.tokenNumber || 'N/A'}}
+                        </h3>
+                        <span
+                            class="badge bg-white bg-opacity-25 text-white fw-normal border border-white border-opacity-25">
+                            Payment ID: #{{selectedDepositForPayment?.depositId}}
+                        </span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" (click)="showPaymentModal = false"></button>
+                </div>
             </div>
             <div class="modal-body p-4">
                 <!-- Summary Section -->
@@ -399,11 +460,11 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Interest Payment</label>
+                    <label class="form-label fw-bold" for="interestPayment">Interest Payment</label>
                     <div class="input-group">
                         <span class="input-group-text"
                             [class.border-danger]="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest">₹</span>
-                        <input type="number" class="form-control"
+                        <input type="number" id="interestPayment" class="form-control"
                             [class.is-invalid]="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest"
                             [(ngModel)]="paymentForm.interestPaid" placeholder="Amount" [disabled]="payFullInterest">
                     </div>
@@ -411,13 +472,16 @@
                     <!-- Checkbox for Full Payment -->
                     <!-- Checkbox for Full Payment -->
                     <div class="mt-2" *ngIf="selectedDepositForPayment?.unpaidInterest > 0">
-                        <label
-                            style="cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #333;">
-                            <input type="checkbox" [(ngModel)]="payFullInterest" (change)="toggleFullInterest()"
-                                style="width: 20px; height: 20px; cursor: pointer; accent-color: #04a9f5; margin: 0;">
-                            Pay Full Pending Interest Only (₹{{ selectedDepositForPayment?.unpaidInterest |
-                            number:'1.2-2' }})
-                        </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="fullInterestToggle"
+                                [(ngModel)]="payFullInterest" (change)="toggleFullInterest()"
+                                style="width: 20px; height: 20px; cursor: pointer; accent-color: #04a9f5;">
+                            <label class="form-check-label ms-2 fw-bold text-dark" for="fullInterestToggle"
+                                style="cursor: pointer;">
+                                Pay Full Pending Interest Only (₹{{ selectedDepositForPayment?.unpaidInterest |
+                                number:'1.2-2' }})
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Warning if amount exceeds unpaid -->
@@ -429,8 +493,9 @@
 
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Notes</label>
-                    <textarea class="form-control" rows="2" [(ngModel)]="paymentForm.notes"></textarea>
+                    <label class="form-label" for="paymentNotes">Notes</label>
+                    <textarea id="paymentNotes" class="form-control" rows="2"
+                        [(ngModel)]="paymentForm.notes"></textarea>
                 </div>
             </div>
             <div class="modal-footer bg-light">
@@ -446,11 +511,26 @@
     style="display: block; background: rgba(0,0,0,0.5)">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
         <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-success text-white" [class.bg-warning]="hasActivePledges"
-                [class.text-dark]="hasActivePledges">
-                <h5 class="modal-title fw-bold">Settlement & Closure</h5>
-                <button type="button" class="btn-close" [class.btn-close-white]="!hasActivePledges"
-                    (click)="showSettlementModal = false"></button>
+            <div class="modal-header premium-modal-header bg-success text-white" [class.bg-warning]="hasActivePledges"
+                [class.text-dark]="hasActivePledges" [class.bg-primary]="!hasActivePledges">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <h3 class="modal-title fw-bolder mb-0 me-3" [class.text-white]="!hasActivePledges"
+                            style="font-size: 1.8rem;">
+                            TOKEN #{{settlementData.tokenNo || settlementData.tokenNumber || 'N/A'}}
+                        </h3>
+                        <span class="badge border fw-normal" [class.bg-white]="!hasActivePledges"
+                            [class.bg-opacity-25]="!hasActivePledges" [class.text-white]="!hasActivePledges"
+                            [class.border-white]="!hasActivePledges" [class.border-opacity-25]="!hasActivePledges"
+                            [class.bg-dark]="hasActivePledges" [class.bg-opacity-10]="hasActivePledges"
+                            [class.text-dark]="hasActivePledges" [class.border-dark]="hasActivePledges"
+                            [class.border-opacity-10]="hasActivePledges">
+                            Settlement ID: #{{settlementData.depositId}}
+                        </span>
+                    </div>
+                    <button type="button" class="btn-close" [class.btn-close-white]="!hasActivePledges"
+                        (click)="showSettlementModal = false"></button>
+                </div>
             </div>
             <div class="modal-body p-4 bg-light">
 
@@ -678,8 +758,10 @@
                             </thead>
                             <tbody>
                                 <ng-container *ngFor="let item of settlementData.activeMerchantEntries">
-                                    <tr (click)="item.expanded = !item.expanded" style="cursor: pointer;"
-                                        [class.table-active]="item.expanded" title="Click to view full log">
+                                    <tr (click)="item.expanded = !item.expanded"
+                                        (keydown.enter)="item.expanded = !item.expanded" tabindex="0"
+                                        style="cursor: pointer;" [class.table-active]="item.expanded"
+                                        title="Click to view full log">
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <i class="feather text-muted me-2"
@@ -1037,7 +1119,7 @@
 
                                             <input class="form-check-input fs-4 m-0" type="checkbox" role="switch"
                                                 id="fullPaymentCheck" [(ngModel)]="isFullPayment"
-                                                (change)="updateSettlementAmount()">
+                                                [attr.aria-checked]="isFullPayment" (change)="updateSettlementAmount()">
                                         </label>
                                     </div>
 
@@ -1066,11 +1148,12 @@
                                             [disabled]="hasActivePledges || settlementValidationError"
                                             style="flex-shrink: 0; cursor: pointer;">
 
-                                        <div class="small fw-bold lh-sm text-dark mb-0">
+                                        <label class="small fw-bold lh-sm text-dark mb-0" for="confirmPayment"
+                                            style="cursor: pointer;">
                                             I confirm that the payment of <span
                                                 class="text-decoration-underline fw-bolder">₹ {{settlementAmount |
                                                 number:'1.2-2'}}</span> has been received from the customer.
-                                        </div>
+                                        </label>
                                     </div>
                                 </div>
 
@@ -1120,20 +1203,20 @@
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Principal Amount</label>
+                        <label class="form-label small fw-bold" for="redeemPrincipal">Principal Amount</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white">₹</span>
-                            <input type="number" class="form-control" [(ngModel)]="redeemForm.principalPaid"
-                                (input)="calculateRedeemTotal()">
+                            <input type="number" id="redeemPrincipal" class="form-control"
+                                [(ngModel)]="redeemForm.principalPaid" (input)="calculateRedeemTotal()">
                         </div>
                         <small class="text-muted">Amount paid to merchant</small>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Interest Amount</label>
+                        <label class="form-label small fw-bold" for="redeemInterest">Interest Amount</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white">₹</span>
-                            <input type="number" class="form-control" [(ngModel)]="redeemForm.interestPaid"
-                                (input)="calculateRedeemTotal()">
+                            <input type="number" id="redeemInterest" class="form-control"
+                                [(ngModel)]="redeemForm.interestPaid" (input)="calculateRedeemTotal()">
                         </div>
                         <small class="text-muted">Interest paid to merchant</small>
                     </div>
@@ -1147,8 +1230,8 @@
                         </div>
                     </div>
                     <div class="col-md-12">
-                        <label class="form-label small fw-bold">Notes</label>
-                        <textarea class="form-control" [(ngModel)]="redeemForm.notes" rows="2"
+                        <label class="form-label small fw-bold" for="redeemNotes">Notes</label>
+                        <textarea id="redeemNotes" class="form-control" [(ngModel)]="redeemForm.notes" rows="2"
                             placeholder="e.g. Account settled in full"></textarea>
                     </div>
                 </div>

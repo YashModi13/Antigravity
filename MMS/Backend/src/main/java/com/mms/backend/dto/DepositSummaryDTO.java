@@ -7,6 +7,7 @@ import java.time.LocalDate;
 @Data
 public class DepositSummaryDTO {
     private Integer depositId;
+    private Integer tokenNumber;
     private String customerName;
     private LocalDate depositDate;
     private BigDecimal totalLoanAmount;

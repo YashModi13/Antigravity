@@ -41,7 +41,7 @@
                                     <small class="text-muted">
                                         <i class="feather icon-phone me-1"></i>{{ result.mobileNumber }}
                                         <span class="mx-2">•</span>
-                                        {{ result.city }}
+                                        {{ result.village || 'N/A' }}
                                     </small>
                                 </div>
                                 <span class="badge bg-light text-dark border">ID: {{ result.id }}</span>
@@ -63,7 +63,7 @@
                                         <span class="me-3"><i class="feather icon-phone me-1"></i> {{
                                             selectedCustomer.mobileNumber }}</span>
                                         <span class="me-3"><i class="feather icon-map-pin me-1"></i> {{
-                                            selectedCustomer.city }}</span>
+                                            selectedCustomer.village || 'N/A' }}</span>
                                         <span class="badge bg-primary rounded-pill">ID: {{ selectedCustomer.id }}</span>
                                     </div>
                                 </div>
@@ -82,8 +82,8 @@
                 <div class="col-md-5">
                     <div class="card shadow-sm border-0 h-100 rounded-3">
                         <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
-                            <label class="text-muted small fw-bold text-uppercase mb-2">Token Number <span
-                                    class="text-danger">*</span></label>
+                            <label class="text-muted small fw-bold text-uppercase mb-2" for="tokenInput">Token Number
+                                <span class="text-danger">*</span></label>
                             <div class="d-flex align-items-center">
                                 <div class="flex-grow-1 position-relative">
                                     <div class="input-group shadow-sm rounded overflow-hidden"
@@ -92,7 +92,8 @@
                                         <span class="input-group-text bg-white border-0 ps-3">
                                             <i class="feather icon-tag text-dark"></i>
                                         </span>
-                                        <input type="number" class="form-control border-0 fw-bold fs-5 text-dark"
+                                        <input type="number" id="tokenInput"
+                                            class="form-control border-0 fw-bold fs-5 text-dark"
                                             [(ngModel)]="deposit.tokenNo" name="tokenNo" placeholder="---" min="1"
                                             (input)="onTokenInput()" autocomplete="off">
                                         <button class="btn btn-dark fw-bold px-3" (click)="generateToken()">
@@ -118,12 +119,12 @@
                 <div class="col-md-4">
                     <div class="card shadow-sm border-0 h-100 rounded-3">
                         <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
-                            <label class="text-muted small fw-bold text-uppercase mb-2">Deposit Date <span
-                                    class="text-danger">*</span></label>
+                            <label class="text-muted small fw-bold text-uppercase mb-2" for="depDateInput">Deposit Date
+                                <span class="text-danger">*</span></label>
                             <div class="input-group shadow-sm rounded">
                                 <span class="input-group-text bg-light border-0"><i
                                         class="feather icon-calendar"></i></span>
-                                <input type="date" class="form-control border-0 bg-light fw-bold fs-6"
+                                <input type="date" id="depDateInput" class="form-control border-0 bg-light fw-bold fs-6"
                                     [(ngModel)]="deposit.depositDate" name="depDate">
                             </div>
                         </div>
@@ -134,10 +135,10 @@
                 <div class="col-md-3">
                     <div class="card shadow-sm border-0 h-100 rounded-3">
                         <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
-                            <label class="text-muted small fw-bold text-uppercase mb-2">Interest Rate (%) <span
-                                    class="text-danger">*</span></label>
+                            <label class="text-muted small fw-bold text-uppercase mb-2" for="intRateInput">Interest Rate
+                                (%) <span class="text-danger">*</span></label>
                             <div class="input-group shadow-sm rounded">
-                                <input type="number"
+                                <input type="number" id="intRateInput"
                                     class="form-control border-0 bg-light fw-bold fs-5 text-center text-primary"
                                     [(ngModel)]="deposit.interestRate" name="intRate" (change)="onInterestRateChange()"
                                     min="0.1" step="0.1">
@@ -156,13 +157,14 @@
                             <div class="p-4" [ngClass]="isLoanAmountInvalid ? 'bg-danger-light' : 'bg-primary-light'">
                                 <label class="form-label fw-bold small text-uppercase mb-2"
                                     [class.text-danger]="isLoanAmountInvalid"
-                                    [class.text-primary]="!isLoanAmountInvalid">
+                                    [class.text-primary]="!isLoanAmountInvalid" for="principalLoanAmt">
                                     Principal Loan Amount <span class="text-danger">*</span>
                                 </label>
                                 <div class="input-group input-group-lg bg-white rounded shadow-sm border-0">
                                     <span class="input-group-text border-0 bg-transparent text-secondary ps-4 fs-4">{{
                                         currencySymbol }}</span>
-                                    <input type="text" class="form-control border-0 fs-2 fw-bold text-dark ps-2"
+                                    <input type="text" id="principalLoanAmt"
+                                        class="form-control border-0 fs-2 fw-bold text-dark ps-2"
                                         [class.text-danger]="isLoanAmountInvalid" [ngModel]="loanAmountDisplay"
                                         (input)="onLoanAmountInput($event)" name="loanAmt" placeholder="0">
                                 </div>
@@ -278,9 +280,11 @@
                 <div class="col-lg-6">
                     <!-- Optional: Notes or Extra Actions could go here -->
                     <div class="form-group">
-                        <label class="form-label text-muted small fw-bold text-uppercase">Notes / Remarks</label>
-                        <textarea class="form-control bg-light border-0" rows="4" [(ngModel)]="deposit.notes"
-                            name="notes" placeholder="Enter any specific transaction notes..."></textarea>
+                        <label class="form-label text-muted small fw-bold text-uppercase" for="depositNotes">Notes /
+                            Remarks</label>
+                        <textarea id="depositNotes" class="form-control bg-light border-0" rows="4"
+                            [(ngModel)]="deposit.notes" name="notes"
+                            placeholder="Enter any specific transaction notes..."></textarea>
                     </div>
                 </div>
                 <div class="col-lg-6">
@@ -372,43 +376,44 @@
                 <div class="card border-0 shadow-sm p-3">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label small fw-bold">Full Name *</label>
-                            <input type="text" class="form-control" [(ngModel)]="newCustomer.customerName"
+                            <label class="form-label small fw-bold" for="ncName">Full Name *</label>
+                            <input type="text" id="ncName" class="form-control" [(ngModel)]="newCustomer.customerName"
                                 name="newCName" placeholder="Enter full name">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Mobile Number *</label>
-                            <input type="text" class="form-control" [(ngModel)]="newCustomer.mobileNumber"
+                            <label class="form-label small fw-bold" for="ncMobile">Mobile Number *</label>
+                            <input type="text" id="ncMobile" class="form-control" [(ngModel)]="newCustomer.mobileNumber"
                                 name="newCMobile" placeholder="10-digit mobile">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold">Email</label>
-                            <input type="email" class="form-control" [(ngModel)]="newCustomer.email" name="newCEmail"
-                                placeholder="Optional">
+                            <label class="form-label small fw-bold" for="ncEmail">Email</label>
+                            <input type="email" id="ncEmail" class="form-control" [(ngModel)]="newCustomer.email"
+                                name="newCEmail" placeholder="Optional">
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label small fw-bold">Address</label>
-                            <textarea class="form-control" rows="2" [(ngModel)]="newCustomer.address" name="newCAddress"
-                                placeholder="Street address"></textarea>
+                            <label class="form-label small fw-bold" for="ncAddress">Address</label>
+                            <textarea id="ncAddress" class="form-control" rows="2" [(ngModel)]="newCustomer.address"
+                                name="newCAddress" placeholder="Street address"></textarea>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold">City/Village</label>
-                            <input type="text" class="form-control" [(ngModel)]="newCustomer.village"
+                            <label class="form-label small fw-bold" for="ncVillage">City/Village</label>
+                            <input type="text" id="ncVillage" class="form-control" [(ngModel)]="newCustomer.village"
                                 name="newCVillage">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold">District</label>
-                            <input type="text" class="form-control" [(ngModel)]="newCustomer.district"
+                            <label class="form-label small fw-bold" for="ncDistrict">District</label>
+                            <input type="text" id="ncDistrict" class="form-control" [(ngModel)]="newCustomer.district"
                                 name="newCDistrict">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold">State</label>
-                            <input type="text" class="form-control" [(ngModel)]="newCustomer.state" name="newCState">
+                            <label class="form-label small fw-bold" for="ncState">State</label>
+                            <input type="text" id="ncState" class="form-control" [(ngModel)]="newCustomer.state"
+                                name="newCState">
                         </div>
                         <div class="col-md-6 form-group position-relative">
-                            <label class="form-label small fw-bold">Referral Name</label>
+                            <label class="form-label small fw-bold" for="ncReferral">Referral Name</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Search Referral..."
+                                <input type="text" id="ncReferral" class="form-control" placeholder="Search Referral..."
                                     [(ngModel)]="referralSearchTerm" name="refSearch" (input)="searchReferrals()">
                             </div>
 

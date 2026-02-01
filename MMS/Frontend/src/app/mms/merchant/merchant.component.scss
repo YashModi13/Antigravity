@@ -68,3 +68,49 @@
 .bg-soft-success {
     background-color: rgba(40, 167, 69, 0.1);
 }
+
+/* Premium Modal Header Styles */
+.premium-modal-header {
+    border-bottom: none;
+    padding: 1.5rem !important;
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 100%);
+        pointer-events: none;
+    }
+
+    &.bg-primary {
+        background: linear-gradient(135deg, #4099ff 0%, #73b4ff 100%) !important;
+    }
+
+    &.bg-info {
+        background: linear-gradient(135deg, #00bcd4 0%, #00acc1 100%) !important;
+    }
+
+    &.bg-success {
+        background: linear-gradient(135deg, #2ed8b6 0%, #59e0c5 100%) !important;
+    }
+
+    &.bg-warning {
+        background: linear-gradient(135deg, #ffb64d 0%, #ffcb80 100%) !important;
+    }
+
+    .modal-title {
+        letter-spacing: 1px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-weight: 700;
+    }
+}
+
+.modal-content {
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}

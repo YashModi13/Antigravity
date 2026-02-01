@@ -91,7 +91,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="mb-0">Select Merchant</label>
+                            <label class="mb-0" for="merchantSelect">Select Merchant</label>
                             <div class="btn-group">
                                 <button class="btn btn-icon btn-sm btn-outline-info border-0"
                                     (click)="openMerchantModal()" title="Add New Merchant">
@@ -109,26 +109,27 @@
                                 </button>
                             </div>
                         </div>
-                        <select class="form-control" [(ngModel)]="targetMerchantId" (change)="onMerchantChange()">
+                        <select id="merchantSelect" class="form-control" [(ngModel)]="targetMerchantId"
+                            (change)="onMerchantChange()">
                             <option [value]="null" disabled>-- Choose Partner --</option>
                             <option *ngFor="let m of merchants" [value]="m.id">{{ m.merchantName }} ({{ m.merchantType
                                 }})</option>
                         </select>
                     </div>
                     <div class="form-group mb-2">
-                        <label>Interest Rate (%)</label>
-                        <input type="number" class="form-control" [(ngModel)]="interestRate" step="0.1"
-                            [disabled]="!targetMerchantId">
+                        <label for="transferInterestRate">Interest Rate (%)</label>
+                        <input type="number" id="transferInterestRate" class="form-control" [(ngModel)]="interestRate"
+                            step="0.1" [disabled]="!targetMerchantId">
                     </div>
                     <div class="form-group mb-2">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="mb-0">Principal Amount</label>
+                            <label class="mb-0" for="transferPrincipal">Principal Amount</label>
                             <span class="badge bg-soft-success text-success border border-success border-opacity-25"
                                 *ngIf="selectedAssetValueTotal > 0">
                                 Total Asset: {{ selectedAssetValueTotal | number:'1.2-2' }}
                             </span>
                         </div>
-                        <input type="number" class="form-control" [disabled]="!hasSelectedItems"
+                        <input type="number" id="transferPrincipal" class="form-control" [disabled]="!hasSelectedItems"
                             [class.is-invalid]="principalAmount > selectedAssetValueTotal && selectedAssetValueTotal > 0"
                             [(ngModel)]="principalAmount" placeholder="Enter amount from merchant">
                         <div class="invalid-feedback"
@@ -137,12 +138,12 @@
                         </div>
                     </div>
                     <div class="form-group mb-2">
-                        <label>Entry Date</label>
-                        <input type="date" class="form-control" [(ngModel)]="entryDate">
+                        <label for="transferEntryDate">Entry Date</label>
+                        <input type="date" id="transferEntryDate" class="form-control" [(ngModel)]="entryDate">
                     </div>
                     <div class="form-group">
-                        <label>Notes</label>
-                        <textarea class="form-control" [(ngModel)]="notes" rows="3"
+                        <label for="transferNotes">Notes</label>
+                        <textarea id="transferNotes" class="form-control" [(ngModel)]="notes" rows="3"
                             placeholder="Additional details about this transaction..."></textarea>
                     </div>
                     <button class="btn btn-primary w-100 py-2 mt-2" (click)="submitTransfer()">
@@ -163,23 +164,33 @@
                             <thead>
                                 <tr>
                                     <th>Select</th>
-                                    <th (click)="toggleAvailableSort('customerName')" style="cursor: pointer;">
+                                    <th (click)="toggleAvailableSort('customerName')"
+                                        (keydown.enter)="toggleAvailableSort('customerName')" tabindex="0"
+                                        style="cursor: pointer;">
                                         Customer <i class="feather"
                                             [ngClass]="availableSortColumn === 'customerName' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                                     </th>
-                                    <th (click)="toggleAvailableSort('itemName')" style="cursor: pointer;">
+                                    <th (click)="toggleAvailableSort('itemName')"
+                                        (keydown.enter)="toggleAvailableSort('itemName')" tabindex="0"
+                                        style="cursor: pointer;">
                                         Item <i class="feather"
                                             [ngClass]="availableSortColumn === 'itemName' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                                     </th>
-                                    <th (click)="toggleAvailableSort('weight')" style="cursor: pointer;">
+                                    <th (click)="toggleAvailableSort('weight')"
+                                        (keydown.enter)="toggleAvailableSort('weight')" tabindex="0"
+                                        style="cursor: pointer;">
                                         Weight <i class="feather"
                                             [ngClass]="availableSortColumn === 'weight' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                                     </th>
-                                    <th (click)="toggleAvailableSort('fineWeight')" style="cursor: pointer;">
+                                    <th (click)="toggleAvailableSort('fineWeight')"
+                                        (keydown.enter)="toggleAvailableSort('fineWeight')" tabindex="0"
+                                        style="cursor: pointer;">
                                         Fine Wt <i class="feather"
                                             [ngClass]="availableSortColumn === 'fineWeight' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                                     </th>
-                                    <th (click)="toggleAvailableSort('currentAssetValue')" style="cursor: pointer;">
+                                    <th (click)="toggleAvailableSort('currentAssetValue')"
+                                        (keydown.enter)="toggleAvailableSort('currentAssetValue')" tabindex="0"
+                                        style="cursor: pointer;">
                                         Asset Value <i class="feather"
                                             [ngClass]="availableSortColumn === 'currentAssetValue' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                                     </th>
@@ -207,6 +218,7 @@
                                         <select class="header-filter" [(ngModel)]="itemFilters.status"
                                             (change)="applyItemFilters()">
                                             <option value="">All</option>
+                                            <option value="ACTIVE">ACTIVE</option>
                                             <option value="DEPOSITED">DEPOSITED</option>
                                         </select>
                                     </td>
@@ -251,23 +263,31 @@
                 <table class="table table-hover align-middle">
                     <thead class="bg-light">
                         <tr>
-                            <th (click)="togglePledgeSort('merchantName')" style="cursor: pointer;">
+                            <th (click)="togglePledgeSort('merchantName')"
+                                (keydown.enter)="togglePledgeSort('merchantName')" tabindex="0"
+                                style="cursor: pointer;">
                                 Merchant <i class="feather"
                                     [ngClass]="pledgeSortColumn === 'merchantName' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="togglePledgeSort('customerName')" style="cursor: pointer;">
+                            <th (click)="togglePledgeSort('customerName')"
+                                (keydown.enter)="togglePledgeSort('customerName')" tabindex="0"
+                                style="cursor: pointer;">
                                 Customer <i class="feather"
                                     [ngClass]="pledgeSortColumn === 'customerName' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="togglePledgeSort('itemName')" style="cursor: pointer;">
+                            <th (click)="togglePledgeSort('itemName')" (keydown.enter)="togglePledgeSort('itemName')"
+                                tabindex="0" style="cursor: pointer;">
                                 Item Details <i class="feather"
                                     [ngClass]="pledgeSortColumn === 'itemName' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="togglePledgeSort('weight')" style="cursor: pointer;">
+                            <th (click)="togglePledgeSort('weight')" (keydown.enter)="togglePledgeSort('weight')"
+                                tabindex="0" style="cursor: pointer;">
                                 Gold Weight <i class="feather"
                                     [ngClass]="pledgeSortColumn === 'weight' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
-                            <th (click)="togglePledgeSort('interestRate')" style="cursor: pointer;">
+                            <th (click)="togglePledgeSort('interestRate')"
+                                (keydown.enter)="togglePledgeSort('interestRate')" tabindex="0"
+                                style="cursor: pointer;">
                                 Int. Rate <i class="feather"
                                     [ngClass]="pledgeSortColumn === 'interestRate' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
@@ -277,7 +297,8 @@
                             <th>Accrued Int.</th>
                             <th>Redemption Amt</th>
                             <th>Asset Value</th>
-                            <th (click)="togglePledgeSort('profitLoss')" style="cursor: pointer;">
+                            <th (click)="togglePledgeSort('profitLoss')"
+                                (keydown.enter)="togglePledgeSort('profitLoss')" tabindex="0" style="cursor: pointer;">
                                 Profit/Loss <i class="feather"
                                     [ngClass]="pledgeSortColumn === 'profitLoss' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
@@ -399,7 +420,7 @@
 <div *ngIf="showMerchantModal" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5)">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header premium-modal-header bg-primary text-white">
                 <h5 class="modal-title text-white">
                     <i class="feather" [ngClass]="isEditingMerchant ? 'icon-edit' : 'icon-plus-circle'"></i>
                     {{ isEditingMerchant ? 'Modify Merchant Details' : 'Register New Merchant' }}
@@ -409,13 +430,13 @@
             <div class="modal-body">
                 <div class="row g-3">
                     <div class="col-12">
-                        <label class="form-label">Merchant Name</label>
-                        <input type="text" class="form-control" [(ngModel)]="merchantForm.merchantName"
-                            placeholder="e.g. Om Jewelers">
+                        <label class="form-label" for="merchNameInput">Merchant Name</label>
+                        <input type="text" id="merchNameInput" class="form-control"
+                            [(ngModel)]="merchantForm.merchantName" placeholder="e.g. Om Jewelers">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Type</label>
-                        <select class="form-select" [(ngModel)]="merchantForm.merchantType">
+                        <label class="form-label" for="merchTypeSelect">Type</label>
+                        <select id="merchTypeSelect" class="form-select" [(ngModel)]="merchantForm.merchantType">
                             <option value="JEWELLER">Jeweller</option>
                             <option value="LENDER">Money Lender</option>
                             <option value="BANK">Bank</option>
@@ -423,23 +444,25 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Mobile Number</label>
-                        <input type="text" class="form-control" [(ngModel)]="merchantForm.mobileNumber"
-                            placeholder="10 Digit Mobile">
+                        <label class="form-label" for="merchMobileInput">Mobile Number</label>
+                        <input type="text" id="merchMobileInput" class="form-control"
+                            [(ngModel)]="merchantForm.mobileNumber" placeholder="10 Digit Mobile">
                     </div>
                     <div class="col-md-12">
-                        <label class="form-label">Full Address</label>
-                        <textarea class="form-control" [(ngModel)]="merchantForm.address" rows="2"></textarea>
+                        <label class="form-label" for="merchAddressInput">Full Address</label>
+                        <textarea id="merchAddressInput" class="form-control" [(ngModel)]="merchantForm.address"
+                            rows="2"></textarea>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Default Int. Rate (%)</label>
-                        <input type="number" class="form-control" [(ngModel)]="merchantForm.defaultInterestRate">
+                        <label class="form-label" for="merchDefaultIR">Default Int. Rate (%)</label>
+                        <input type="number" id="merchDefaultIR" class="form-control"
+                            [(ngModel)]="merchantForm.defaultInterestRate">
                     </div>
                     <div class="col-md-6 d-flex align-items-end">
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="merActive"
                                 [(ngModel)]="merchantForm.isActive">
-                            <label class="form-check-input-label" for="merActive">Active Merchant</label>
+                            <label class="form-check-label" for="merActive">Active Merchant</label>
                         </div>
                     </div>
                 </div>
@@ -459,30 +482,34 @@
     tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header premium-modal-header bg-primary text-white">
                 <h5 class="modal-title">Edit Merchant Entry</h5>
                 <button type="button" class="btn-close btn-close-white" (click)="showEditEntryModal = false"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Entry Date</label>
-                        <input type="date" class="form-control" [(ngModel)]="editEntryForm.entryDate">
+                        <label class="form-label small fw-bold" for="editEntryDate">Entry Date</label>
+                        <input type="date" id="editEntryDate" class="form-control"
+                            [(ngModel)]="editEntryForm.entryDate">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Interest Rate (%)</label>
-                        <input type="number" class="form-control" step="0.1" [(ngModel)]="editEntryForm.interestRate">
+                        <label class="form-label small fw-bold" for="editEntryIR">Interest Rate (%)</label>
+                        <input type="number" id="editEntryIR" class="form-control" step="0.1"
+                            [(ngModel)]="editEntryForm.interestRate">
                     </div>
                     <div class="col-md-12">
-                        <label class="form-label small fw-bold">Principal Amount</label>
+                        <label class="form-label small fw-bold" for="editEntryPrincipal">Principal Amount</label>
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
-                            <input type="number" class="form-control" [(ngModel)]="editEntryForm.principalAmount">
+                            <input type="number" id="editEntryPrincipal" class="form-control"
+                                [(ngModel)]="editEntryForm.principalAmount">
                         </div>
                     </div>
                     <div class="col-md-12">
-                        <label class="form-label small fw-bold">Notes</label>
-                        <textarea class="form-control" rows="2" [(ngModel)]="editEntryForm.notes"></textarea>
+                        <label class="form-label small fw-bold" for="editEntryNotes">Notes</label>
+                        <textarea id="editEntryNotes" class="form-control" rows="2"
+                            [(ngModel)]="editEntryForm.notes"></textarea>
                     </div>
                 </div>
             </div>
@@ -498,7 +525,7 @@
 <div class="modal fade show" *ngIf="showRedeemModal" style="display: block; background: rgba(0,0,0,0.6);" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-success text-white">
+            <div class="modal-header premium-modal-header bg-success text-white">
                 <h5 class="modal-title">
                     <i class="feather icon-download-cloud me-2"></i>Redeem from Merchant
                 </h5>
@@ -518,20 +545,20 @@
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Principal Amount</label>
+                        <label class="form-label small fw-bold" for="redeemPrincipalAmt">Principal Amount</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white">₹</span>
-                            <input type="number" class="form-control" [(ngModel)]="redeemForm.principalPaid"
-                                (input)="calculateRedeemTotal()">
+                            <input type="number" id="redeemPrincipalAmt" class="form-control"
+                                [(ngModel)]="redeemForm.principalPaid" (input)="calculateRedeemTotal()">
                         </div>
                         <small class="text-muted">Amount paid to merchant</small>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-bold">Interest Amount</label>
+                        <label class="form-label small fw-bold" for="redeemInterestAmt">Interest Amount</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white">₹</span>
-                            <input type="number" class="form-control" [(ngModel)]="redeemForm.interestPaid"
-                                (input)="calculateRedeemTotal()">
+                            <input type="number" id="redeemInterestAmt" class="form-control"
+                                [(ngModel)]="redeemForm.interestPaid" (input)="calculateRedeemTotal()">
                         </div>
                         <small class="text-muted">Interest paid to merchant</small>
                     </div>
@@ -545,8 +572,8 @@
                         </div>
                     </div>
                     <div class="col-md-12">
-                        <label class="form-label small fw-bold">Notes</label>
-                        <textarea class="form-control" [(ngModel)]="redeemForm.notes" rows="2"
+                        <label class="form-label small fw-bold" for="redeemNotesText">Notes</label>
+                        <textarea id="redeemNotesText" class="form-control" [(ngModel)]="redeemForm.notes" rows="2"
                             placeholder="e.g. Account settled in full"></textarea>
                     </div>
                     <div class="col-md-12">
@@ -605,7 +632,7 @@
     tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-success text-white">
+            <div class="modal-header premium-modal-header bg-success text-white">
                 <h5 class="modal-title">
                     <i class="feather icon-credit-card me-2"></i>New Transaction
                 </h5>
@@ -639,7 +666,8 @@
 
                 <div class="row">
                     <div class="col-12 mb-3">
-                        <label class="form-label small text-uppercase text-muted">Payment Amount</label>
+                        <label class="form-label small text-uppercase text-muted" for="txAmountInput">Payment
+                            Amount</label>
 
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="payFullInterest"
@@ -659,7 +687,7 @@
                             <span class="input-group-text bg-light border-end-0"
                                 [class.border-danger]="transactionForm.amount > pendingInterestForTx"
                                 [class.text-danger]="transactionForm.amount > pendingInterestForTx">₹</span>
-                            <input type="number" class="form-control border-start-0 ps-0"
+                            <input type="number" id="txAmountInput" class="form-control border-start-0 ps-0"
                                 [class.is-invalid]="transactionForm.amount > pendingInterestForTx"
                                 [class.border-danger]="transactionForm.amount > pendingInterestForTx"
                                 placeholder="Enter total amount to pay..." [(ngModel)]="transactionForm.amount"
@@ -673,8 +701,8 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small text-uppercase text-muted">Notes</label>
-                    <textarea class="form-control" rows="2" [(ngModel)]="transactionForm.notes"
+                    <label class="form-label small text-uppercase text-muted" for="txNotesArea">Notes</label>
+                    <textarea id="txNotesArea" class="form-control" rows="2" [(ngModel)]="transactionForm.notes"
                         placeholder="Transaction details..."></textarea>
                 </div>
             </div>
@@ -695,7 +723,7 @@
     tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-info text-white">
+            <div class="modal-header premium-modal-header bg-info text-white">
                 <h5 class="modal-title">
                     <i class="feather icon-eye me-2"></i>Entry Details
                 </h5>

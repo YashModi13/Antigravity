@@ -6,6 +6,7 @@ import com.mms.backend.dto.MerchantItemDTO;
 import com.mms.backend.dto.RedemptionRequest;
 import com.mms.backend.entity.*;
 import com.mms.backend.repository.*;
+import static com.mms.backend.util.Constants.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +45,7 @@ public class MerchantService {
         Map<Integer, ItemPriceHistory> latestPricesMap = priceRepository.findLatestPricePerItem().stream()
                 .collect(Collectors.toMap(p -> p.getItem().getId(), p -> p));
 
-        return itemsRepository.findByItemStatus("DEPOSITED").stream()
+        return itemsRepository.findByItemStatusIn(List.of(STATUS_ACTIVE, "DEPOSITED")).stream()
                 .map(item -> {
                     AvailableItemDTO dto = new AvailableItemDTO();
                     dto.setId(item.getId());
@@ -75,7 +76,7 @@ public class MerchantService {
 
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -220,9 +221,6 @@ public class MerchantService {
                     // Days elapsed
                     Period period = Period.between(e.getEntryDate(), LocalDate.now());
                     int totalMonths = (period.getYears() * 12) + period.getMonths() + 1;
-                    // if (period.getDays() > 0 || (totalMonths == 0)) {
-                    // totalMonths++; // Business Rule: Any partial month counts as full month
-                    // }
 
                     BigDecimal interestAccrued = amount.multiply(rate)
                             .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
@@ -273,7 +271,7 @@ public class MerchantService {
 
                     return dto;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional
@@ -351,7 +349,7 @@ public class MerchantService {
 
         // Update Item Status back to DEPOSITED
         CustomerDepositItems item = entry.getCustomerDepositItem();
-        item.setItemStatus("DEPOSITED");
+        item.setItemStatus(STATUS_ACTIVE);
         itemsRepository.save(item);
     }
 

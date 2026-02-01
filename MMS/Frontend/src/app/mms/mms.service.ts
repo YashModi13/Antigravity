@@ -5,6 +5,7 @@ import { REST_URLS } from './shared/resturl';
 
 export interface DepositSummary {
     depositId: number;
+    tokenNumber: number;
     customerName: string;
     depositDate: string;
     totalLoanAmount: number;

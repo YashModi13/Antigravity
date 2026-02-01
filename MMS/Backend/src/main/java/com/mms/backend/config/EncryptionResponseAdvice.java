@@ -53,7 +53,20 @@ public class EncryptionResponseAdvice implements ResponseBodyAdvice<Object> {
             String json = objectMapper.writeValueAsString(body);
             String encryptedData = encryptionService.encrypt(json);
             log.info(">>> [SECURITY] Encryption Success.");
-            return new EncryptedPayload(encryptedData);
+
+            EncryptedPayload payload = new EncryptedPayload(encryptedData);
+
+            // Handle case where controller returns String (StringHttpMessageConverter
+            // selected)
+            // but we are returning an object (EncryptedPayload). We must serialize to
+            // String manually.
+            if (org.springframework.http.converter.StringHttpMessageConverter.class
+                    .isAssignableFrom(selectedConverterType)) {
+                response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                return objectMapper.writeValueAsString(payload);
+            }
+
+            return payload;
         } catch (Exception e) {
             log.error(">>> [SECURITY] Encryption Failed", e);
             throw new org.springframework.web.server.ResponseStatusException(

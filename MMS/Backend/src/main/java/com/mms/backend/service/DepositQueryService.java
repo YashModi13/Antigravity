@@ -90,6 +90,7 @@ public class DepositQueryService {
             Map<Integer, ItemPriceHistory> latestPricesMap, Map<String, String> configs) {
         DepositSummaryDTO dto = new DepositSummaryDTO();
         dto.setDepositId(deposit.getId());
+        dto.setTokenNumber(deposit.getTokenNo());
         dto.setCustomerName(deposit.getCustomer() != null ? deposit.getCustomer().getCustomerName() : "Unknown");
         dto.setDepositDate(deposit.getDepositDate());
 
@@ -243,6 +244,9 @@ public class DepositQueryService {
             boolean match = true;
             if (filters.getId() != null && !filters.getId().isEmpty())
                 match = match && d.getDepositId().toString().contains(filters.getId());
+            if (filters.getTokenNo() != null && !filters.getTokenNo().isEmpty())
+                match = match && d.getTokenNumber() != null
+                        && d.getTokenNumber().toString().contains(filters.getTokenNo());
             if (filters.getCustomerName() != null && !filters.getCustomerName().isEmpty())
                 match = match
                         && d.getCustomerName().toLowerCase().contains(filters.getCustomerName().toLowerCase());
@@ -270,6 +274,9 @@ public class DepositQueryService {
         switch (sortBy) {
             case "depositId":
                 return Comparator.comparing(DepositSummaryDTO::getDepositId);
+            case "tokenNumber":
+                return Comparator.comparing(DepositSummaryDTO::getTokenNumber,
+                        Comparator.nullsFirst(Integer::compareTo));
             case "customerName":
                 return Comparator.comparing(d -> d.getCustomerName().toLowerCase());
             case "depositDate":

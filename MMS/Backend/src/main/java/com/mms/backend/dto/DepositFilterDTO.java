@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 @Data
 public class DepositFilterDTO {
     private String id;
+    private String tokenNo;
     private String customerName;
     private String depositDate;
     private Integer months;
