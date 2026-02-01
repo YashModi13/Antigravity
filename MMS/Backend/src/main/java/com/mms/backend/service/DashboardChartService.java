@@ -22,8 +22,6 @@ public class DashboardChartService {
     private final CustomerDepositEntryRepository depositRepository;
     private final DepositQueryService depositQueryService;
 
-    private static final Random RANDOM = new Random();
-
     public DashboardStatsDTO getDashboardStats() {
         List<DepositSummaryDTO> summaries = depositQueryService.getActiveDepositSummary();
 
@@ -94,19 +92,6 @@ public class DashboardChartService {
                         com.mms.backend.util.Constants.TX_INTEREST_PAYMENT.equals(tx.getTransactionType())) {
                     dto.setSellAmount(dto.getSellAmount().add(tx.getAmount()));
                 }
-            }
-        }
-
-        // --- MOCK DATA FOR DEMO IF EMPTY ---
-        // If everything is zero, let's provide some mock data so the user sees
-        // something in the chart
-        boolean allZero = map.values().stream().allMatch(d -> d.getPurchaseAmount().compareTo(BigDecimal.ZERO) == 0 &&
-                d.getSellAmount().compareTo(BigDecimal.ZERO) == 0);
-
-        if (allZero) {
-            for (ChartDataDTO dto : map.values()) {
-                dto.setPurchaseAmount(new BigDecimal(10000 + RANDOM.nextInt(50000)));
-                dto.setSellAmount(new BigDecimal(5000 + RANDOM.nextInt(40000)));
             }
         }
 
