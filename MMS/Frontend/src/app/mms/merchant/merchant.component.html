@@ -164,6 +164,12 @@
                             <thead>
                                 <tr>
                                     <th>Select</th>
+                                    <th (click)="toggleAvailableSort('tokenNo')"
+                                        (keydown.enter)="toggleAvailableSort('tokenNo')" tabindex="0"
+                                        style="cursor: pointer;">
+                                        Token No <i class="feather"
+                                            [ngClass]="availableSortColumn === 'tokenNo' ? (availableSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                                    </th>
                                     <th (click)="toggleAvailableSort('customerName')"
                                         (keydown.enter)="toggleAvailableSort('customerName')" tabindex="0"
                                         style="cursor: pointer;">
@@ -199,6 +205,8 @@
                                 <tr class="filter-row">
                                     <td></td>
                                     <td><input type="text" class="header-filter" placeholder="Filter..."
+                                            [(ngModel)]="itemFilters.tokenNo" (keyup)="applyItemFilters()"></td>
+                                    <td><input type="text" class="header-filter" placeholder="Filter..."
                                             [(ngModel)]="itemFilters.customerName" (keyup)="applyItemFilters()"></td>
                                     <td>
                                         <select class="header-filter" [(ngModel)]="itemFilters.itemName"
@@ -230,6 +238,7 @@
                                         <input type="checkbox" [(ngModel)]="selectedItems[item.id]"
                                             (change)="applyItemFilters()">
                                     </td>
+                                    <td class="fw-bold text-primary">{{ item.tokenNo }}</td>
                                     <td>{{ item.customerName }}</td>
                                     <td>{{ item.itemName }}</td>
                                     <td>{{ item.weight }}</td>
@@ -241,7 +250,7 @@
                                     <td><span class="badge bg-success">{{ item.itemStatus }}</span></td>
                                 </tr>
                                 <tr *ngIf="availableItems.length === 0">
-                                    <td colspan="7" class="text-center p-4">No and ready items found.</td>
+                                    <td colspan="8" class="text-center p-4">No and ready items found.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -263,6 +272,11 @@
                 <table class="table table-hover align-middle">
                     <thead class="bg-light">
                         <tr>
+                            <th (click)="togglePledgeSort('tokenNo')" (keydown.enter)="togglePledgeSort('tokenNo')"
+                                tabindex="0" style="cursor: pointer;">
+                                Token No <i class="feather"
+                                    [ngClass]="pledgeSortColumn === 'tokenNo' ? (pledgeSortDir === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
                             <th (click)="togglePledgeSort('merchantName')"
                                 (keydown.enter)="togglePledgeSort('merchantName')" tabindex="0"
                                 style="cursor: pointer;">
@@ -306,6 +320,8 @@
                             <th class="text-center" style="width: 140px">Action</th>
                         </tr>
                         <tr class="filter-row">
+                            <td><input type="text" class="header-filter" placeholder="Filter..."
+                                    [(ngModel)]="pledgeFilters.tokenNo" (keyup)="applyPledgeFilters()"></td>
                             <td><input type="text" class="header-filter" placeholder="Merchant..."
                                     [(ngModel)]="pledgeFilters.merchantName" (keyup)="applyPledgeFilters()"></td>
                             <td><input type="text" class="header-filter" placeholder="Customer..."
@@ -332,6 +348,7 @@
                     <tbody>
                         <tr *ngFor="let p of filteredActivePledges"
                             [class.table-danger]="(p.currentAssetValue - p.totalOwed) < 0">
+                            <td class="fw-bold text-primary">{{ p.tokenNo }}</td>
                             <td>
                                 <div class="fw-bold text-primary">{{ p.merchantName }}</div>
                                 <small class="text-muted">ID: {{ p.merchantId }}</small>
@@ -404,7 +421,7 @@
                             </td>
                         </tr>
                         <tr *ngIf="filteredActivePledges.length === 0">
-                            <td colspan="11" class="text-center p-5 text-muted">
+                            <td colspan="12" class="text-center p-5 text-muted">
                                 <i class="feather icon-package display-4 mb-2"></i>
                                 <p>No items are currently re-pledged to merchants.</p>
                             </td>

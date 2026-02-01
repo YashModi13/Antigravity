@@ -51,6 +51,7 @@ export interface Merchant {
 export interface DepositItem {
     id: number;
     depositEntryId: number;
+    tokenNo?: number;
     customerName: string;
     itemName: string;
     weight: number;
@@ -64,6 +65,7 @@ export interface MerchantItem {
     merchantId: number;
     merchantName: string;
     depositItemId: number;
+    tokenNo?: number;
     customerName: string;
     itemName: string;
     weight: number;

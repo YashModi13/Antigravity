@@ -10,6 +10,7 @@ public class MerchantItemDTO {
     private Integer merchantId;
     private String merchantName;
     private Integer depositItemId;
+    private Integer tokenNo;
     private String customerName;
     private String itemName;
     private BigDecimal weight;

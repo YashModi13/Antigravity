@@ -24,6 +24,7 @@ export class MmsMerchantComponent implements OnInit {
 
     // Filters
     itemFilters = {
+        tokenNo: '',
         customerName: '',
         itemName: '',
         weight: '',
@@ -33,6 +34,7 @@ export class MmsMerchantComponent implements OnInit {
     };
 
     pledgeFilters = {
+        tokenNo: '',
         merchantName: '',
         customerName: '',
         itemName: '',
@@ -202,12 +204,13 @@ export class MmsMerchantComponent implements OnInit {
     applyItemFilters() {
         let result = this.availableItems.filter(i => {
             const matchName = this.itemFilters.customerName ? i.customerName.toLowerCase().includes(this.itemFilters.customerName.toLowerCase()) : true;
+            const matchToken = this.itemFilters.tokenNo ? i.tokenNo?.toString().includes(this.itemFilters.tokenNo) : true;
             const matchItem = this.itemFilters.itemName ? i.itemName === this.itemFilters.itemName : true;
             const matchWeight = this.itemFilters.weight ? (i.weight || 0) >= parseFloat(this.itemFilters.weight) : true;
             const matchFine = this.itemFilters.fineWeight ? (i.fineWeight || 0) >= parseFloat(this.itemFilters.fineWeight) : true;
             const matchAsset = this.itemFilters.assetValue ? (i.currentAssetValue || 0) >= parseFloat(this.itemFilters.assetValue) : true;
             const matchStatus = this.itemFilters.status ? i.itemStatus.includes(this.itemFilters.status) : true;
-            return matchName && matchItem && matchWeight && matchFine && matchAsset && matchStatus;
+            return matchName && matchToken && matchItem && matchWeight && matchFine && matchAsset && matchStatus;
         });
 
         // Sort: Selection first, then chosen column
@@ -236,6 +239,7 @@ export class MmsMerchantComponent implements OnInit {
 
     applyPledgeFilters() {
         let result = this.activePledges.filter(p => {
+            const matchToken = this.pledgeFilters.tokenNo ? p.tokenNo?.toString().includes(this.pledgeFilters.tokenNo) : true;
             const matchMerchant = this.pledgeFilters.merchantName ? p.merchantName.toLowerCase().includes(this.pledgeFilters.merchantName.toLowerCase()) : true;
             const matchCustomer = this.pledgeFilters.customerName ? p.customerName.toLowerCase().includes(this.pledgeFilters.customerName.toLowerCase()) : true;
             const matchItem = this.pledgeFilters.itemName ? p.itemName.toLowerCase().includes(this.pledgeFilters.itemName.toLowerCase()) : true;
@@ -243,7 +247,7 @@ export class MmsMerchantComponent implements OnInit {
             const matchRate = this.pledgeFilters.interestRate ? (p.interestRate || 0) >= parseFloat(this.pledgeFilters.interestRate) : true;
             const matchAsset = this.pledgeFilters.assetValue ? (p.currentAssetValue || 0) >= parseFloat(this.pledgeFilters.assetValue) : true;
             const matchOwed = this.pledgeFilters.totalOwed ? (p.totalOwed || 0) >= parseFloat(this.pledgeFilters.totalOwed) : true;
-            return matchMerchant && matchCustomer && matchItem && matchWeight && matchRate && matchAsset && matchOwed;
+            return matchToken && matchMerchant && matchCustomer && matchItem && matchWeight && matchRate && matchAsset && matchOwed;
         });
 
         // Sort
@@ -375,8 +379,8 @@ export class MmsMerchantComponent implements OnInit {
 
     clearFilter() {
         this.depositFilterId = null;
-        this.itemFilters = { customerName: '', itemName: '', weight: '', fineWeight: '', assetValue: '', status: '' };
-        this.pledgeFilters = { merchantName: '', customerName: '', itemName: '', weight: '', interestRate: '', assetValue: '', totalOwed: '' };
+        this.itemFilters = { tokenNo: '', customerName: '', itemName: '', weight: '', fineWeight: '', assetValue: '', status: '' };
+        this.pledgeFilters = { tokenNo: '', merchantName: '', customerName: '', itemName: '', weight: '', interestRate: '', assetValue: '', totalOwed: '' };
         this.router.navigate([], { queryParams: { depositId: null }, queryParamsHandling: 'merge' });
         this.loadData();
     }

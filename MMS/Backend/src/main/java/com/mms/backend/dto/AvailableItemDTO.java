@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 public class AvailableItemDTO {
     private Integer id;
     private Integer depositEntryId;
+    private Integer tokenNo;
     private String customerName;
     private String itemName;
     private BigDecimal weight;

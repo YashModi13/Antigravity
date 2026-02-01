@@ -48,6 +48,7 @@ public class DepositQueryService {
             dto.setEntryId(entry.getId());
             dto.setMerchantName(entry.getMerchant().getMerchantName());
             dto.setMerchantId(entry.getMerchant().getId());
+            dto.setTokenNo(entry.getCustomerDepositItem().getDepositEntry().getTokenNo());
             dto.setItemName(entry.getCustomerDepositItem().getItem().getItemName());
             dto.setFineWeight(entry.getCustomerDepositItem().getFineWeight());
             dto.setPrincipalAmount(entry.getPrincipalAmount());

@@ -50,6 +50,7 @@ public class MerchantService {
                     AvailableItemDTO dto = new AvailableItemDTO();
                     dto.setId(item.getId());
                     dto.setDepositEntryId(item.getDepositEntry().getId());
+                    dto.setTokenNo(item.getDepositEntry().getTokenNo());
                     dto.setCustomerName(item.getDepositEntry().getCustomer().getCustomerName());
                     dto.setItemName(item.getItem().getItemName());
                     dto.setWeight(item.getWeightReceived());
@@ -193,6 +194,7 @@ public class MerchantService {
                     dto.setMerchantId(e.getMerchant().getId());
                     dto.setMerchantName(e.getMerchant().getMerchantName());
                     dto.setDepositItemId(e.getCustomerDepositItem().getId());
+                    dto.setTokenNo(e.getCustomerDepositItem().getDepositEntry().getTokenNo());
                     dto.setCustomerName(e.getCustomerDepositItem().getDepositEntry().getCustomer().getCustomerName());
                     dto.setItemName(e.getCustomerDepositItem().getItem().getItemName());
                     dto.setWeight(e.getCustomerDepositItem().getWeightReceived());
@@ -366,6 +368,7 @@ public class MerchantService {
         dto.setMerchantId(e.getMerchant().getId());
         dto.setMerchantName(e.getMerchant().getMerchantName());
         dto.setDepositItemId(e.getCustomerDepositItem().getId());
+        dto.setTokenNo(e.getCustomerDepositItem().getDepositEntry().getTokenNo());
         dto.setCustomerName(e.getCustomerDepositItem().getDepositEntry().getCustomer().getCustomerName());
         dto.setItemName(e.getCustomerDepositItem().getItem().getItemName());
         dto.setWeight(e.getCustomerDepositItem().getWeightReceived());
