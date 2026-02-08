@@ -30,8 +30,8 @@
                                 <i class="feather icon-search text-muted"></i>
                             </span>
                             <input type="text" class="form-control border-0 bg-transparent fw-medium"
-                                placeholder="Search by Name, Mobile..." [(ngModel)]="searchTerm"
-                                (keyup)="searchCustomers()" style="box-shadow: none;">
+                                placeholder="Search by Name, Mobile..." [ngModel]="searchTerm"
+                                (ngModelChange)="searchTerm=$event; searchCustomers()" style="box-shadow: none;">
 
                             <button
                                 class="btn btn-link input-group-text bg-transparent border-0 text-decoration-none p-0 ps-1 pe-2"
@@ -172,6 +172,22 @@
                                         KYC
                                     </button>
                                 </th>
+                                <th class="border-0 text-center" style="width: 8%;">
+                                    <button
+                                        class="btn btn-link p-0 text-decoration-none text-muted fw-bold text-uppercase small"
+                                        (click)="onSort('activeEntries')">
+                                        Active <i class="feather"
+                                            [ngClass]="{'icon-chevron-up': sortBy === 'activeEntries' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'activeEntries' && sortDir === 'desc'}"></i>
+                                    </button>
+                                </th>
+                                <th class="border-0 text-center" style="width: 8%;">
+                                    <button
+                                        class="btn btn-link p-0 text-decoration-none text-muted fw-bold text-uppercase small"
+                                        (click)="onSort('closedEntries')">
+                                        Closed <i class="feather"
+                                            [ngClass]="{'icon-chevron-up': sortBy === 'closedEntries' && sortDir === 'asc', 'icon-chevron-down': sortBy === 'closedEntries' && sortDir === 'desc'}"></i>
+                                    </button>
+                                </th>
                                 <th class="text-end pe-4 border-0" style="width: 13%;">Action</th>
                             </tr>
                         </thead>
@@ -224,6 +240,18 @@
                                         class="feather icon-alert-circle text-muted fs-5 opacity-50"
                                         title="Pending"></i>
                                 </td>
+                                <td class="text-center">
+                                    <span
+                                        class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10 rounded-pill px-3">
+                                        {{ c.activeEntries || 0 }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span
+                                        class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 rounded-pill px-3">
+                                        {{ c.closedEntries || 0 }}
+                                    </span>
+                                </td>
                                 <td class="text-end pe-4">
                                     <button class="btn btn-sm btn-outline-secondary me-1 rounded-pill px-3 fw-medium"
                                         (click)="editCustomer(c)">
@@ -232,6 +260,14 @@
                                     <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-medium"
                                         (click)="selectCustomer(c)">
                                         View
+                                    </button>
+                                    <button class="btn btn-sm ms-1 rounded-pill px-2" (click)="deleteCustomer(c)"
+                                        [title]="(c.activeEntries > 0 || c.closedEntries > 0) ? 'Cannot delete active customer' : 'Delete Customer'"
+                                        [disabled]="c.activeEntries > 0 || c.closedEntries > 0"
+                                        [class.btn-outline-danger]="!(c.activeEntries > 0 || c.closedEntries > 0)"
+                                        [class.btn-light]="c.activeEntries > 0 || c.closedEntries > 0"
+                                        [class.text-muted]="c.activeEntries > 0 || c.closedEntries > 0">
+                                        <i class="feather icon-trash-2"></i>
                                     </button>
                                 </td>
                             </tr>
@@ -301,7 +337,8 @@
             <!-- Search Bar -->
             <div class="position-relative flex-grow-1">
                 <input type="text" class="form-control border-0 shadow-sm ps-4 rounded-pill"
-                    placeholder="Search another customer..." [(ngModel)]="searchTerm" (keyup)="searchCustomers()">
+                    placeholder="Search another customer..." [ngModel]="searchTerm"
+                    (ngModelChange)="searchTerm=$event; searchCustomers()">
                 <i class="feather icon-search position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
 
                 <div *ngIf="showResults"
@@ -521,6 +558,13 @@
                                     <app-deposit-detail-view [deposit]="deposit" [customerName]="portfolio.customerName"
                                         (refresh)="loadPortfolio(portfolio.customerId)">
                                     </app-deposit-detail-view>
+                                </div>
+
+                                <!-- Discount Display -->
+                                <div *ngIf="deposit.discountAmount > 0">
+                                    <span class="text-uppercase small fw-bold me-2 text-warning">Discount:</span>
+                                    <span class="fw-bold fs-6 text-warning">{{ deposit.discountAmount | currency:'INR'
+                                        }}</span>
                                 </div>
 
                                 <!-- Net Profit Display -->

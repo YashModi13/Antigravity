@@ -67,6 +67,7 @@ export class MmsDepositsListComponent implements OnInit {
     settlementData: any = null;
     selectedPledgeForRedeem: any = null;
     settlementAmount: number = 0;
+    settlementDate: string = new Date().toISOString().split('T')[0];
     isFullPayment = true;
     redeemForm: any = {
         principalPaid: 0,
@@ -299,8 +300,9 @@ export class MmsDepositsListComponent implements OnInit {
                     activeMerchantEntries: activeEntries || []
                 };
 
-                this.generateLedger(fullDetails);
                 this.isFullPayment = true;
+                this.settlementDate = new Date().toISOString().split('T')[0];
+                this.generateLedger(fullDetails, new Date(this.settlementDate));
                 this.updateSettlementAmount();
                 this.showSettlementModal = true;
             },
@@ -356,6 +358,13 @@ export class MmsDepositsListComponent implements OnInit {
         }
     }
 
+    onSettlementDateChange() {
+        if (this.settlementData && this.settlementDate) {
+            this.generateLedger(this.settlementData, new Date(this.settlementDate));
+            this.updateSettlementAmount();
+        }
+    }
+
     get settlementValidationError(): string | null {
         if (this.isFullPayment) return null; // Full payment is always valid logic-wise
 
@@ -406,7 +415,8 @@ export class MmsDepositsListComponent implements OnInit {
         const paymentData = {
             principalPaid: pPaid,
             interestPaid: iPaid,
-            notes: this.isFullPayment ? 'Final Settlement (Full)' : `Settlement (Adjusted: ₹${this.settlementAmount})`
+            notes: this.isFullPayment ? 'Final Settlement (Full)' : `Settlement (Adjusted: ₹${this.settlementAmount})`,
+            transactionDate: this.settlementDate
         };
 
         // Call addDepositTransaction
@@ -437,10 +447,20 @@ export class MmsDepositsListComponent implements OnInit {
         });
     }
 
-    generateLedger(deposit: any) {
+    generateLedger(deposit: any, customCutoffDate?: Date) {
         if (!deposit) return;
 
         const events: any[] = [];
+
+        // Determine the cutoff date for interest generation
+        let cutoffDate = customCutoffDate;
+        if (!cutoffDate) {
+            if (deposit.status === 'CLOSED' && deposit.updatedDate) {
+                cutoffDate = new Date(deposit.updatedDate);
+            } else {
+                cutoffDate = new Date();
+            }
+        }
 
         // A. Add explicit transactions
         if (deposit.transactions) {
@@ -451,7 +471,7 @@ export class MmsDepositsListComponent implements OnInit {
         }
 
         // B. Generate Monthly Interest Accruals
-        this.addInterestAccrualEvents(deposit, events);
+        this.addInterestAccrualEvents(deposit, events, cutoffDate);
 
         // C. Sort Events Chronologically
         this.sortLedgerEvents(events);
@@ -465,7 +485,8 @@ export class MmsDepositsListComponent implements OnInit {
             'INITIAL_MONEY': { type: 'OPENING', cr: tx.amount, desc: 'Opening Balance' },
             'EXTRA_WITHDRAWAL': { type: 'EXTRA_WITHDRAWAL', cr: tx.amount, desc: 'Additional Loan' },
             'PRINCIPAL_PAYMENT': { type: 'PRINCIPAL_PAYMENT', dr: tx.amount, desc: 'Principal Repayment' },
-            'INTEREST_PAYMENT': { type: 'INTEREST PAYMENT', dr: tx.amount, isInterest: true, desc: 'Interest Repayment' }
+            'INTEREST_PAYMENT': { type: 'INTEREST PAYMENT', dr: tx.amount, isInterest: true, desc: 'Interest Repayment' },
+            'DISCOUNT': { type: 'DISCOUNT', dr: tx.amount, isInterest: true, desc: 'Discount (Kasar)' }
         };
 
         const config = typeMap[tx.type];
@@ -486,16 +507,15 @@ export class MmsDepositsListComponent implements OnInit {
         };
     }
 
-    private addInterestAccrualEvents(deposit: any, events: any[]) {
+    private addInterestAccrualEvents(deposit: any, events: any[], cutoffDate: Date) {
         const depositDate = new Date(deposit.depositDate);
-        const today = new Date();
         let monthCount = 1;
 
         while (true) {
             const intDate = new Date(depositDate);
             intDate.setMonth(depositDate.getMonth() + (monthCount - 1));
 
-            if (intDate > today && monthCount > 1) break;
+            if (intDate > cutoffDate && monthCount > 1) break;
 
             events.push({
                 date: intDate,

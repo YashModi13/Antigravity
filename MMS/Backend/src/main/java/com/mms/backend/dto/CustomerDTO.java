@@ -20,4 +20,6 @@ public class CustomerDTO {
     private Boolean isActive;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+    private Integer activeEntries;
+    private Integer closedEntries;
 }

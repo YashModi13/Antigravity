@@ -221,12 +221,28 @@
                                                 class="input-group-text bg-transparent border-0 pe-0 text-muted small">₹</span>
                                             <input type="number" id="settlementAmountInput"
                                                 class="form-control bg-transparent border-0 fw-bold fs-3 text-success ps-2"
-                                                [(ngModel)]="settlementAmount" [disabled]="isFullPayment">
+                                                [(ngModel)]="settlementAmount" [disabled]="isFullPayment"
+                                                (change)="calculateDiscount()">
                                         </div>
                                         <p class="text-muted small mt-2 d-flex align-items-center"
                                             *ngIf="!isFullPayment">
                                             <i class="feather icon-info me-1"></i> Balance will be closed.
                                         </p>
+                                    </div>
+
+                                    <!-- Discount Input for Partial Payment -->
+                                    <div class="mb-4" *ngIf="!isFullPayment">
+                                        <label class="form-label small fw-bold text-muted text-uppercase mb-2"
+                                            for="discountInput">Discount / Not Payable (Kasar)</label>
+                                        <div
+                                            class="input-group input-group-lg bg-light rounded-3 overflow-hidden border border-warning">
+                                            <span
+                                                class="input-group-text bg-transparent border-0 pe-0 text-muted small">₹</span>
+                                            <input type="number" id="discountInput"
+                                                class="form-control bg-transparent border-0 fw-bold fs-3 text-warning ps-2"
+                                                [(ngModel)]="discountAmount"
+                                                (change)="calculateSettlementFromDiscount()">
+                                        </div>
                                     </div>
 
                                     <div

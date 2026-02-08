@@ -40,7 +40,8 @@ public class CustomerController {
     public ResponseEntity<List<CustomerDTO>> searchCustomers(@RequestBody Map<String, String> payload) {
         log.info("[CustomerController] Request: Search Customers. Payload: {}", payload);
         String query = payload.get("q");
-        List<CustomerMaster> results = customerRepository.searchCustomers(query != null ? query : "");
+        List<CustomerMaster> results = customerRepository.searchCustomers(query != null ? query : "",
+                PageRequest.of(0, 20));
         return ResponseEntity.ok(results.stream()
                 .map(this::mapToCustomerDTO)
                 .toList());
@@ -139,6 +140,45 @@ public class CustomerController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/delete")
+    public ResponseEntity<Object> deleteCustomer(@RequestBody IdRequest request) {
+        log.info("[CustomerController] Request: Delete Customer. ID: {}", request.getId());
+        if (request.getId() == null) {
+            return ResponseEntity.badRequest().body("ID Required");
+        }
+        try {
+            CustomerMaster customer = customerRepository.findById(java.util.Objects.requireNonNull(request.getId()))
+                    .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+            // Check if customer has active or closed entries via computed fields
+            // Wait, computed fields are on FETCH. So finding by ID works.
+            // But checking repository directly is safer?
+            // If activeEntries > 0 or closedEntries > 0 -> Reject.
+            // Actually, just let constraints handle it? No, explicit check is better for
+            // messaging.
+            // But computed fields are @Formula. They exist on the retrieved entity.
+
+            Integer activeCount = customer.getActiveEntries() != null ? customer.getActiveEntries() : 0;
+            Integer closedCount = customer.getClosedEntries() != null ? customer.getClosedEntries() : 0;
+
+            if (activeCount > 0 || closedCount > 0) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("Cannot delete customer with existing deposits (Active: " + activeCount + ", Closed: "
+                                + closedCount + ")");
+            }
+
+            customerRepository.delete(customer);
+            return ResponseEntity.ok().build();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.warn("[CustomerController] Cannot delete customer due to constraints: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Cannot delete customer. Data integrity constraint violation.");
+        } catch (Exception e) {
+            log.error("[CustomerController] Error deleting customer", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting customer");
+        }
+    }
+
     private CustomerDTO mapToCustomerDTO(CustomerMaster entity) {
         if (entity == null)
             return null;
@@ -156,6 +196,8 @@ public class CustomerController {
         dto.setIsActive(entity.getIsActive());
         dto.setCreatedDate(entity.getCreatedDate());
         dto.setUpdatedDate(entity.getUpdatedDate());
+        dto.setActiveEntries(entity.getActiveEntries() != null ? entity.getActiveEntries() : 0);
+        dto.setClosedEntries(entity.getClosedEntries() != null ? entity.getClosedEntries() : 0);
 
         // Handle referralName (computed in entity)
         dto.setReferralName(entity.getReferralName());

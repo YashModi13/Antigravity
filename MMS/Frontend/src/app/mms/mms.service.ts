@@ -208,9 +208,9 @@ export class MmsService {
         return this.http.post(REST_URLS.DEPOSITS_CREATE, data, { responseType: 'text' });
     }
 
-    // deleteCustomer(id: number): Observable<void> {
-    //     return this.http.post<void>(REST_URLS.CUSTOMERS_DELETE, { id });
-    // }
+    deleteCustomer(id: number): Observable<any> {
+        return this.http.post<any>(REST_URLS.CUSTOMERS_DELETE, { id });
+    }
 
     searchCustomers(query: string): Observable<any[]> {
         return this.http.post<any[]>(REST_URLS.CUSTOMERS_SEARCH, { q: query });

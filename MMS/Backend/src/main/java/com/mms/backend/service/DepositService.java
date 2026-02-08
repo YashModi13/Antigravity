@@ -141,6 +141,10 @@ public class DepositService {
         if (request.getIsVerified() != null) {
             entry.setIsVerified(request.getIsVerified());
         }
+        if (request.getCustomerId() != null) {
+            entry.setCustomer(customerRepository.findById(Objects.requireNonNull(request.getCustomerId()))
+                    .orElseThrow(() -> new IllegalArgumentException("Customer not found")));
+        }
     }
 
     private void propagateDepositDateUpdate(Integer depositId, LocalDate newDate) {
@@ -186,9 +190,17 @@ public class DepositService {
             int matchIndex = findMatchingItemIndex(existing, itemsToCreate);
 
             if (matchIndex != -1) {
-                // Keep Existing
+                // Keep Existing & Update
                 DepositItemRequest req = itemsToCreate.get(matchIndex);
                 existing.setItemDescription(req.getDescription());
+                // Update specific fields that are allowed to change
+                existing.setWeightReceived(req.getWeight());
+                existing.setFineWeight(req.getFineWeight());
+                existing.setItem(
+                        itemRepository.findById(Objects.requireNonNull(req.getItemId())).orElse(existing.getItem()));
+                existing.setWeightUnit(unitRepository.findById(Objects.requireNonNull(req.getUnitId()))
+                        .orElse(existing.getWeightUnit()));
+
                 itemsRepository.save(existing);
                 itemsToKeep.add(existing);
                 itemsToCreate.remove(matchIndex);
@@ -216,13 +228,18 @@ public class DepositService {
     private int findMatchingItemIndex(CustomerDepositItems existing, List<DepositItemRequest> itemsToCreate) {
         for (int i = 0; i < itemsToCreate.size(); i++) {
             DepositItemRequest req = itemsToCreate.get(i);
+            // Match by ID if provided (this is the most robust way to update)
+            if (req.getId() != null && req.getId().equals(existing.getId())) {
+                return i;
+            }
+            // Fallback: heuristic matching (only if ID is not provided)
             boolean sameItem = req.getItemId().equals(existing.getItem().getId());
             int reqUnitId = req.getUnitId() != null ? req.getUnitId() : 1;
             boolean sameUnit = (existing.getWeightUnit() != null) && (existing.getWeightUnit().getId() == reqUnitId);
             boolean sameWeight = req.getWeight().compareTo(existing.getWeightReceived()) == 0;
             boolean sameFine = req.getFineWeight().compareTo(existing.getFineWeight()) == 0;
 
-            if (sameItem && sameUnit && sameWeight && sameFine) {
+            if (req.getId() == null && sameItem && sameUnit && sameWeight && sameFine) {
                 return i;
             }
         }
@@ -248,6 +265,10 @@ public class DepositService {
         if (request.getExtraPrincipal() != null && request.getExtraPrincipal().compareTo(BigDecimal.ZERO) > 0) {
             LocalDate txDate = request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now();
             createTransaction(entry, TX_EXTRA_WITHDRAWAL, request.getExtraPrincipal(), txDate, request.getNotes());
+        }
+
+        if (request.getDiscountAmount() != null && request.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
+            createTransaction(entry, "DISCOUNT", request.getDiscountAmount(), LocalDate.now(), request.getNotes());
         }
 
         entry.setUpdatedDate(LocalDateTime.now());

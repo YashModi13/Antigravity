@@ -22,8 +22,9 @@
                                 <i class="feather icon-search text-muted"></i>
                             </span>
                             <input type="text" class="form-control border-0 bg-transparent ps-2"
-                                placeholder="Search Customer by Name, Mobile or ID..." [(ngModel)]="searchTerm"
-                                name="searchBox" (input)="searchCustomers()" [disabled]="isEditMode" autocomplete="off">
+                                placeholder="Search Customer by Name, Mobile or ID..." [ngModel]="searchTerm"
+                                (ngModelChange)="searchTerm=$event; searchCustomers()" name="searchBox"
+                                autocomplete="off">
                         </div>
 
                         <!-- Dropdown Results -->

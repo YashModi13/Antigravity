@@ -599,7 +599,7 @@
                         </div>
                         <div *ngIf="settlementData.status">
                             <span class="badge fs-6 px-4 py-2 text-uppercase shadow-sm" [ngClass]="{
-                                    'bg-success': settlementData.status === 'ACTIVE',
+                                    'bg-success': settlementData.status === 'ACTIVE' || settlementData.status === 'SAFE',
                                     'bg-danger': settlementData.status === 'RISK',
                                     'bg-secondary': settlementData.status === 'CLOSED',
                                     'bg-warning text-dark': settlementData.status === 'OVERDUE'
@@ -1157,6 +1157,26 @@
                             <div class="col-md-6 ps-md-5">
                                 <h6 class="text-uppercase text-muted small fw-bold mb-4">Payment</h6>
 
+                                <div *ngIf="!settlementData.isVerified"
+                                    class="alert alert-warning d-flex align-items-center mb-4 border-warning"
+                                    role="alert">
+                                    <i class="feather icon-alert-triangle fs-4 me-3"></i>
+                                    <div>
+                                        <strong>Verification Pending</strong>
+                                        <div class="small">This deposit entry has not been verified yet. Please verify
+                                            the
+                                            entry before proceeding with settlement.</div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted text-uppercase"
+                                        for="settlementDate">Settlement Date</label>
+                                    <input type="date" id="settlementDate" class="form-control"
+                                        [(ngModel)]="settlementDate" (change)="onSettlementDateChange()"
+                                        [disabled]="!settlementData.isVerified">
+                                </div>
+
                                 <div class="mb-4">
                                     <div class="form-check form-switch ps-0 mb-3">
                                         <!-- Entire box is a Label for maximum clickability -->
@@ -1172,14 +1192,16 @@
 
                                             <input class="form-check-input fs-4 m-0" type="checkbox"
                                                 id="fullPaymentCheck" [(ngModel)]="isFullPayment"
-                                                (change)="updateSettlementAmount()">
+                                                (change)="updateSettlementAmount()"
+                                                [disabled]="!settlementData.isVerified">
                                         </label>
                                     </div>
 
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text bg-light border-end-0 fw-bold text-muted">₹</span>
                                         <input type="number" class="form-control fw-bold text-end fs-4"
-                                            [(ngModel)]="settlementAmount" [disabled]="isFullPayment"
+                                            [(ngModel)]="settlementAmount"
+                                            [disabled]="isFullPayment || !settlementData.isVerified"
                                             [class.text-danger]="settlementValidationError" placeholder="0.00">
                                     </div>
 
@@ -1198,7 +1220,7 @@
 
                                         <input class="form-check-input m-0 me-3 fs-3" type="checkbox"
                                             id="confirmPayment" #confirmPayment
-                                            [disabled]="hasActivePledges || settlementValidationError"
+                                            [disabled]="hasActivePledges || settlementValidationError || !settlementData.isVerified"
                                             style="flex-shrink: 0; cursor: pointer;">
 
                                         <label class="small fw-bold lh-sm text-dark mb-0" for="confirmPayment"
@@ -1222,7 +1244,7 @@
                 <button type="button" class="btn btn-lg btn-outline-secondary me-2 px-4"
                     (click)="showSettlementModal = false">Cancel</button>
                 <button type="button" class="btn btn-lg btn-success fw-bold px-5 shadow-sm"
-                    [disabled]="hasActivePledges || settlementValidationError"
+                    [disabled]="hasActivePledges || settlementValidationError || !settlementData.isVerified"
                     (click)="confirmSettlement(confirmPayment.checked)">
                     <i class="feather icon-check-circle me-2"></i> Settle & Close
                 </button>

@@ -60,6 +60,12 @@ public class CustomerMaster {
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
 
+    @org.hibernate.annotations.Formula("(SELECT COUNT(d.id) FROM mms.customer_deposit_entry d WHERE d.customer_id = id AND d.entry_status != 'CLOSED')")
+    private Integer activeEntries;
+
+    @org.hibernate.annotations.Formula("(SELECT COUNT(d.id) FROM mms.customer_deposit_entry d WHERE d.customer_id = id AND d.entry_status = 'CLOSED')")
+    private Integer closedEntries;
+
     @PrePersist
     @PreUpdate
     private void sanitizeData() {

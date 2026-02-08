@@ -37,6 +37,7 @@ public class CustomerPortfolioDTO {
         private BigDecimal paidPrincipal;
         private BigDecimal paidInterest;
         private BigDecimal monthlyInterest;
+        private BigDecimal discountAmount; // For waivers/kasar
         private BigDecimal netProfitLoss;
 
         // Time

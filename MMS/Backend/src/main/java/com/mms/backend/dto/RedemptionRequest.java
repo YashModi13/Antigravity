@@ -12,5 +12,6 @@ public class RedemptionRequest {
 
     // Support for adding extra principal (withdrawal)
     private BigDecimal extraPrincipal;
+    private BigDecimal discountAmount; // For waivers/kasar
     private java.time.LocalDate transactionDate;
 }

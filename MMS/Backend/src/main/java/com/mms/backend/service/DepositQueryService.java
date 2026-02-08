@@ -502,6 +502,10 @@ public class DepositQueryService {
         BigDecimal interestPaid = txs.stream().filter(t -> TX_INTEREST_PAYMENT.equals(t.getTransactionType()))
                 .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Calculate Discount from Transactions
+        BigDecimal discountAmount = txs.stream().filter(t -> "DISCOUNT".equals(t.getTransactionType()))
+                .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
         depDto.setPaidPrincipal(principalPaid);
         depDto.setPaidInterest(interestPaid);
         depDto.setInterestRate(deposit.getTotalInterestRate());
@@ -525,6 +529,17 @@ public class DepositQueryService {
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         depDto.setAccruedInterest(accrued);
 
+        // Fallback: If Closed and no discount transaction, calculate implied discount
+        // (Kasar)
+        if (STATUS_CLOSED.equals(deposit.getEntryStatus()) && discountAmount.compareTo(BigDecimal.ZERO) == 0) {
+            BigDecimal totalDue = originalLoan.add(accrued);
+            BigDecimal totalPaid = principalPaid.add(interestPaid);
+            if (totalDue.compareTo(totalPaid) > 0) {
+                discountAmount = totalDue.subtract(totalPaid);
+            }
+        }
+        depDto.setDiscountAmount(discountAmount);
+
         if (STATUS_CLOSED.equals(deposit.getEntryStatus()) && interestPaid.compareTo(BigDecimal.ZERO) == 0) {
             depDto.setPaidInterest(accrued);
             interestPaid = accrued;
@@ -536,39 +551,12 @@ public class DepositQueryService {
         depDto.setNetProfitLoss(netProfit);
 
         // Items
+        // Items
         List<CustomerDepositItems> items = itemsRepository.findByDepositEntry_Id(deposit.getId());
-        List<CustomerPortfolioDTO.PortfolioItemDTO> itemDTOs = items.stream().map(item -> {
-            CustomerPortfolioDTO.PortfolioItemDTO itemDto = new CustomerPortfolioDTO.PortfolioItemDTO();
-            itemDto.setItemName(item.getItem().getItemName());
-            itemDto.setWeight(item.getWeightReceived());
-            itemDto.setFineWeight(item.getFineWeight());
-            if (STATUS_CLOSED.equals(deposit.getEntryStatus())) {
-                itemDto.setStatus(STATUS_RETURNED);
-            } else {
-                itemDto.setStatus(item.getItemStatus());
-            }
-            try {
-                BigDecimal val = priceService.calculateAssetValue(item.getItem().getId(), item.getFineWeight());
-                itemDto.setCurrentAssetValue(val);
-            } catch (Exception e) {
-                itemDto.setCurrentAssetValue(BigDecimal.ZERO);
-            }
-            return itemDto;
-        }).toList();
-        depDto.setItems(new ArrayList<>(itemDTOs)); // Mutable
+        depDto.setItems(new ArrayList<>(mapPortfolioItems(items, deposit.getEntryStatus())));
 
         // Transactions
-        List<CustomerPortfolioDTO.PortfolioTransactionDTO> transDTOs = txs.stream()
-                .sorted((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate()))
-                .map(t -> {
-                    CustomerPortfolioDTO.PortfolioTransactionDTO tDto = new CustomerPortfolioDTO.PortfolioTransactionDTO();
-                    tDto.setDate(t.getTransactionDate());
-                    tDto.setType(t.getTransactionType());
-                    tDto.setAmount(t.getAmount());
-                    tDto.setNotes(t.getDescription());
-                    return tDto;
-                }).toList();
-        depDto.setTransactions(new ArrayList<>(transDTOs));
+        depDto.setTransactions(new ArrayList<>(mapPortfolioTransactions(txs)));
 
         return depDto;
     }
@@ -583,5 +571,41 @@ public class DepositQueryService {
 
     private String getConfig(Map<String, String> configs, String key, String defaultValue) {
         return configs.getOrDefault(key, defaultValue);
+    }
+
+    private List<CustomerPortfolioDTO.PortfolioItemDTO> mapPortfolioItems(List<CustomerDepositItems> items,
+            String depositStatus) {
+        return items.stream().map(item -> {
+            CustomerPortfolioDTO.PortfolioItemDTO itemDto = new CustomerPortfolioDTO.PortfolioItemDTO();
+            itemDto.setItemName(item.getItem().getItemName());
+            itemDto.setWeight(item.getWeightReceived());
+            itemDto.setFineWeight(item.getFineWeight());
+            if (STATUS_CLOSED.equals(depositStatus)) {
+                itemDto.setStatus(STATUS_RETURNED);
+            } else {
+                itemDto.setStatus(item.getItemStatus());
+            }
+            try {
+                BigDecimal val = priceService.calculateAssetValue(item.getItem().getId(), item.getFineWeight());
+                itemDto.setCurrentAssetValue(val);
+            } catch (Exception e) {
+                itemDto.setCurrentAssetValue(BigDecimal.ZERO);
+            }
+            return itemDto;
+        }).toList();
+    }
+
+    private List<CustomerPortfolioDTO.PortfolioTransactionDTO> mapPortfolioTransactions(
+            List<CustomerDepositTransaction> txs) {
+        return txs.stream()
+                .sorted((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate()))
+                .map(t -> {
+                    CustomerPortfolioDTO.PortfolioTransactionDTO tDto = new CustomerPortfolioDTO.PortfolioTransactionDTO();
+                    tDto.setDate(t.getTransactionDate());
+                    tDto.setType(t.getTransactionType());
+                    tDto.setAmount(t.getAmount());
+                    tDto.setNotes(t.getDescription());
+                    return tDto;
+                }).toList();
     }
 }

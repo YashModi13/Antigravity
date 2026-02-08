@@ -370,15 +370,23 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                     this.searchTerm = data.customerName;
                 }
 
-                this.deposit.itemLines = data.items.map((i: any) => ({
-                    itemId: i.itemId,
-                    weight: i.weight,
-                    unitId: this.defaultUnitId,
-                    fineWeight: i.fineWeight,
-                    finePercentage: i.weight > 0 ? Number(((i.fineWeight / i.weight) * 100).toFixed(3)) : 0,
-                    description: i.description,
-                    assetValue: null
-                }));
+                this.deposit.itemLines = data.items.map((i: any) => {
+                    const itemMaster = this.items.find(im => im.id == i.itemId);
+                    const unitFactor = itemMaster?.unit?.unitInGram ?? 1;
+                    return {
+                        id: i.id, // Preserve ID for updates
+                        itemId: i.itemId,
+                        weight: i.weight / unitFactor,
+                        unitId: itemMaster?.unit?.id ?? this.defaultUnitId,
+                        fineWeight: i.fineWeight / unitFactor,
+                        // Recalculate fine percentage based on raw values to avoid rounding errors
+                        finePercentage: i.weight > 0 ? Number(((i.fineWeight / i.weight) * 100).toFixed(3)) : 0,
+                        description: i.description,
+                        selectedItem: itemMaster,
+                        selectedUnit: itemMaster?.unit,
+                        assetValue: null
+                    };
+                });
 
                 // Calculate asset values for all loaded items
                 this.deposit.itemLines.forEach(line => this.updateAssetValue(line));
@@ -392,14 +400,22 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
     }
 
     searchCustomers() {
-        if (this.searchTerm.length < 2) {
+        if (!this.searchTerm || this.searchTerm.length < 2) {
             this.showResults = false;
             return;
         }
 
-        this.mmsService.searchCustomers(this.searchTerm).subscribe(results => {
-            this.searchResults = results;
-            this.showResults = true;
+        this.mmsService.searchCustomers(this.searchTerm).subscribe({
+            next: (results) => {
+                this.searchResults = results || [];
+                // Only show results if we have matches
+                this.showResults = this.searchResults.length > 0;
+            },
+            error: (err) => {
+                console.error('Customer Search Failed', err);
+                this.searchResults = [];
+                this.showResults = false;
+            }
         });
     }
 
@@ -620,6 +636,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
 
         if (this.isEditMode) {
             const payload = {
+                customerId: this.deposit.customerId,
                 depositDate: this.deposit.depositDate,
                 interestRate: this.deposit.interestRate,
                 notes: this.deposit.notes,
@@ -630,6 +647,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                     const item = this.items.find(i => i.id == line.itemId);
                     const factor = item?.unit?.unitInGram ?? 1;
                     return {
+                        id: line.id, // Pass existing ID
                         itemId: line.itemId,
                         weight: line.weight * factor,
                         unitId: item?.unit?.id ?? this.defaultUnitId,

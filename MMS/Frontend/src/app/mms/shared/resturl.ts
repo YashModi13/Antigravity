@@ -38,6 +38,7 @@ export const REST_URLS = {
     CUSTOMERS_SEARCH: `${BASE_API_URL}/customers/search`,
     CUSTOMERS_ITEMS: `${BASE_API_URL}/customers/items`,
     CUSTOMERS_PORTFOLIO: `${BASE_API_URL}/customers/portfolio`,
+    CUSTOMERS_DELETE: `${BASE_API_URL}/customers/delete`,
 
     MERCHANTS_LIST: `${BASE_API_URL}/merchants/list`,
     MERCHANTS_CREATE: `${BASE_API_URL}/merchants/create`,

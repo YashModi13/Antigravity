@@ -32,6 +32,24 @@ export class DepositDetailViewComponent {
     settlementData: any = null;
     settlementAmount: number = 0;
     isFullPayment = true;
+    discountAmount: number = 0;
+
+    calculateDiscount() {
+        if (!this.isFullPayment && this.settlementData) {
+            // Round to 2 decimals to avoid floating point issues
+            const discount = Math.max(0, this.settlementData.totalDue - this.settlementAmount);
+            this.discountAmount = Math.round(discount * 100) / 100;
+        } else {
+            this.discountAmount = 0;
+        }
+    }
+
+    calculateSettlementFromDiscount() {
+        if (!this.isFullPayment && this.settlementData) {
+            const amount = Math.max(0, this.settlementData.totalDue - this.discountAmount);
+            this.settlementAmount = Math.round(amount * 100) / 100;
+        }
+    }
 
     // --- HISTORY MODAL STATE ---
     showHistoryModal = false;
@@ -109,6 +127,7 @@ export class DepositDetailViewComponent {
 
         this.settlementAmount = totalDue;
         this.isFullPayment = true;
+        this.discountAmount = 0;
         this.showSettlementModal = true;
     }
 
@@ -133,10 +152,26 @@ export class DepositDetailViewComponent {
             }
         }
 
+
+        // Calculate Discount (Kasar) if not full payment
+        let discount = 0;
+        if (!this.isFullPayment) {
+            // Use the explicitly calculated/entered discount amount
+            // Ensure we handle cases where totalDue changed or user entered custom discount
+            discount = this.discountAmount;
+
+            // Safety check: if discount is 0 but settlement < totalDue, recalculate?
+            // No, trust the state. But if state is 0, check if we should auto-calc?
+            if (discount <= 0 && this.settlementAmount < this.settlementData.totalDue) {
+                discount = this.settlementData.totalDue - this.settlementAmount;
+            }
+        }
+
         const paymentData = {
             principalPaid: pPaid,
             interestPaid: iPaid,
-            notes: this.isFullPayment ? 'Final Settlement (Full)' : `Settlement (Adjusted: ₹${this.settlementAmount})`
+            discountAmount: discount, // Send discount/kasar amount
+            notes: this.isFullPayment ? 'Final Settlement (Full)' : `Settlement (Adjusted: ₹${this.settlementAmount}, Discount: ₹${discount})`
         };
 
         this.mmsService.addDepositTransaction(this.settlementData.depositId, paymentData).subscribe({

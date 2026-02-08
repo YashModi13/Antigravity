@@ -5,6 +5,7 @@ import { MmsService } from '../mms.service';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { ToastService } from 'src/app/theme/shared/components/toast/toast.service';
+import Swal from 'sweetalert2';
 import { DepositDetailViewComponent } from '../common/deposit-detail-view/deposit-detail-view.component';
 
 @Component({
@@ -50,9 +51,9 @@ export class CustomerItemsComponent implements OnInit {
     protected readonly Math = Math;
 
     constructor(
-        private mmsService: MmsService,
-        private router: Router,
-        private toastService: ToastService
+        private readonly mmsService: MmsService,
+        private readonly router: Router,
+        private readonly toastService: ToastService
     ) { }
 
     customersList: any[] = [];
@@ -198,6 +199,51 @@ export class CustomerItemsComponent implements OnInit {
         });
     }
 
+    deleteCustomer(customer: any) {
+        if (customer.activeEntries > 0 || customer.closedEntries > 0) {
+            this.toastService.error('Cannot delete customer with existing history');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `You are about to delete ${customer.customerName}. This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.isLoading = true;
+                this.mmsService.deleteCustomer(customer.id).subscribe({
+                    next: () => {
+                        this.toastService.success('Customer deleted successfully');
+                        this.loadCustomers(); // Refresh list
+                        this.isLoading = false;
+                        Swal.fire(
+                            'Deleted!',
+                            'Customer has been deleted.',
+                            'success'
+                        );
+                    },
+                    error: (err) => {
+                        // Check if error is simple string or object
+                        let msg = 'Failed to delete customer';
+                        if (typeof err.error === 'string') {
+                            msg = err.error;
+                        } else if (err.error?.message) {
+                            msg = err.error.message;
+                        }
+                        this.toastService.error(msg);
+                        console.error('Delete error', err);
+                        this.isLoading = false;
+                    }
+                });
+            }
+        });
+    }
+
     extractFilters() {
         const vSet = new Set<string>();
         const dSet = new Set<string>();
@@ -205,8 +251,8 @@ export class CustomerItemsComponent implements OnInit {
             if (c.village) vSet.add(c.village);
             if (c.district) dSet.add(c.district);
         });
-        this.villages = Array.from(vSet).sort();
-        this.districts = Array.from(dSet).sort();
+        this.villages = Array.from(vSet).sort((a, b) => a.localeCompare(b));
+        this.districts = Array.from(dSet).sort((a, b) => a.localeCompare(b));
     }
 
     applyFilters() {
@@ -215,9 +261,9 @@ export class CustomerItemsComponent implements OnInit {
         // For this step, I'll filter the current page view.
         this.filteredCustomers = this.customersList.filter(c => {
             const matchesSearch = !this.searchTerm ||
-                c.customerName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-                c.mobileNumber.includes(this.searchTerm) ||
-                (c.village && c.village.toLowerCase().includes(this.searchTerm.toLowerCase()));
+                c.customerName?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                c.mobileNumber?.includes(this.searchTerm) ||
+                (c.village?.toLowerCase().includes(this.searchTerm.toLowerCase()));
 
             const matchesVillage = !this.selectedVillage || c.village === this.selectedVillage;
             const matchesDistrict = !this.selectedDistrict || c.district === this.selectedDistrict;
@@ -227,17 +273,26 @@ export class CustomerItemsComponent implements OnInit {
     }
 
     searchCustomers() {
-        // 1. Trigger local filtering (on current page)
+        // 1. Trigger local filtering (on current page) - Optional visual feedback
         this.applyFilters();
 
         // 2. Search Dropdown logic (Backend Search)
-        if (!this.searchTerm) {
+        if (!this.searchTerm || this.searchTerm.length < 2) {
             this.showResults = false;
             return;
         }
-        this.mmsService.searchCustomers(this.searchTerm).subscribe(results => {
-            this.searchResults = results;
-            this.showResults = true;
+
+        this.mmsService.searchCustomers(this.searchTerm).subscribe({
+            next: (results) => {
+                this.searchResults = results || [];
+                // Show results dropdown if we have results OR if we want to show "No results found"
+                this.showResults = true;
+            },
+            error: (err) => {
+                console.error('Search failed', err);
+                this.searchResults = [];
+                this.showResults = false;
+            }
         });
     }
 
@@ -274,7 +329,7 @@ export class CustomerItemsComponent implements OnInit {
     calculateTotals() {
         this.totalLoan = 0;
         this.totalAssetValue = 0;
-        if (this.portfolio && this.portfolio.deposits) {
+        if (this.portfolio?.deposits) {
             this.portfolio.deposits.forEach((d: any) => {
                 if (d.status === 'ACTIVE') {
                     this.totalLoan += d.loanAmount || 0;

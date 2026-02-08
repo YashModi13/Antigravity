@@ -15,4 +15,5 @@ public class UpdateDepositRequest {
     private Integer tokenNo;
     private List<DepositItemRequest> items;
     private Boolean isVerified;
+    private Integer customerId;
 }
