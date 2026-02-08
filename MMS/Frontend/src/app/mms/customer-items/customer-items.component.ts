@@ -177,13 +177,16 @@ export class CustomerItemsComponent implements OnInit {
     }
 
     saveEditedCustomer() {
-        if (!this.editingCustomer.customerName || !this.editingCustomer.mobileNumber) {
-            this.toastService.error('Name and Mobile Number are required');
+        if (!this.editingCustomer.customerName) {
+            this.toastService.error('Customer Name is required');
             return;
         }
 
-        // Prepare payload (ensure referral is set correctly)
-        const payload = { ...this.editingCustomer };
+        // Prepare payload (ensure referral is set correctly and mobile can be null)
+        const payload = {
+            ...this.editingCustomer,
+            mobileNumber: this.editingCustomer.mobileNumber || null
+        };
         // If referral term matches current referral name, good. If cleared, set null.
         if (!this.editReferralSearchTerm) {
             payload.referralCustomer = null;

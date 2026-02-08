@@ -364,8 +364,18 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 this.deposit.initialLoanAmount = data.initialLoanAmount || null;
                 this.loanAmountDisplay = this.deposit.initialLoanAmount ? this.deposit.initialLoanAmount.toLocaleString('en-IN') : '';
 
-                // Set Customer Name for Display
-                if (data.customerName) {
+                // Set Customer for Profile Card Display
+                if (data.customerId) {
+                    this.selectedCustomer = {
+                        id: data.customerId,
+                        customerName: data.customerName,
+                        mobileNumber: data.mobileNumber,
+                        village: data.village,
+                        address: data.address,
+                        district: data.district,
+                        state: data.state,
+                        pincode: data.pincode
+                    };
                     this.selectedCustomerName = data.customerName;
                     this.searchTerm = data.customerName;
                 }
@@ -473,7 +483,13 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.mmsService.createCustomer(this.newCustomer).subscribe({
+        // Handle empty mobile as null
+        const payload = {
+            ...this.newCustomer,
+            mobileNumber: this.newCustomer.mobileNumber || null
+        };
+
+        this.mmsService.createCustomer(payload).subscribe({
             next: (customer: any) => {
                 this.toastService.success('Customer created successfully');
                 this.selectCustomer(customer);

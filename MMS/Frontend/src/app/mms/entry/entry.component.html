@@ -31,22 +31,45 @@
                         <div class="dropdown-menu show w-100 shadow-lg border-0 mt-2 rounded-3" *ngIf="showResults"
                             style="position: absolute; z-index: 1050; max-height: 350px; overflow-y: auto;">
                             <!-- Existing Results -->
-                            <a class="dropdown-item py-3 border-bottom d-flex align-items-center"
+                            <a class="dropdown-item py-3 border-bottom d-flex align-items-center bg-white"
                                 *ngFor="let result of searchResults" (click)="selectCustomer(result)"
                                 href="javascript:void(0)">
-                                <div class="bg-light rounded-circle p-2 me-3 text-center"
-                                    style="width: 40px; height: 40px;">
-                                    <i class="feather icon-user text-secondary"></i>
+                                <div class="position-relative me-3">
+                                    <div class="bg-primary rounded-circle p-2 text-center d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                                        style="width: 45px; height: 45px; font-size: 1.1rem; background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;">
+                                        {{ result.customerName.charAt(0) }}
+                                    </div>
+                                    <span
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark border border-white fw-medium shadow-sm"
+                                        style="font-size: 0.65rem; padding: 0.35em 0.65em;">
+                                        #{{ result.id }}
+                                    </span>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0 text-dark fw-bold">{{ result.customerName }}</h6>
-                                    <small class="text-muted">
-                                        <i class="feather icon-phone me-1"></i>{{ result.mobileNumber }}
-                                        <span class="mx-2">•</span>
-                                        {{ result.village || 'N/A' }}
-                                    </small>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h6 class="mb-0 text-dark fw-bold text-truncate pe-2">{{ result.customerName }}
+                                        </h6>
+                                        <span class="small text-primary fw-bold"><i
+                                                class="feather icon-phone me-1"></i>{{ result.mobileNumber }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-light text-secondary border fw-medium small">
+                                            <i class="feather icon-map-pin me-1"></i>{{ result.village || 'N/A' }}
+                                        </span>
+                                        <span class="badge bg-light text-secondary border fw-medium small"
+                                            *ngIf="result.pincode">
+                                            <i class="feather icon-hash me-1"></i>{{ result.pincode }}
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted text-truncate opacity-75 d-flex align-items-center"
+                                        *ngIf="result.address">
+                                        <i class="feather icon-home me-1 fs-xs"></i>
+                                        <span class="text-truncate">{{ result.address }}</span>
+                                    </div>
                                 </div>
-                                <span class="badge bg-light text-dark border">ID: {{ result.id }}</span>
+                                <div class="ms-3 text-muted opacity-25">
+                                    <i class="feather icon-chevron-right fs-4"></i>
+                                </div>
                             </a>
 
                             <!-- No Results Placeholder -->
@@ -56,8 +79,7 @@
                                     <i class="feather icon-search fs-3 text-muted opacity-25"></i>
                                 </div>
                                 <p class="mb-0 text-muted small fw-bold">No matching customers found for "{{ searchTerm
-                                    }}"
-                                </p>
+                                    }}"</p>
                             </div>
 
                             <!-- Beast Mode Design: Add New Customer Quick Action -->
@@ -65,14 +87,13 @@
                                 style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;"
                                 (click)="openNewCustomerModal()" href="javascript:void(0)">
                                 <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3 text-center d-flex align-items-center justify-content-center shadow-sm"
-                                    style="width: 40px; height: 40px;">
-                                    <i class="feather icon-plus text-white" style="font-size: 1.2rem;"></i>
+                                    style="width: 45px; height: 45px;">
+                                    <i class="feather icon-plus text-white" style="font-size: 1.4rem;"></i>
                                 </div>
                                 <div class="flex-grow-1">
                                     <h6 class="mb-0 text-white fw-bolder">Add "{{ searchTerm }}" as New Customer</h6>
                                     <small class="text-white text-opacity-75">Click here to quickly create a new
-                                        customer
-                                        profile.</small>
+                                        customer profile.</small>
                                 </div>
                                 <div class="ms-2">
                                     <i class="feather icon-arrow-right text-white"></i>
@@ -81,28 +102,70 @@
                         </div>
                     </div>
 
-                    <!-- Selected Customer Profile Card -->
-                    <div class="mt-4 animate__animated animate__fadeIn" *ngIf="selectedCustomer">
-                        <div
-                            class="bg-primary-light border border-primary-light rounded-3 p-3 position-relative overflow-hidden">
-                            <div class="d-flex align-items-center position-relative" style="z-index: 1;">
-                                <div class="bg-white p-3 rounded-circle shadow-sm text-primary me-3">
-                                    <i class="feather icon-user fs-4"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-1 text-primary fw-bold">{{ selectedCustomer.customerName }}</h5>
-                                    <div class="d-flex align-items-center text-secondary small fw-bold">
-                                        <span class="me-3"><i class="feather icon-phone me-1"></i> {{
-                                            selectedCustomer.mobileNumber }}</span>
-                                        <span class="me-3"><i class="feather icon-map-pin me-1"></i> {{
-                                            selectedCustomer.village || 'N/A' }}</span>
-                                        <span class="badge bg-primary rounded-pill">ID: {{ selectedCustomer.id }}</span>
+                    <!-- Selected Customer Profile Card (Beast Mode) -->
+                    <div class="mt-4 animate__animated animate__zoomIn" *ngIf="selectedCustomer">
+                        <div class="card border-0 shadow-sm overflow-hidden"
+                            style="background: #f8fbff; border: 1px solid #e1e9f4 !important;">
+                            <div class="card-body p-0">
+                                <div class="row g-0">
+                                    <div class="col-auto bg-primary d-flex align-items-center justify-content-center px-4 py-3"
+                                        style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important; min-width: 100px;">
+                                        <div class="text-center text-white">
+                                            <div class="fs-2 fw-black mb-0">{{ selectedCustomer.customerName.charAt(0)
+                                                }}</div>
+                                            <div class="small opacity-75 fw-bold mt-n1">#{{ selectedCustomer.id }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col p-3 ps-4">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <h5 class="mb-1 text-dark fw-black letter-spacing-1">{{
+                                                    selectedCustomer.customerName }}</h5>
+                                                <span
+                                                    class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-1 small fw-bold">
+                                                    <i class="feather icon-check-circle me-1"></i>VERIFIED CUSTOMER
+                                                </span>
+                                            </div>
+                                            <button class="btn btn-outline-primary btn-sm rounded-pill"
+                                                (click)="selectedCustomer = null; searchTerm = ''">
+                                                <i class="feather icon-refresh-cw me-1"></i> Change
+                                            </button>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <div class="small fw-bold text-muted text-uppercase mb-1"
+                                                    style="font-size: 0.65rem;">Mobile Number</div>
+                                                <div class="fw-bold text-primary"><i
+                                                        class="feather icon-phone me-1"></i> {{
+                                                    selectedCustomer.mobileNumber }}</div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="small fw-bold text-muted text-uppercase mb-1"
+                                                    style="font-size: 0.65rem;">Village / City</div>
+                                                <div class="fw-bold text-dark"><i
+                                                        class="feather icon-map-pin me-1 text-danger"></i> {{
+                                                    selectedCustomer.village || 'N/A' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="small fw-bold text-muted text-uppercase mb-1"
+                                                    style="font-size: 0.65rem;">Full Address</div>
+                                                <div class="fw-bold text-dark text-truncate"
+                                                    [title]="selectedCustomer.address || 'N/A'">
+                                                    <i class="feather icon-home me-1 text-warning"></i> {{
+                                                    selectedCustomer.address || 'Not Provided' }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2" *ngIf="selectedCustomer.pincode">
+                                                <div class="small fw-bold text-muted text-uppercase mb-1"
+                                                    style="font-size: 0.65rem;">Pincode</div>
+                                                <div class="fw-bold text-dark"><i
+                                                        class="feather icon-hash me-1 text-info"></i> {{
+                                                    selectedCustomer.pincode }}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <!-- Background Decoration -->
-                            <i class="feather icon-users position-absolute text-primary opacity-10"
-                                style="right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.05;"></i>
                         </div>
                     </div>
                 </div>
@@ -425,9 +488,9 @@
                                 name="newCName" placeholder="Enter full name">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold" for="ncMobile">Mobile Number *</label>
+                            <label class="form-label small fw-bold" for="ncMobile">Mobile Number</label>
                             <input type="text" id="ncMobile" class="form-control" [(ngModel)]="newCustomer.mobileNumber"
-                                name="newCMobile" placeholder="10-digit mobile">
+                                name="newCMobile" placeholder="10-digit mobile (optional)">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold" for="ncEmail">Email</label>
