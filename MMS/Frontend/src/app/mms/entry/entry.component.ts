@@ -408,8 +408,8 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         this.mmsService.searchCustomers(this.searchTerm).subscribe({
             next: (results) => {
                 this.searchResults = results || [];
-                // Only show results if we have matches
-                this.showResults = this.searchResults.length > 0;
+                // Always show results so "Add New Customer" option is visible
+                this.showResults = true;
             },
             error: (err) => {
                 console.error('Customer Search Failed', err);

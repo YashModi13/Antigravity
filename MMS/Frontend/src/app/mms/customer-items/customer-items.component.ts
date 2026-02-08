@@ -62,6 +62,7 @@ export class CustomerItemsComponent implements OnInit {
     // Pagination & Sorting
     page = 0;
     size = 10; // Default, can be overwritten by config if needed
+    pageSizeOptions = [10, 20, 50, 100, 500];
     totalPages = 0;
     totalElements = 0;
     sortBy = 'id';
@@ -100,6 +101,11 @@ export class CustomerItemsComponent implements OnInit {
 
     onPageChange(page: number) {
         this.page = page;
+        this.loadCustomers();
+    }
+
+    onPageSizeChange() {
+        this.page = 0; // Reset to first page
         this.loadCustomers();
     }
 
