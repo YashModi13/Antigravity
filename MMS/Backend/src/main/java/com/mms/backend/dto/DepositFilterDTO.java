@@ -1,5 +1,7 @@
 package com.mms.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 import java.math.BigDecimal;
 
@@ -16,4 +18,6 @@ public class DepositFilterDTO {
     private BigDecimal assetValue;
     private BigDecimal pl;
     private String status;
+    @JsonProperty("isVerified")
+    private Boolean isVerified;
 }

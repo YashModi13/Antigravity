@@ -18,7 +18,7 @@ import { DepositDetailViewComponent } from '../common/deposit-detail-view/deposi
         border-left: 4px solid #ccc;
         transition: transform 0.2s;
     }
-    .deposit-card.ACTIVE {
+    .deposit-card.ACTIVE, .deposit-card.SAFE {
         border-left-color: #28a745; 
         background-color: #f9fff9;
     }
@@ -331,7 +331,7 @@ export class CustomerItemsComponent implements OnInit {
         this.totalAssetValue = 0;
         if (this.portfolio?.deposits) {
             this.portfolio.deposits.forEach((d: any) => {
-                if (d.status === 'ACTIVE') {
+                if (d.status === 'ACTIVE' || d.status === 'SAFE' || d.status === 'RISK') {
                     this.totalLoan += d.loanAmount || 0;
                     if (d.items) {
                         d.items.forEach((i: any) => this.totalAssetValue += i.currentAssetValue || 0);

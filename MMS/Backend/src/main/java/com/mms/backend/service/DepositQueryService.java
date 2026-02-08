@@ -124,7 +124,7 @@ public class DepositQueryService {
         dto.setProfitLoss(currentAssetValue.subtract(totalOwed));
 
         BigDecimal riskThreshold = new BigDecimal(
-                getConfig(configs, "system.risk.threshold.percentage", "100"));
+                getConfig(configs, CONFIG_RISK_THRESHOLD, "100"));
         BigDecimal limitValue = currentAssetValue.multiply(riskThreshold).divide(BigDecimal.valueOf(100), 2,
                 RoundingMode.HALF_UP);
         dto.setStatus(totalOwed.compareTo(limitValue) > 0 ? STATUS_RISK : STATUS_SAFE);
@@ -242,18 +242,90 @@ public class DepositQueryService {
     }
 
     private List<DepositSummaryDTO> applyFilters(List<DepositSummaryDTO> data, DepositFilterDTO filters) {
-        return data.stream().filter(d -> {
-            boolean match = true;
-            if (filters.getId() != null && !filters.getId().isEmpty())
-                match = match && d.getDepositId().toString().contains(filters.getId());
-            if (filters.getTokenNo() != null && !filters.getTokenNo().isEmpty())
-                match = match && d.getTokenNumber() != null
-                        && d.getTokenNumber().toString().contains(filters.getTokenNo());
-            if (filters.getCustomerName() != null && !filters.getCustomerName().isEmpty())
-                match = match
-                        && d.getCustomerName().toLowerCase().contains(filters.getCustomerName().toLowerCase());
-            return match;
-        }).toList();
+        return data.stream()
+                .filter(d -> matchId(d, filters))
+                .filter(d -> matchToken(d, filters))
+                .filter(d -> matchCustomer(d, filters))
+                .filter(d -> matchDate(d, filters))
+                .filter(d -> matchNumeric(d, filters))
+                .filter(d -> matchStatus(d, filters))
+                .filter(d -> matchVerified(d, filters))
+                .toList();
+    }
+
+    private boolean matchId(DepositSummaryDTO d, DepositFilterDTO filters) {
+        if (filters.getId() == null || filters.getId().isEmpty())
+            return true;
+        return d.getDepositId().toString().contains(filters.getId());
+    }
+
+    private boolean matchToken(DepositSummaryDTO d, DepositFilterDTO filters) {
+        if (filters.getTokenNo() == null || filters.getTokenNo().isEmpty())
+            return true;
+        return d.getTokenNumber() != null && d.getTokenNumber().toString().contains(filters.getTokenNo());
+    }
+
+    private boolean matchCustomer(DepositSummaryDTO d, DepositFilterDTO filters) {
+        if (filters.getCustomerName() == null || filters.getCustomerName().isEmpty())
+            return true;
+        return d.getCustomerName().toLowerCase().contains(filters.getCustomerName().toLowerCase());
+    }
+
+    private boolean matchDate(DepositSummaryDTO d, DepositFilterDTO filters) {
+        if (filters.getDepositDate() == null || filters.getDepositDate().isEmpty())
+            return true;
+        return d.getDepositDate() != null && d.getDepositDate().toString().contains(filters.getDepositDate());
+    }
+
+    private boolean matchNumeric(DepositSummaryDTO d, DepositFilterDTO filters) {
+        return matchMonths(d, filters) &&
+                matchLoanAmount(d, filters) &&
+                matchInterest(d, filters) &&
+                matchUnpaidInterest(d, filters) &&
+                matchAssetValue(d, filters) &&
+                matchPl(d, filters);
+    }
+
+    private boolean matchMonths(DepositSummaryDTO d, DepositFilterDTO filters) {
+        return filters.getMonths() == null
+                || (d.getDepositedMonths() != null && d.getDepositedMonths().doubleValue() >= filters.getMonths());
+    }
+
+    private boolean matchLoanAmount(DepositSummaryDTO d, DepositFilterDTO filters) {
+        return filters.getLoanAmount() == null
+                || (d.getTotalLoanAmount() != null && d.getTotalLoanAmount().compareTo(filters.getLoanAmount()) >= 0);
+    }
+
+    private boolean matchInterest(DepositSummaryDTO d, DepositFilterDTO filters) {
+        return filters.getInterest() == null || (d.getTotalInterestAccrued() != null
+                && d.getTotalInterestAccrued().compareTo(filters.getInterest()) >= 0);
+    }
+
+    private boolean matchUnpaidInterest(DepositSummaryDTO d, DepositFilterDTO filters) {
+        return filters.getUnpaidInterest() == null
+                || (d.getUnpaidInterest() != null && d.getUnpaidInterest().compareTo(filters.getUnpaidInterest()) >= 0);
+    }
+
+    private boolean matchAssetValue(DepositSummaryDTO d, DepositFilterDTO filters) {
+        return filters.getAssetValue() == null || (d.getCurrentAssetValue() != null
+                && d.getCurrentAssetValue().compareTo(filters.getAssetValue()) >= 0);
+    }
+
+    private boolean matchPl(DepositSummaryDTO d, DepositFilterDTO filters) {
+        return filters.getPl() == null
+                || (d.getProfitLoss() != null && d.getProfitLoss().compareTo(filters.getPl()) >= 0);
+    }
+
+    private boolean matchStatus(DepositSummaryDTO d, DepositFilterDTO filters) {
+        if (filters.getStatus() == null || filters.getStatus().isEmpty())
+            return true;
+        return filters.getStatus().equals(d.getStatus());
+    }
+
+    private boolean matchVerified(DepositSummaryDTO d, DepositFilterDTO filters) {
+        if (filters.getIsVerified() == null)
+            return true;
+        return filters.getIsVerified().equals(d.getIsVerified() == Boolean.TRUE);
     }
 
     private List<DepositSummaryDTO> applySorting(List<DepositSummaryDTO> data, String sortBy, String direction) {
@@ -391,7 +463,7 @@ public class DepositQueryService {
 
         BigDecimal totalOwed = financial.loanAmount.add(dto.getUnpaidInterest());
         dto.setProfitLoss(currentAssetValue.subtract(totalOwed));
-        BigDecimal riskThreshold = new BigDecimal(getConfig(configs, "system.risk.threshold.percentage", "100"));
+        BigDecimal riskThreshold = new BigDecimal(getConfig(configs, CONFIG_RISK_THRESHOLD, "100"));
         BigDecimal limitValue = currentAssetValue.multiply(riskThreshold).divide(BigDecimal.valueOf(100), 2,
                 RoundingMode.HALF_UP);
         dto.setStatus(totalOwed.compareTo(limitValue) > 0 ? STATUS_RISK : STATUS_SAFE);
@@ -456,12 +528,22 @@ public class DepositQueryService {
         portfolio.setActiveDeposits(activeCount);
         portfolio.setHasItems(activeCount > 0);
 
+        Map<String, String> configs = configRepository.findAll().stream()
+                .collect(Collectors.toMap(ConfigProperty::getPropertyKey, ConfigProperty::getPropertyValue,
+                        (a, b) -> a));
+
         List<CustomerPortfolioDTO.PortfolioDepositDTO> depositDTOs = deposits.stream()
-                .map(this::mapToPortfolioDeposit)
+                .map(d -> mapToPortfolioDeposit(d, configs))
                 .sorted((a, b) -> {
-                    if (a.getStatus().equals(STATUS_ACTIVE) && !b.getStatus().equals(STATUS_ACTIVE))
+                    if ((STATUS_ACTIVE.equals(a.getStatus()) || STATUS_SAFE.equals(a.getStatus())
+                            || STATUS_RISK.equals(a.getStatus())) &&
+                            !(STATUS_ACTIVE.equals(b.getStatus()) || STATUS_SAFE.equals(b.getStatus())
+                                    || STATUS_RISK.equals(b.getStatus())))
                         return -1;
-                    if (!a.getStatus().equals(STATUS_ACTIVE) && b.getStatus().equals(STATUS_ACTIVE))
+                    if (!(STATUS_ACTIVE.equals(a.getStatus()) || STATUS_SAFE.equals(a.getStatus())
+                            || STATUS_RISK.equals(a.getStatus())) &&
+                            (STATUS_ACTIVE.equals(b.getStatus()) || STATUS_SAFE.equals(b.getStatus())
+                                    || STATUS_RISK.equals(b.getStatus())))
                         return 1;
                     return b.getDepositDate().compareTo(a.getDepositDate());
                 })
@@ -470,7 +552,8 @@ public class DepositQueryService {
         return portfolio;
     }
 
-    private CustomerPortfolioDTO.PortfolioDepositDTO mapToPortfolioDeposit(CustomerDepositEntry deposit) {
+    private CustomerPortfolioDTO.PortfolioDepositDTO mapToPortfolioDeposit(CustomerDepositEntry deposit,
+            Map<String, String> configs) {
         CustomerPortfolioDTO.PortfolioDepositDTO depDto = new CustomerPortfolioDTO.PortfolioDepositDTO();
         depDto.setDepositId(deposit.getId());
         depDto.setDepositDate(deposit.getDepositDate());
@@ -478,12 +561,6 @@ public class DepositQueryService {
 
         List<CustomerDepositTransaction> txs = transactionRepository.findByDepositEntry_Id(deposit.getId());
         calculateFinancials(txs);
-        // Special logic for Portfolio View: PrincipalPaid logic might differ slightly
-        // in original code?
-        // Original: "PRINCIPAL_PAYMENT" reduced -> principalPaid. "PRINCIPAL_LOAN" |
-        // "INITIAL" | "EXTRA" -> originalLoan.
-        // My calculateFinancials subtracts PAYMENT from loan.
-        // Let's recalculate strictly as per original logic to be safe for portfolio.
 
         BigDecimal principalPaid = txs.stream().filter(t -> TX_PRINCIPAL_PAYMENT.equals(t.getTransactionType()))
                 .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -498,11 +575,9 @@ public class DepositQueryService {
         }
         depDto.setLoanAmount(originalLoan.subtract(principalPaid));
 
-        // Use financial.interestPaid
         BigDecimal interestPaid = txs.stream().filter(t -> TX_INTEREST_PAYMENT.equals(t.getTransactionType()))
                 .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Calculate Discount from Transactions
         BigDecimal discountAmount = txs.stream().filter(t -> "DISCOUNT".equals(t.getTransactionType()))
                 .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -529,8 +604,6 @@ public class DepositQueryService {
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         depDto.setAccruedInterest(accrued);
 
-        // Fallback: If Closed and no discount transaction, calculate implied discount
-        // (Kasar)
         if (STATUS_CLOSED.equals(deposit.getEntryStatus()) && discountAmount.compareTo(BigDecimal.ZERO) == 0) {
             BigDecimal totalDue = originalLoan.add(accrued);
             BigDecimal totalPaid = principalPaid.add(interestPaid);
@@ -551,12 +624,29 @@ public class DepositQueryService {
         depDto.setNetProfitLoss(netProfit);
 
         // Items
-        // Items
         List<CustomerDepositItems> items = itemsRepository.findByDepositEntry_Id(deposit.getId());
-        depDto.setItems(new ArrayList<>(mapPortfolioItems(items, deposit.getEntryStatus())));
+        List<CustomerPortfolioDTO.PortfolioItemDTO> itemDTOs = new ArrayList<>(
+                mapPortfolioItems(items, deposit.getEntryStatus()));
+        depDto.setItems(itemDTOs);
 
         // Transactions
         depDto.setTransactions(new ArrayList<>(mapPortfolioTransactions(txs)));
+
+        // Status override for Active deposits
+        if (STATUS_ACTIVE.equals(deposit.getEntryStatus())) {
+            BigDecimal currentAssetValue = itemDTOs.stream()
+                    .map(CustomerPortfolioDTO.PortfolioItemDTO::getCurrentAssetValue)
+                    .filter(java.util.Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal unpaidInterest = accrued.subtract(interestPaid);
+            BigDecimal totalOwed = depDto.getLoanAmount().add(unpaidInterest);
+
+            BigDecimal riskThreshold = new BigDecimal(getConfig(configs, CONFIG_RISK_THRESHOLD, "100"));
+            BigDecimal limitValue = currentAssetValue.multiply(riskThreshold).divide(BigDecimal.valueOf(100), 2,
+                    RoundingMode.HALF_UP);
+            depDto.setStatus(totalOwed.compareTo(limitValue) > 0 ? STATUS_RISK : STATUS_SAFE);
+        }
 
         return depDto;
     }

@@ -1,5 +1,7 @@
 package com.mms.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,5 +22,6 @@ public class DepositSummaryDTO {
     private BigDecimal depositedMonths;
     private String depositedTimeDisplay;
     private BigDecimal monthlyInterest;
+    @JsonProperty("isVerified")
     private Boolean isVerified;
 }

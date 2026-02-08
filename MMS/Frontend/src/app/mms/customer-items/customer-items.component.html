@@ -435,7 +435,7 @@
                                 <h5 class="mb-0 fw-bold text-primary">Bill #{{ deposit.depositId
                                     }}</h5>
                                 <span class="badge rounded-pill px-3" [ngClass]="{
-                                    'bg-success': deposit.status === 'ACTIVE',
+                                    'bg-success': deposit.status === 'ACTIVE' || deposit.status === 'SAFE',
                                     'bg-secondary': deposit.status === 'CLOSED',
                                     'bg-danger': deposit.status === 'RISK'
                                 }">{{ deposit.status }}</span>
