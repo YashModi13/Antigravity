@@ -102,7 +102,7 @@ EXECUTE FUNCTION mms.set_created_date_and_active();
 CREATE TABLE mms.customer_master (
     id SERIAL PRIMARY KEY,
     customer_name VARCHAR(100) NOT NULL,
-    mobile_number VARCHAR(15) UNIQUE NOT NULL,
+    mobile_number VARCHAR(15) UNIQUE,
     email VARCHAR(100),
     address TEXT,
     village VARCHAR(50),
@@ -132,7 +132,7 @@ CREATE TABLE mms.merchant_master (
     id SERIAL PRIMARY KEY,
     merchant_name VARCHAR(100) NOT NULL,
     merchant_type VARCHAR(20) NOT NULL,
-    mobile_number VARCHAR(15) UNIQUE NOT NULL,
+    mobile_number VARCHAR(15) UNIQUE,
     address TEXT,
     village VARCHAR(50),
     district VARCHAR(50),

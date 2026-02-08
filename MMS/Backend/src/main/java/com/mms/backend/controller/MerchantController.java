@@ -38,14 +38,30 @@ public class MerchantController {
     }
 
     @PostMapping("/merchants/create")
-    public ResponseEntity<MerchantMaster> createMerchant(@RequestBody MerchantMaster merchant) {
+    public ResponseEntity<Object> createMerchant(@RequestBody MerchantMaster merchant) {
         log.info("[MerchantController] Request: Create Merchant. Name: {}", merchant.getMerchantName());
-        return ResponseEntity.ok(merchantService.saveMerchant(merchant));
+        try {
+            return ResponseEntity.ok(merchantService.saveMerchant(merchant));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.warn("[MerchantController] Duplicate merchant data: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Mobile number already exists for another merchant");
+        } catch (Exception e) {
+            log.error("[MerchantController] Error creating merchant", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating merchant");
+        }
     }
 
     @PostMapping("/merchants/update")
-    public ResponseEntity<MerchantMaster> updateMerchant(@RequestBody MerchantMaster merchant) {
-        return ResponseEntity.ok(merchantService.updateMerchant(merchant.getId(), merchant));
+    public ResponseEntity<Object> updateMerchant(@RequestBody MerchantMaster merchant) {
+        try {
+            return ResponseEntity.ok(merchantService.updateMerchant(merchant.getId(), merchant));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.warn("[MerchantController] Duplicate mobile number on merchant update: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Mobile number already exists for another merchant");
+        } catch (Exception e) {
+            log.error("[MerchantController] Error updating merchant", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating merchant");
+        }
     }
 
     @PostMapping("/merchants/delete")
@@ -170,4 +186,5 @@ public class MerchantController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Return failed: " + e.getMessage());
         }
     }
+
 }

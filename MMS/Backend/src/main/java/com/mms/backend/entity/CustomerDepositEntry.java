@@ -44,4 +44,7 @@ public class CustomerDepositEntry {
 
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
+
+    @Column(name = "is_verified")
+    private Boolean isVerified = false;
 }

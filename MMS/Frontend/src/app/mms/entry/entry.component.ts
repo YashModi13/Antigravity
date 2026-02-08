@@ -60,11 +60,11 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
 
     // System Config Defaults
     defaultUnitId = 1;
-    defaultInterestRate = 3.0;
-    defaultFinePercentage = 75.0;
+    defaultInterestRate = 3;
+    defaultFinePercentage = 75;
     currencySymbol = '₹';
     defaultState = APP_CONSTANTS.DEFAULT_STATE;
-    defaultGivingPercentage = 60.0;
+    defaultGivingPercentage = 60;
 
     // Deposit Form
 
@@ -73,9 +73,9 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
     loanAmountDisplay = '';
 
     onLoanAmountInput(event: any) {
-        let valueStr = event.target.value.replace(/,/g, '');
+        let valueStr = event.target.value.replaceAll(',', '');
         const value = Number(valueStr);
-        if (!isNaN(value) && valueStr !== '' && value > 0) {
+        if (!Number.isNaN(value) && valueStr !== '' && value > 0) {
             this.deposit.initialLoanAmount = value;
             this.loanAmountDisplay = value.toLocaleString('en-IN');
         } else {
@@ -88,7 +88,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
 
     onInterestRateChange() {
         if (this.deposit.interestRate != null && this.deposit.interestRate <= 0) {
-            this.deposit.interestRate = 3.0; // Reset to default if zero or negative
+            this.deposit.interestRate = 3; // Reset to default if zero or negative
         }
     }
 
@@ -108,7 +108,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
 
         this.tokenDebounceTimer = setTimeout(() => {
             const token = Number(this.deposit.tokenNo);
-            if (isNaN(token)) {
+            if (Number.isNaN(token)) {
                 this.tokenStatus = 'invalid';
                 this.tokenErrorMessage = 'Invalid Token Format';
                 return;
@@ -122,13 +122,8 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
 
             this.mmsService.checkTokenAvailability(token).subscribe({
                 next: (isAvailable) => {
-                    if (isAvailable) {
-                        this.tokenStatus = 'valid';
-                        this.tokenErrorMessage = '';
-                    } else {
-                        this.tokenStatus = 'invalid';
-                        this.tokenErrorMessage = 'Token already exists!';
-                    }
+                    const action = isAvailable ? this.handleTokenAvailable : this.handleTokenUnavailable;
+                    action.call(this);
                 },
                 error: (err) => {
                     console.error('Token check failed', err);
@@ -136,6 +131,16 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 }
             });
         }, 500); // 500ms Debounce
+    }
+
+    private handleTokenAvailable() {
+        this.tokenStatus = 'valid';
+        this.tokenErrorMessage = '';
+    }
+
+    private handleTokenUnavailable() {
+        this.tokenStatus = 'invalid';
+        this.tokenErrorMessage = 'Token already exists!';
     }
 
     generateToken() {
@@ -166,18 +171,19 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         customerId: null as number | null,
         depositDate: new Date().toISOString().split('T')[0],
         tokenNo: '' as string,
-        interestRate: 3.0,
+        interestRate: 3,
         givingPercentage: 60,
         notes: '',
         initialLoanAmount: null as number | null,
+        isVerified: false,
         itemLines: [] as any[]
     };
 
     constructor(
-        private mmsService: MmsService,
-        private route: ActivatedRoute,
-        private router: Router,
-        private toastService: ToastService
+        private readonly mmsService: MmsService,
+        private readonly route: ActivatedRoute,
+        private readonly router: Router,
+        private readonly toastService: ToastService
     ) { }
 
     ngOnInit() {
@@ -266,7 +272,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
 
         // Get the conversion factor for the item's own defined unit
         const item = this.items.find(i => i.id == line.itemId);
-        const unitFactor = (item && item.unit) ? item.unit.unitInGram : 1;
+        const unitFactor = item?.unit?.unitInGram ?? 1;
         const fineWeightInGrams = line.fineWeight * unitFactor;
 
         this.mmsService.calculateAssetValue(line.itemId, fineWeightInGrams).subscribe({
@@ -354,6 +360,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 }
                 this.deposit.interestRate = data.interestRate;
                 this.deposit.notes = data.notes;
+                this.deposit.isVerified = data.isVerified || false;
                 this.deposit.initialLoanAmount = data.initialLoanAmount || null;
                 this.loanAmountDisplay = this.deposit.initialLoanAmount ? this.deposit.initialLoanAmount.toLocaleString('en-IN') : '';
 
@@ -483,7 +490,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
             return defUnit ? defUnit.unitName : '';
         }
         const item = this.items.find(i => i.id == itemId);
-        return (item && item.unit) ? item.unit.unitName : '';
+        return item?.unit?.unitName ?? '';
     }
 
     // Totals Calculation (Grouped by Item Type)
@@ -553,54 +560,61 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         return '';
     }
 
-    submitDeposit() {
+    validateSubmission(): boolean {
         // 1. Validate Customer
         if (!this.deposit.customerId) {
             this.toastService.error('Please select a Customer');
-            return;
+            return false;
         }
 
         // 2. Validate Interest Rate
         if (this.deposit.interestRate == null || this.deposit.interestRate <= 0) {
             this.toastService.error('Please enter a valid Interest Rate');
-            return;
+            return false;
         }
 
         // 3. Validate Items Existence
         if (this.deposit.itemLines.length === 0) {
             this.toastService.error('Please add at least one item');
-            return;
+            return false;
         }
 
         // 4. Validate Each Item Line
         for (const line of this.deposit.itemLines) {
             if (!line.itemId) {
                 this.toastService.error('Please select an Item type for all rows');
-                return;
+                return false;
             }
             if (!line.weight || line.weight <= 0) {
                 this.toastService.error('Weight must be greater than 0 for all items');
-                return;
+                return false;
             }
             if (!line.description || line.description.trim() === '') {
                 this.toastService.error('Please enter a Description for all items');
-                return;
+                return false;
             }
             if (line.fineWeight > line.weight) {
                 this.toastService.error(`Fine Weight cannot be greater than Weight for item`);
-                return;
+                return false;
             }
         }
 
         // 5. Validate Loan Amount Rules
         if (this.isLoanAmountInvalid || this.deposit.initialLoanAmount == null) {
             this.toastService.error(this.loanAmountErrorMsg || 'Please enter a valid Loan Amount');
-            return;
+            return false;
         }
 
         // 6. Validate Token
         if (!this.deposit.tokenNo) {
             this.toastService.error('Please enter a Token Number');
+            return false;
+        }
+        return true;
+    }
+
+    submitDeposit() {
+        if (!this.validateSubmission()) {
             return;
         }
 
@@ -611,20 +625,21 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 notes: this.deposit.notes,
                 initialLoanAmount: this.deposit.initialLoanAmount,
                 tokenNo: Number(this.deposit.tokenNo),
+                isVerified: this.deposit.isVerified,
                 items: this.deposit.itemLines.map(line => {
                     const item = this.items.find(i => i.id == line.itemId);
-                    const factor = (item && item.unit) ? item.unit.unitInGram : 1;
+                    const factor = item?.unit?.unitInGram ?? 1;
                     return {
                         itemId: line.itemId,
                         weight: line.weight * factor,
-                        unitId: (item && item.unit) ? item.unit.id : this.defaultUnitId,
+                        unitId: item?.unit?.id ?? this.defaultUnitId,
                         fineWeight: line.fineWeight * factor,
                         description: line.description
                     };
                 })
             };
 
-            this.mmsService.updateDeposit(this.editId!, payload).subscribe({
+            this.mmsService.updateDeposit(this.editId, payload).subscribe({
                 next: () => {
                     this.toastService.success('Deposit Updated Successfully!');
                     this.router.navigate(['/mms/deposits']);
@@ -642,13 +657,14 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                 notes: this.deposit.notes,
                 initialLoanAmount: this.deposit.initialLoanAmount,
                 tokenNo: Number(this.deposit.tokenNo),
+                isVerified: this.deposit.isVerified,
                 items: this.deposit.itemLines.map(line => {
                     const item = this.items.find(i => i.id == line.itemId);
-                    const factor = (item && item.unit) ? item.unit.unitInGram : 1;
+                    const factor = item?.unit?.unitInGram ?? 1;
                     return {
                         itemId: line.itemId,
                         weight: line.weight * factor,
-                        unitId: (item && item.unit) ? item.unit.id : this.defaultUnitId,
+                        unitId: item?.unit?.id ?? this.defaultUnitId,
                         fineWeight: line.fineWeight * factor,
                         description: line.description
                     };
@@ -677,6 +693,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
             givingPercentage: this.defaultGivingPercentage,
             notes: '',
             initialLoanAmount: null,
+            isVerified: false,
             itemLines: []
         };
         this.selectedCustomer = null;

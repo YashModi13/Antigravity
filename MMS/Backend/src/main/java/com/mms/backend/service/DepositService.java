@@ -58,6 +58,7 @@ public class DepositService {
         entry.setTokenNo(request.getTokenNo());
         entry.setEntryStatus(STATUS_ACTIVE);
         entry.setCreatedDate(LocalDateTime.now());
+        entry.setIsVerified(Boolean.TRUE.equals(request.getIsVerified()));
         entry = depositRepository.save(entry);
 
         // 2. Create Items
@@ -69,7 +70,8 @@ public class DepositService {
 
         // 3. Create Transaction (Initial Loan)
         if (request.getInitialLoanAmount() != null && request.getInitialLoanAmount().compareTo(BigDecimal.ZERO) > 0) {
-            createTransaction(entry, TX_INITIAL_MONEY, request.getInitialLoanAmount(), request.getDepositDate());
+            createTransaction(entry, TX_INITIAL_MONEY, request.getInitialLoanAmount(), request.getDepositDate(),
+                    "Initial Loan");
         }
     }
 
@@ -89,12 +91,14 @@ public class DepositService {
         itemsRepository.save(item);
     }
 
-    private void createTransaction(CustomerDepositEntry entry, String type, BigDecimal amount, LocalDate date) {
+    private void createTransaction(CustomerDepositEntry entry, String type, BigDecimal amount, LocalDate date,
+            String description) {
         CustomerDepositTransaction tx = new CustomerDepositTransaction();
         tx.setDepositEntry(entry);
         tx.setTransactionType(type);
         tx.setAmount(amount);
         tx.setTransactionDate(date);
+        tx.setDescription(description);
         tx.setCreatedDate(LocalDateTime.now());
         transactionRepository.save(tx);
     }
@@ -133,6 +137,9 @@ public class DepositService {
         }
         if (request.getNotes() != null) {
             entry.setNotes(request.getNotes());
+        }
+        if (request.getIsVerified() != null) {
+            entry.setIsVerified(request.getIsVerified());
         }
     }
 
@@ -229,11 +236,18 @@ public class DepositService {
                 .orElseThrow(() -> new NoSuchElementException("Deposit not found"));
 
         if (request.getPrincipalPaid() != null && request.getPrincipalPaid().compareTo(BigDecimal.ZERO) > 0) {
-            createTransaction(entry, TX_PRINCIPAL_PAYMENT, request.getPrincipalPaid(), LocalDate.now());
+            createTransaction(entry, TX_PRINCIPAL_PAYMENT, request.getPrincipalPaid(), LocalDate.now(),
+                    request.getNotes());
         }
 
         if (request.getInterestPaid() != null && request.getInterestPaid().compareTo(BigDecimal.ZERO) > 0) {
-            createTransaction(entry, TX_INTEREST_PAYMENT, request.getInterestPaid(), LocalDate.now());
+            createTransaction(entry, TX_INTEREST_PAYMENT, request.getInterestPaid(), LocalDate.now(),
+                    request.getNotes());
+        }
+
+        if (request.getExtraPrincipal() != null && request.getExtraPrincipal().compareTo(BigDecimal.ZERO) > 0) {
+            LocalDate txDate = request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now();
+            createTransaction(entry, TX_EXTRA_WITHDRAWAL, request.getExtraPrincipal(), txDate, request.getNotes());
         }
 
         entry.setUpdatedDate(LocalDateTime.now());

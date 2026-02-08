@@ -33,11 +33,12 @@ public class DepositDetailDTO {
     private String status;
     private BigDecimal depositedMonths;
     private String depositedTimeDisplay;
+    private Boolean isVerified;
     private List<DepositItemDTO> items;
     private List<TransactionDTO> transactions;
 
     @Data
-    static public class TransactionDTO {
+    public static class TransactionDTO {
         private String type;
         private BigDecimal amount;
         private LocalDate date;
@@ -45,7 +46,7 @@ public class DepositDetailDTO {
     }
 
     @Data
-    static public class DepositItemDTO {
+    public static class DepositItemDTO {
         private Integer id;
         private Integer itemId;
         private String itemName;

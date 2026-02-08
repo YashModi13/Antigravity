@@ -128,6 +128,7 @@ public class DepositQueryService {
         BigDecimal limitValue = currentAssetValue.multiply(riskThreshold).divide(BigDecimal.valueOf(100), 2,
                 RoundingMode.HALF_UP);
         dto.setStatus(totalOwed.compareTo(limitValue) > 0 ? STATUS_RISK : STATUS_SAFE);
+        dto.setIsVerified(deposit.getIsVerified());
 
         return dto;
     }
@@ -332,6 +333,7 @@ public class DepositQueryService {
         dto.setDepositDate(entry.getDepositDate());
         dto.setInterestRate(entry.getTotalInterestRate());
         dto.setNotes(entry.getNotes());
+        dto.setIsVerified(entry.getIsVerified());
 
         List<CustomerDepositTransaction> transactions = transactionRepository.findByDepositEntry_Id(id);
         FinancialSummary financial = calculateFinancials(transactions);

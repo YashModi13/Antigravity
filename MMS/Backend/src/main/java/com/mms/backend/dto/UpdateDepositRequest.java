@@ -14,4 +14,5 @@ public class UpdateDepositRequest {
     private BigDecimal initialLoanAmount;
     private Integer tokenNo;
     private List<DepositItemRequest> items;
+    private Boolean isVerified;
 }

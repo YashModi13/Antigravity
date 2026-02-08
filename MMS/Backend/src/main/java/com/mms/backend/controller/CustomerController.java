@@ -98,6 +98,9 @@ public class CustomerController {
             CustomerMaster saved = customerRepository.save(customer);
             log.info("[CustomerController] Customer created successfully. ID: {}", saved.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.warn("[CustomerController] Duplicate customer data: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Mobile number already exists");
         } catch (Exception e) {
             log.error("[CustomerController] Error creating customer", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating customer");
@@ -123,8 +126,16 @@ public class CustomerController {
             existing.setKycVerified(customer.getKycVerified());
             existing.setUpdatedDate(LocalDateTime.now());
 
-            log.info("[CustomerController] Customer updated successfully. ID: {}", existing.getId());
-            return ResponseEntity.ok((Object) customerRepository.save(existing));
+            try {
+                log.info("[CustomerController] Customer updated successfully. ID: {}", existing.getId());
+                return ResponseEntity.ok((Object) customerRepository.save(existing));
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                log.warn("[CustomerController] Duplicate mobile number on update: {}", e.getMessage());
+                return ResponseEntity.status(HttpStatus.CONFLICT).body((Object) "Mobile number already exists");
+            } catch (Exception e) {
+                log.error("[CustomerController] Error updating customer", e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body((Object) "Error updating customer");
+            }
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -172,4 +183,5 @@ public class CustomerController {
 
         return dto;
     }
+
 }

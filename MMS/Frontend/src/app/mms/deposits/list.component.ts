@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastService } from 'src/app/theme/shared/components/toast/toast.service';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap, map } from 'rxjs/operators';
 
 
 @Component({
@@ -28,7 +28,10 @@ export class MmsDepositsListComponent implements OnInit {
     paymentForm = {
         principalPaid: 0,
         interestPaid: 0,
-        notes: ''
+        notes: '',
+        addPrincipal: false,
+        extraPrincipal: 0,
+        transactionDate: new Date().toISOString().split('T')[0]
     };
     payFullInterest = false;
 
@@ -54,7 +57,8 @@ export class MmsDepositsListComponent implements OnInit {
         unpaidInterest: '',
         assetValue: '',
         pl: '',
-        status: ''
+        status: '',
+        isVerified: ''
     };
 
     // Settlement & Redemption State
@@ -76,9 +80,9 @@ export class MmsDepositsListComponent implements OnInit {
     }
 
     constructor(
-        private mmsService: MmsService,
-        private router: Router,
-        private toastService: ToastService
+        private readonly mmsService: MmsService,
+        private readonly router: Router,
+        private readonly toastService: ToastService
     ) { }
 
     ngOnInit() {
@@ -150,7 +154,8 @@ export class MmsDepositsListComponent implements OnInit {
             unpaidInterest: '',
             assetValue: '',
             pl: '',
-            status: ''
+            status: '',
+            isVerified: ''
         };
         this.sortColumn = 'depositId';
         this.sortDirection = 'asc';
@@ -201,7 +206,10 @@ export class MmsDepositsListComponent implements OnInit {
         this.paymentForm = {
             principalPaid: 0,
             interestPaid: 0,
-            notes: ''
+            notes: '',
+            addPrincipal: false,
+            extraPrincipal: 0,
+            transactionDate: new Date().toISOString().split('T')[0]
         };
         this.payFullInterest = false;
         this.showPaymentModal = true;
@@ -230,7 +238,9 @@ export class MmsDepositsListComponent implements OnInit {
             principalPaid: p,
             interestPaid: i,
             totalPaid: p + i,
-            notes: this.paymentForm.notes
+            notes: this.paymentForm.notes,
+            extraPrincipal: this.paymentForm.addPrincipal ? (Number(this.paymentForm.extraPrincipal) || 0) : 0,
+            transactionDate: this.paymentForm.transactionDate
         };
 
         this.mmsService.addDepositTransaction(this.selectedDepositForPayment.depositId, payload).subscribe({
@@ -255,55 +265,47 @@ export class MmsDepositsListComponent implements OnInit {
     blockedDepositId: number | null = null;
 
     closeDeposit(summaryDeposit: any) {
-        // 1. Fetch detailed active merchant entries
-        this.mmsService.getActiveMerchantEntries(summaryDeposit.depositId).subscribe({
-            next: (activeEntries) => {
-                // 2. Fetch Full Deposit Details
-                this.mmsService.getDeposit(summaryDeposit.depositId).subscribe({
-                    next: (fullDetails) => {
-                        // 2a. Fetch Precise Asset Value for Each Item (Backend Calculation)
-                        const itemValueRequests = (fullDetails.items || []).map((item: any) => {
-                            if (!item.itemId || !item.fineWeight) return of(0);
-                            return this.mmsService.calculateAssetValue(item.itemId, item.fineWeight).pipe(
-                                catchError(() => of(0)) // If calc fails, return 0
-                            );
-                        });
+        const depositId = summaryDeposit.depositId;
 
-                        forkJoin(itemValueRequests).subscribe((values: any[]) => {
-                            // Assign values to items
-                            if (fullDetails.items) {
-                                fullDetails.items.forEach((item: any, index: number) => {
-                                    item.estValue = values[index];
-                                });
-                            }
-
-                            // 3. Prepare Settlement Data
-                            this.settlementData = {
-                                ...fullDetails,
-                                finalPrincipal: fullDetails.totalLoanAmount,
-                                finalInterest: fullDetails.unpaidInterest,
-                                totalPayable: ((fullDetails.totalLoanAmount || 0) + (fullDetails.unpaidInterest || 0)),
-                                activeMerchantEntries: activeEntries || []
-                            };
-
-                            // 4. Generate Ledger
-                            this.generateLedger(fullDetails);
-
-                            // 5. Open Modal
-                            this.isFullPayment = true;
-                            // Use helper to set amount with correct rounding
-                            this.updateSettlementAmount();
-                            this.showSettlementModal = true;
-                        });
-                    },
-                    error: (err) => {
-                        this.toastService.error('Failed to fetch deposit details');
-                        console.error(err);
-                    }
+        forkJoin({
+            activeEntries: this.mmsService.getActiveMerchantEntries(depositId),
+            fullDetails: this.mmsService.getDeposit(depositId)
+        }).pipe(
+            switchMap(({ activeEntries, fullDetails }) => {
+                const itemValueRequests = (fullDetails.items || []).map((item: any) => {
+                    if (!item.itemId || !item.fineWeight) return of(0);
+                    return this.mmsService.calculateAssetValue(item.itemId, item.fineWeight).pipe(
+                        catchError(() => of(0))
+                    );
                 });
+
+                return forkJoin(itemValueRequests).pipe(
+                    map(values => ({ activeEntries, fullDetails, values }))
+                );
+            })
+        ).subscribe({
+            next: ({ activeEntries, fullDetails, values }) => {
+                if (fullDetails.items) {
+                    fullDetails.items.forEach((item: any, index: number) => {
+                        item.estValue = values[index];
+                    });
+                }
+
+                this.settlementData = {
+                    ...fullDetails,
+                    finalPrincipal: fullDetails.totalLoanAmount,
+                    finalInterest: fullDetails.unpaidInterest,
+                    totalPayable: ((fullDetails.totalLoanAmount || 0) + (fullDetails.unpaidInterest || 0)),
+                    activeMerchantEntries: activeEntries || []
+                };
+
+                this.generateLedger(fullDetails);
+                this.isFullPayment = true;
+                this.updateSettlementAmount();
+                this.showSettlementModal = true;
             },
             error: (err) => {
-                this.toastService.error('Failed to validate deposit status');
+                this.toastService.error('Failed to prepare settlement data');
                 console.error(err);
             }
         });
@@ -382,26 +384,22 @@ export class MmsDepositsListComponent implements OnInit {
         }
 
         // Calculate Split based on input amount
-        let pPaid = 0;
-        let iPaid = 0;
-
         const totalInterest = this.ledgerSummary.interest || 0;
         const totalPrincipal = this.ledgerSummary.principal || 0;
+        let pPaid = 0;
+        let iPaid = 0;
 
         if (this.isFullPayment) {
             // Exact Match
             pPaid = totalPrincipal;
             iPaid = totalInterest;
-        } else {
+        } else if (this.settlementAmount >= totalInterest) {
             // Custom Amount Logic: Pay Interest First? Or Proportional?
             // Usually, Interest is paid first.
-            if (this.settlementAmount >= totalInterest) {
-                iPaid = totalInterest;
-                pPaid = this.settlementAmount - totalInterest;
-            } else {
-                iPaid = this.settlementAmount;
-                pPaid = 0;
-            }
+            iPaid = totalInterest;
+            pPaid = this.settlementAmount - totalInterest;
+        } else {
+            iPaid = this.settlementAmount;
         }
 
         // 1. Record the Payment Transaction
@@ -442,97 +440,61 @@ export class MmsDepositsListComponent implements OnInit {
     generateLedger(deposit: any) {
         if (!deposit) return;
 
-        const ledger: any[] = [];
-        let runningBalance = 0; // Total Owed
-
-        // 1. Initial Deposit / Opening Balance
-        // We find the 'INITIAL_MONEY' transaction or just use deposit date
-        // Ideally we iterate correctly.
-
-        // Let's create a timeline of events.
         const events: any[] = [];
 
         // A. Add explicit transactions
         if (deposit.transactions) {
             deposit.transactions.forEach((tx: any) => {
-                let type = tx.type;
-                let dr = 0;
-                let cr = 0;
-                let isInterest = false;
-
-                if (type === 'INITIAL_MONEY') {
-                    type = 'OPENING';
-                    cr = tx.amount; // Principal Added (Loan Taken) -> We owe this
-                    if (!tx.description) tx.description = 'Opening Balance';
-                } else if (type === 'EXTRA_WITHDRAWAL') {
-                    cr = tx.amount; // More Loan
-                } else if (type === 'PRINCIPAL_PAYMENT') {
-                    dr = tx.amount; // Loan Repaid
-                } else if (type === 'INTEREST_PAYMENT') {
-                    type = 'INTEREST PAYMENT';
-                    dr = tx.amount; // Paid towards interest
-                    isInterest = true;
-                } else if (type === 'INTEREST_RECEIVED') {
-                    // This is if we manually posted interest.
-                    // usually we calculate it dynamically.
-                    // let's skip dynamic calculation if we have these? 
-                    // No, let's stick to dynamic for consistency with "Merchant" view.
-                }
-
-                if (type !== 'INTEREST_RECEIVED') { // Skip internal posted interest for now to avoid duplication with auto-generated
-
-                    // Format Description: Friendly Type + (Comment)
-                    let friendlyDesc = tx.description || '';
-                    if (type === 'OPENING') friendlyDesc = 'Opening Balance';
-                    else if (type === 'PRINCIPAL_PAYMENT') friendlyDesc = `Principal Repayment${tx.description ? ' (' + tx.description + ')' : ''}`;
-                    else if (type === 'INTEREST PAYMENT') friendlyDesc = `Interest Repayment${tx.description ? ' (' + tx.description + ')' : ''}`;
-                    else if (type === 'EXTRA_WITHDRAWAL') friendlyDesc = `Additional Loan${tx.description ? ' (' + tx.description + ')' : ''}`;
-
-                    events.push({
-                        date: new Date(tx.date),
-                        type: type,
-                        principalCr: !isInterest ? cr : 0,
-                        principalDr: !isInterest ? dr : 0,
-                        interestCr: 0, // Will accrue dynamically
-                        interestDr: isInterest ? dr : 0,
-                        rawDate: tx.date,
-                        desc: friendlyDesc
-                    });
-                }
+                const event = this.mapTransactionToEvent(tx);
+                if (event) events.push(event);
             });
         }
 
         // B. Generate Monthly Interest Accruals
-        // Start from deposit date, go up to today.
+        this.addInterestAccrualEvents(deposit, events);
+
+        // C. Sort Events Chronologically
+        this.sortLedgerEvents(events);
+
+        // D. Replay and Calculate
+        this.processLedgerEvents(events, deposit.interestRate || 2);
+    }
+
+    private mapTransactionToEvent(tx: any): any {
+        const typeMap: { [key: string]: { type: string, dr?: number, cr?: number, isInterest?: boolean, desc: string } } = {
+            'INITIAL_MONEY': { type: 'OPENING', cr: tx.amount, desc: 'Opening Balance' },
+            'EXTRA_WITHDRAWAL': { type: 'EXTRA_WITHDRAWAL', cr: tx.amount, desc: 'Additional Loan' },
+            'PRINCIPAL_PAYMENT': { type: 'PRINCIPAL_PAYMENT', dr: tx.amount, desc: 'Principal Repayment' },
+            'INTEREST_PAYMENT': { type: 'INTEREST PAYMENT', dr: tx.amount, isInterest: true, desc: 'Interest Repayment' }
+        };
+
+        const config = typeMap[tx.type];
+        if (!config) return null;
+
+        const isInterest = config.isInterest || false;
+        const description = tx.description ? `${config.desc} (${tx.description})` : config.desc;
+
+        return {
+            date: new Date(tx.date),
+            type: config.type,
+            principalCr: isInterest ? 0 : (config.cr || 0),
+            principalDr: isInterest ? 0 : (config.dr || 0),
+            interestCr: 0,
+            interestDr: isInterest ? (config.dr || 0) : 0,
+            rawDate: tx.date,
+            desc: description
+        };
+    }
+
+    private addInterestAccrualEvents(deposit: any, events: any[]) {
         const depositDate = new Date(deposit.depositDate);
         const today = new Date();
-        const interestRate = deposit.interestRate || 2;
-        let currentDate = new Date(depositDate);
-
-        // We assume strictly 1st month starts immediately? Or at end?
-        // Merchant view logic: "Start of Month" billing.
-        // i.e., Date 1: Interest for Month 1 starts.
-
-        // Loop months
         let monthCount = 1;
-        // We go until today.
-        while (currentDate <= today || monthCount === 1) { // Ensure at least 1 month
-            // Calculate principal at this point? It's hard to know exact balance at historical date without replaying.
-            // Simplified: We assume interest is calculated on *Current* principal for simplicity or 
-            // we need to perform a chronological replay.
 
-            // Let's do chronological replay sort first.
-            // But we need the events to "insert" interest.
-
-            // Strategy: Add "Interest Event" at strictly +1 month intervals?
-            // Or just simple logic: 
-            // Date = DepositDate + (Month-1) months.
-
-            let intDate = new Date(depositDate);
+        while (true) {
+            const intDate = new Date(depositDate);
             intDate.setMonth(depositDate.getMonth() + (monthCount - 1));
 
-            // If this generated date is in future beyond "now", stop? 
-            // well, "active/started" month counts.
             if (intDate > today && monthCount > 1) break;
 
             events.push({
@@ -540,19 +502,18 @@ export class MmsDepositsListComponent implements OnInit {
                 type: 'INTEREST',
                 principalCr: 0,
                 principalDr: 0,
-                interestCr: 0, // Placeholder, calculated during replay
+                interestCr: 0,
                 interestDr: 0,
                 rawDate: intDate.toISOString().split('T')[0],
                 desc: `Interest (Month ${monthCount})`
             });
 
-            currentDate.setMonth(currentDate.getMonth() + 1);
             monthCount++;
-            if (monthCount > 1200) break; // Safety break
+            if (monthCount > 1200) break;
         }
+    }
 
-        // C. Sort Events Chronologically
-        // Priority on same day: Opening -> Interest -> Payment
+    private sortLedgerEvents(events: any[]) {
         events.sort((a, b) => {
             if (a.date.getTime() !== b.date.getTime()) {
                 return a.date.getTime() - b.date.getTime();
@@ -564,97 +525,49 @@ export class MmsDepositsListComponent implements OnInit {
             };
             return priority(a.type) - priority(b.type);
         });
+    }
 
-        // D. Replay to calculate balances
+    private processLedgerEvents(events: any[], interestRate: number) {
         let currentPrincipal = 0;
+        let runningBalance = 0;
         let totalInterestAccrued = 0;
-        let totalPaid = 0;
+        let totalInterestPaid = 0;
 
         events.forEach(ev => {
-            // 1. Update Principal
             if (ev.type === 'OPENING' || ev.type === 'EXTRA_WITHDRAWAL') {
                 currentPrincipal += ev.principalCr;
-            }
-            if (ev.type === 'PRINCIPAL_PAYMENT') {
+            } else if (ev.type === 'PRINCIPAL_PAYMENT') {
                 currentPrincipal -= ev.principalDr;
             }
 
-            // 2. Calculate Interest if Type is INTEREST
             if (ev.type === 'INTEREST') {
                 const intAmount = (currentPrincipal * interestRate) / 100;
-                ev.interestCr = intAmount; // Accrued
+                ev.interestCr = intAmount;
                 totalInterestAccrued += intAmount;
             }
 
-            // 3. Payments
-            if (ev.type === 'INTEREST PAYMENT') {
-                // specific logic
-            }
-
-            // 4. Update Running Balance (Principal + Interest - Paid)
-            // Actually, Passbook usually shows "Balance" of Loan+Interest?
-            // Let's keep it simple: Balance = Principal + All Interest - All Paid
-
-            // But wait, "Interest Payment" reduces the liability.
-            if (ev.type === 'INTEREST PAYMENT') {
-                // It reduces balance
-            }
-
-            // runningInterest?
-            // Let's track "Total Liability"
-            // Balance = Principal + AccruedInterest - PaidInterest - PaidPrincipal
-
-            // Re-calc for this line
-            // We need to know "Principal" and "Interest" components?
-            // The table usually shows a single "Total Balance" column.
-
-            const netPrincipal = currentPrincipal; // already adjusted for principal payments
-            // We need cumulative interest and cumulative payments till this point? 
-            // easier:
-            // Balance changes by: +PrincipalCr -PrincipalDr +InterestCr -InterestDr
-
-            runningBalance += ev.principalCr;
-            runningBalance -= ev.principalDr;
-            runningBalance += ev.interestCr;
-            runningBalance -= ev.interestDr;
+            runningBalance += ev.principalCr - ev.principalDr + ev.interestCr - ev.interestDr;
+            totalInterestPaid += ev.interestDr;
 
             ev.balance = runningBalance;
             ev.currentPrincipal = currentPrincipal;
         });
 
-        // Map events to the view model expected by HTML
         this.ledger = events.map(ev => ({
             date: ev.date,
-            description: ev.desc, // Map desc -> description
-            notes: null, // or ev.notes if available
-            // Net Principal Change for display column
+            description: ev.desc,
+            notes: null,
             principal: (ev.principalCr || 0) - (ev.principalDr || 0),
-            // Net Interest Change for display column
             interest: (ev.interestCr || 0) - (ev.interestDr || 0),
             balance: ev.balance
         }));
 
-        // Calculate Final Summary
-        // Principal Bal = currentPrincipal (after loop)
-        // Interest Bal = (Sum of Interest Cr) - (Sum of Interest Dr)
-
-        let interestBal = 0;
-        let totalInterestPaid = 0;
-        let grossInterest = 0;
-
-        events.forEach(ev => {
-            interestBal += (ev.interestCr || 0);
-            interestBal -= (ev.interestDr || 0);
-            totalInterestPaid += (ev.interestDr || 0);
-            grossInterest += (ev.interestCr || 0);
-        });
-
         this.ledgerSummary = {
             principal: currentPrincipal,
-            interest: interestBal, // Net Outstanding
+            interest: runningBalance - currentPrincipal,
             total: runningBalance,
             totalInterestPaid: totalInterestPaid,
-            totalInterestAccrued: grossInterest
+            totalInterestAccrued: totalInterestAccrued
         };
     }
 

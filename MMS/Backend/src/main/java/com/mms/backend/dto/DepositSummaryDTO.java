@@ -20,4 +20,5 @@ public class DepositSummaryDTO {
     private BigDecimal depositedMonths;
     private String depositedTimeDisplay;
     private BigDecimal monthlyInterest;
+    private Boolean isVerified;
 }

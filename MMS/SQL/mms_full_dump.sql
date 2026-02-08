@@ -117,7 +117,8 @@ CREATE TABLE mms.customer_deposit_entry (
     created_date timestamp without time zone,
     updated_date timestamp without time zone,
     token_no integer NOT NULL,
-    close_date date
+    close_date date,
+    is_verified boolean DEFAULT false
 );
 
 
@@ -236,7 +237,7 @@ ALTER SEQUENCE mms.customer_deposit_transaction_id_seq OWNED BY mms.customer_dep
 CREATE TABLE mms.customer_master (
     id integer NOT NULL,
     customer_name character varying(100) NOT NULL,
-    mobile_number character varying(15) NOT NULL,
+    mobile_number character varying(15),
     email character varying(100),
     address text,
     village character varying(50),
@@ -445,7 +446,7 @@ CREATE TABLE mms.merchant_master (
     id integer NOT NULL,
     merchant_name character varying(100) NOT NULL,
     merchant_type character varying(20) NOT NULL,
-    mobile_number character varying(15) NOT NULL,
+    mobile_number character varying(15),
     address text,
     village character varying(50),
     district character varying(50),

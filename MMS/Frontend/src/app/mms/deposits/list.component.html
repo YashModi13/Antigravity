@@ -82,6 +82,11 @@
                                 Status <i class="feather"
                                     [ngClass]="sortColumn === 'status' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
                             </th>
+                            <th (click)="toggleSort('isVerified')" (keydown.enter)="toggleSort('isVerified')"
+                                tabindex="0" style="cursor: pointer;">
+                                Verified <i class="feather"
+                                    [ngClass]="sortColumn === 'isVerified' ? (sortDirection === 'asc' ? 'icon-chevron-up' : 'icon-chevron-down') : 'icon-minus'"></i>
+                            </th>
                             <th>Action</th>
                         </tr>
                         <tr class="filter-row">
@@ -120,6 +125,14 @@
                                     <option value="">All</option>
                                     <option value="SAFE">SAFE</option>
                                     <option value="RISK">RISK</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="header-filter" [(ngModel)]="filters.isVerified" (change)="applyFilter()"
+                                    aria-label="Filter by Verified">
+                                    <option value="">All</option>
+                                    <option [ngValue]="true">YES</option>
+                                    <option [ngValue]="false">NO</option>
                                 </select>
                             </td>
                             <td></td>
@@ -161,6 +174,11 @@
                             <td>
                                 <span class="badge" [ngClass]="d.status === 'RISK' ? 'bg-danger' : 'bg-success'">{{
                                     d.status }}</span>
+                            </td>
+                            <td>
+                                <span class="badge" [ngClass]="d.isVerified ? 'bg-success' : 'bg-secondary'">
+                                    {{ d.isVerified ? 'YES' : 'NO' }}
+                                </span>
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
@@ -492,8 +510,43 @@
                     </div>
 
                 </div>
+
+                <!-- Add Principal Section -->
+                <hr class="my-3">
                 <div class="mb-3">
-                    <label class="form-label" for="paymentNotes">Notes</label>
+                    <div class="form-check form-switch custom-switch-lg mb-3">
+                        <input class="form-check-input" type="checkbox" id="toggleAddPrincipal"
+                            [(ngModel)]="paymentForm.addPrincipal">
+                        <label class="form-check-label fw-bold text-primary" for="toggleAddPrincipal"
+                            style="cursor: pointer;">
+                            <i class="feather icon-plus-circle me-1"></i> Add Extra Principal Loan
+                        </label>
+                    </div>
+
+                    <div *ngIf="paymentForm.addPrincipal"
+                        class="bg-light p-3 rounded border animate__animated animate__fadeIn">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted text-uppercase"
+                                    for="extraPrincipal">Extra Principal Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">₹</span>
+                                    <input type="number" id="extraPrincipal" class="form-control"
+                                        [(ngModel)]="paymentForm.extraPrincipal" placeholder="Enter Amount">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted text-uppercase"
+                                    for="principalDate">Transaction Date</label>
+                                <input type="date" id="principalDate" class="form-control"
+                                    [(ngModel)]="paymentForm.transactionDate">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold" for="paymentNotes">Notes</label>
                     <textarea id="paymentNotes" class="form-control" rows="2"
                         [(ngModel)]="paymentForm.notes"></textarea>
                 </div>

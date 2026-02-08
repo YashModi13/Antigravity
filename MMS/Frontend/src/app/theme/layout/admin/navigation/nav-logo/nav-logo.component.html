@@ -1,11 +1,12 @@
 <div class="nav-logo-container">
-  <a [routerLink]="['/dashboard']" class="b-brand">
-    <div class="b-bg">
-      <i class="feather icon-aperture text-gold"></i>
+  <a [routerLink]="['/dashboard']" class="b-brand d-flex align-items-center gap-2 text-decoration-none">
+    <div class="b-bg bg-gold-20 rounded-circle d-flex align-items-center justify-content-center"
+      style="width: 35px; height: 35px;">
+      <i class="feather icon-aperture text-gold fs-5"></i>
     </div>
-    <div class="b-title-wrapper ms-2">
-      <span class="b-title-main text-uppercase">{{ (businessName$ | async)?.substring(0, 18) }}</span>
-      <span class="b-title-sub text-uppercase f-10 opacity-75 d-block">Dhiran System</span>
+    <div class="b-title lh-1">
+      <span class="d-block fw-bold text-white text-uppercase ls-1">Dhiran</span>
+      <span class="d-block text-white-50 f-10 text-uppercase fw-medium ls-2">System</span>
     </div>
   </a>
   <a href="javascript:" class="mobile-menu" [ngClass]="{ on: navCollapsed }" id="mobile-collapse"

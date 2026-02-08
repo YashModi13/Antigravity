@@ -19,7 +19,7 @@ public class MerchantMaster {
     @Column(name = "merchant_type", nullable = false, length = 20)
     private String merchantType;
 
-    @Column(name = "mobile_number", nullable = false, unique = true, length = 15)
+    @Column(name = "mobile_number", unique = true, length = 15)
     private String mobileNumber;
 
     @Column(columnDefinition = "TEXT")
@@ -48,4 +48,22 @@ public class MerchantMaster {
 
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
+
+    @PrePersist
+    @PreUpdate
+    private void sanitizeData() {
+        this.mobileNumber = trimToNull(this.mobileNumber);
+        this.address = trimToNull(this.address);
+        this.village = trimToNull(this.village);
+        this.district = trimToNull(this.district);
+        this.state = trimToNull(this.state);
+        this.pincode = trimToNull(this.pincode);
+    }
+
+    private String trimToNull(String str) {
+        if (str == null || str.trim().isEmpty()) {
+            return null;
+        }
+        return str.trim();
+    }
 }

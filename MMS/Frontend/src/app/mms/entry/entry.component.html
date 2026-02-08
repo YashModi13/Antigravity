@@ -155,11 +155,23 @@
                     <div class="row g-0">
                         <div class="col-md-12">
                             <div class="p-4" [ngClass]="isLoanAmountInvalid ? 'bg-danger-light' : 'bg-primary-light'">
-                                <label class="form-label fw-bold small text-uppercase mb-2"
-                                    [class.text-danger]="isLoanAmountInvalid"
-                                    [class.text-primary]="!isLoanAmountInvalid" for="principalLoanAmt">
-                                    Principal Loan Amount <span class="text-danger">*</span>
-                                </label>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-bold small text-uppercase mb-0"
+                                        [class.text-danger]="isLoanAmountInvalid"
+                                        [class.text-primary]="!isLoanAmountInvalid" for="principalLoanAmt">
+                                        Principal Loan Amount <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input shadow-none cursor-pointer" type="checkbox"
+                                            id="isVerifiedCheck" [(ngModel)]="deposit.isVerified" name="isVerified"
+                                            style="transform: scale(1.2);">
+                                        <label class="form-check-label small fw-bold text-uppercase ms-2 cursor-pointer"
+                                            for="isVerifiedCheck" [class.text-primary]="deposit.isVerified"
+                                            [class.text-muted]="!deposit.isVerified">
+                                            Is Verified
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="input-group input-group-lg bg-white rounded shadow-sm border-0">
                                     <span class="input-group-text border-0 bg-transparent text-secondary ps-4 fs-4">{{
                                         currencySymbol }}</span>

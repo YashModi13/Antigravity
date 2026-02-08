@@ -9,4 +9,8 @@ public class RedemptionRequest {
     private BigDecimal interestPaid;
     private BigDecimal totalPaid;
     private String notes;
+
+    // Support for adding extra principal (withdrawal)
+    private BigDecimal extraPrincipal;
+    private java.time.LocalDate transactionDate;
 }
