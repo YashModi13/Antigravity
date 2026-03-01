@@ -53,6 +53,15 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
     referralSearchResults: any[] = [];
     showReferralResults = false;
 
+    // Edit Customer State
+    showEditCustomerModal = false;
+    editingCustomer: any = null;
+    editReferralSearchTerm = '';
+    showEditReferralResults = false;
+    editReferralSearchResults: any[] = [];
+
+
+
 
     isEditMode = false;
     editId: number | null = null;
@@ -98,8 +107,22 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
     private tokenDebounceTimer: any;
 
     onTokenInput() {
-        if (!this.deposit.tokenNo) {
+        if (!this.deposit.tokenNo || this.deposit.tokenNo.toString().trim() === '') {
             this.tokenStatus = 'none';
+            this.tokenErrorMessage = '';
+            return;
+        }
+
+        const token = Number(this.deposit.tokenNo);
+        if (Number.isNaN(token)) {
+            this.tokenStatus = 'invalid';
+            this.tokenErrorMessage = 'Invalid Token Format';
+            return;
+        }
+
+        if (token <= 0) {
+            this.tokenStatus = 'invalid';
+            this.tokenErrorMessage = 'Token must be > 0';
             return;
         }
 
@@ -107,40 +130,31 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         clearTimeout(this.tokenDebounceTimer);
 
         this.tokenDebounceTimer = setTimeout(() => {
-            const token = Number(this.deposit.tokenNo);
-            if (Number.isNaN(token)) {
-                this.tokenStatus = 'invalid';
-                this.tokenErrorMessage = 'Invalid Token Format';
-                return;
-            }
-
-            if (token <= 0) {
-                this.tokenStatus = 'invalid';
-                this.tokenErrorMessage = 'Token must be greater than 0';
-                return;
-            }
-
-            this.mmsService.checkTokenAvailability(token).subscribe({
+            this.mmsService.checkTokenAvailability(token, this.editId || undefined).subscribe({
                 next: (isAvailable) => {
-                    const action = isAvailable ? this.handleTokenAvailable : this.handleTokenUnavailable;
-                    action.call(this);
+                    if (isAvailable) {
+                        this.handleTokenAvailable();
+                    } else {
+                        this.handleTokenUnavailable();
+                    }
                 },
                 error: (err) => {
                     console.error('Token check failed', err);
-                    this.tokenStatus = 'none'; // Reset or show generic error
+                    this.tokenStatus = 'none';
+                    this.tokenErrorMessage = 'Check failed';
                 }
             });
-        }, 500); // 500ms Debounce
+        }, 400); // 400ms Debounce for better responsiveness
     }
 
     private handleTokenAvailable() {
         this.tokenStatus = 'valid';
-        this.tokenErrorMessage = '';
+        this.tokenErrorMessage = 'Available for new entry';
     }
 
     private handleTokenUnavailable() {
         this.tokenStatus = 'invalid';
-        this.tokenErrorMessage = 'Token already exists!';
+        this.tokenErrorMessage = 'Already exists in database - Not Available';
     }
 
     generateToken() {
@@ -148,8 +162,7 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         this.mmsService.generateToken().subscribe({
             next: (token) => {
                 this.deposit.tokenNo = token.toString();
-                this.tokenStatus = 'valid';
-                this.tokenErrorMessage = '';
+                this.handleTokenAvailable();
             },
             error: (err) => {
                 this.toastService.error('Failed to generate token');
@@ -369,13 +382,20 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
                     this.selectedCustomer = {
                         id: data.customerId,
                         customerName: data.customerName,
-                        mobileNumber: data.mobileNumber,
-                        village: data.village,
-                        address: data.address,
-                        district: data.district,
-                        state: data.state,
-                        pincode: data.pincode
+                        mobileNumber: data.customerMobileNumber,
+                        village: data.customerVillage,
+                        address: data.customerAddress,
+                        district: data.customerDistrict,
+                        state: data.customerState,
+                        pincode: data.customerPincode,
+                        email: data.customerEmail,
+                        kycVerified: data.customerKycVerified,
+                        referralName: data.customerReference,
+                        referralId: data.customerReferenceId
                     };
+
+
+
                     this.selectedCustomerName = data.customerName;
                     this.searchTerm = data.customerName;
                 }
@@ -436,6 +456,65 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         this.searchTerm = customer.customerName;
         this.showResults = false;
     }
+
+    openEditCustomerModal() {
+        if (!this.selectedCustomer) return;
+        this.editingCustomer = { ...this.selectedCustomer };
+        this.editReferralSearchTerm = this.selectedCustomer.referralName || '';
+        this.showEditCustomerModal = true;
+    }
+
+    searchEditReferrals() {
+        if (this.editReferralSearchTerm.length < 2) {
+            this.showEditReferralResults = false;
+            if (this.editReferralSearchTerm.length === 0) {
+                this.editingCustomer.referralCustomer = null;
+            }
+            return;
+        }
+
+        this.mmsService.searchCustomers(this.editReferralSearchTerm).subscribe(results => {
+            this.editReferralSearchResults = results;
+            this.showEditReferralResults = true;
+        });
+    }
+
+    selectEditReferral(customer: any) {
+        this.editingCustomer.referralCustomer = { id: customer.id };
+        this.editingCustomer.referralName = customer.customerName;
+        this.editReferralSearchTerm = customer.customerName;
+        this.showEditReferralResults = false;
+    }
+
+    saveEditedCustomer() {
+        if (!this.editingCustomer.customerName) {
+            this.toastService.error('Customer Name is required');
+            return;
+        }
+
+        const payload = {
+            ...this.editingCustomer,
+            mobileNumber: this.editingCustomer.mobileNumber || null
+        };
+
+        this.isLoading = true;
+        this.mmsService.updateCustomer(this.editingCustomer.id, payload).subscribe({
+            next: (customer: any) => {
+                this.isLoading = false;
+                this.toastService.success('Customer updated successfully');
+                this.selectedCustomer = customer;
+                this.selectedCustomerName = customer.customerName;
+                this.searchTerm = customer.customerName;
+                this.showEditCustomerModal = false;
+            },
+            error: (err) => {
+                this.isLoading = false;
+                this.toastService.error('Error updating customer');
+                console.error(err);
+            }
+        });
+    }
+
 
     openNewCustomerModal() {
         this.showResults = false;
@@ -640,6 +719,11 @@ export class MmsEntryComponent implements OnInit, OnDestroy {
         // 6. Validate Token
         if (!this.deposit.tokenNo) {
             this.toastService.error('Please enter a Token Number');
+            return false;
+        }
+
+        if (this.tokenStatus === 'invalid') {
+            this.toastService.error(this.tokenErrorMessage || 'This Token Number is already in use');
             return false;
         }
         return true;

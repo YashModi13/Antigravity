@@ -42,9 +42,6 @@ export const RECOMMENDED_CONFIGS = [
     { key: CONFIG_KEYS.DEFAULT_GIVING_PERCENTAGE, val: '60.0', desc: 'Default loan-to-value percentage for items' }
 ];
 
-export const SECRET_KEYS = {
-    APP_SECRET: 'AntigravitySecretKey2024Secure!!'
-};
 
 export const ENCRYPTION_UI_TEXTS = {
     TITLE: 'Encryption & Security Testing Console',

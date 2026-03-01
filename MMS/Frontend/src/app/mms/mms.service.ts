@@ -256,8 +256,8 @@ export class MmsService {
         return this.http.post(REST_URLS.DEPOSITS_ADD_TRANSACTION, payload, { responseType: 'text' });
     }
 
-    checkTokenAvailability(tokenNo: number): Observable<boolean> {
-        return this.http.post<boolean>(REST_URLS.DEPOSITS_CHECK_TOKEN, { tokenNo });
+    checkTokenAvailability(tokenNo: number, id?: number): Observable<boolean> {
+        return this.http.post<boolean>(REST_URLS.DEPOSITS_CHECK_TOKEN, { tokenNo, id });
     }
 
     generateToken(): Observable<number> {
@@ -272,8 +272,8 @@ export class MmsService {
         return this.http.post<any[]>(REST_URLS.DEPOSITS_ACTIVE_MERCHANT_ENTRIES, { id });
     }
 
-    closeDeposit(id: number): Observable<any> {
-        return this.http.post(REST_URLS.DEPOSITS_CLOSE, { id }, { responseType: 'text' });
+    closeDeposit(id: number, date?: string): Observable<any> {
+        return this.http.post(REST_URLS.DEPOSITS_CLOSE, { id, date }, { responseType: 'text' });
     }
 
     getAllMerchants(): Observable<Merchant[]> {

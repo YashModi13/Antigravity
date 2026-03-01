@@ -6,6 +6,11 @@ import { EncryptionService } from '../services/encryption.service';
 export const encryptionInterceptor: HttpInterceptorFn = (req, next) => {
     const encryptionService = inject(EncryptionService);
 
+    // Skip encryption for public endpoints
+    if (req.url.includes('/api/public/')) {
+        return next(req);
+    }
+
     let request = req;
 
     // Encrypt Request Body (if POST/PUT/PATCH)
@@ -29,8 +34,8 @@ export const encryptionInterceptor: HttpInterceptorFn = (req, next) => {
                 if (body && body.data) { // Check body exist
                     const decrypted = encryptionService.decrypt(body.data);
 
-                    // Only replace if decryption successful
-                    if (decrypted) {
+                    // Only replace if decryption was successful (allow falsy values like false or 0)
+                    if (decrypted !== null && decrypted !== undefined) {
                         return event.clone({ body: decrypted });
                     }
                 }

@@ -433,7 +433,7 @@ export class MmsDepositsListComponent implements OnInit {
     }
 
     closeDepositRequest() {
-        this.mmsService.closeDeposit(this.settlementData.depositId).subscribe({
+        this.mmsService.closeDeposit(this.settlementData.depositId, this.settlementDate).subscribe({
             next: () => {
                 this.toastService.success('Deposit Settled & Closed Successfully');
                 this.showSettlementModal = false;

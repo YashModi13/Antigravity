@@ -61,4 +61,16 @@ public class ConfigController {
         configRepository.deleteById(Objects.requireNonNull(request.getId()));
         return ResponseEntity.ok().build();
     }
+
+    // PUBLIC ENDPOINTS - SKIPPED BY ENCRYPTION
+    @GetMapping("/public/encryption-key")
+    public ResponseEntity<java.util.Map<String, String>> getEncryptionKey() {
+        return configRepository.findByPropertyKey("system.encryption.secret-key")
+                .map(config -> {
+                    java.util.Map<String, String> response = new java.util.HashMap<>();
+                    response.put("key", config.getPropertyValue());
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

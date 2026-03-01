@@ -14,11 +14,14 @@ public class DepositDetailDTO {
     private String customerMobileNumber;
     private String customerAddress;
     private String customerCity; // Mapping 'village' or 'city'
-    private String customerCaste; // Not in entity, maybe 'referralName'? Or new field?
-    // Let's stick to entity fields:
+    private String customerCaste;
     private String customerVillage;
     private String customerDistrict;
     private String customerState;
+    private String customerPincode;
+    private String customerEmail;
+    private Boolean customerKycVerified;
+    private Integer customerReferenceId;
     private String customerReference;
 
     private LocalDate depositDate;

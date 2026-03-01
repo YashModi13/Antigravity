@@ -35,7 +35,10 @@ public class DepositService {
     private final UnitMasterRepository unitRepository;
     private final MerchantItemEntryRepository merchantEntryRepository;
 
-    public boolean isTokenExists(Integer tokenNo) {
+    public boolean isTokenExists(Integer tokenNo, Integer excludeId) {
+        if (excludeId != null) {
+            return depositRepository.existsByTokenNoAndIdNot(tokenNo, excludeId);
+        }
         return depositRepository.existsByTokenNo(tokenNo);
     }
 
@@ -48,6 +51,12 @@ public class DepositService {
     public void createDeposit(CreateDepositRequest request) {
         log.info("[DepositService] Creating Deposit. Token: {}, CustomerID: {}", request.getTokenNo(),
                 request.getCustomerId());
+
+        if (isTokenExists(request.getTokenNo(), null)) {
+            throw new IllegalArgumentException(
+                    "Token Number '" + request.getTokenNo() + "' already exists. Duplicates are not allowed.");
+        }
+
         // 1. Create Entry
         CustomerDepositEntry entry = new CustomerDepositEntry();
         entry.setCustomer(customerRepository.findById(Objects.requireNonNull(request.getCustomerId()))
@@ -106,6 +115,12 @@ public class DepositService {
     @Transactional
     public void updateDeposit(Integer id, UpdateDepositRequest request) {
         log.info("[DepositService] Updating Deposit. ID: {}", id);
+
+        if (request.getTokenNo() != null && isTokenExists(request.getTokenNo(), id)) {
+            throw new IllegalArgumentException(
+                    "Token Number '" + request.getTokenNo() + "' is already assigned to another record.");
+        }
+
         CustomerDepositEntry entry = depositRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new NoSuchElementException("Deposit not found with ID: " + id));
 
@@ -252,23 +267,24 @@ public class DepositService {
         CustomerDepositEntry entry = depositRepository.findById(Objects.requireNonNull(depositId))
                 .orElseThrow(() -> new NoSuchElementException("Deposit not found"));
 
+        LocalDate txDate = request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now();
+
         if (request.getPrincipalPaid() != null && request.getPrincipalPaid().compareTo(BigDecimal.ZERO) > 0) {
-            createTransaction(entry, TX_PRINCIPAL_PAYMENT, request.getPrincipalPaid(), LocalDate.now(),
+            createTransaction(entry, TX_PRINCIPAL_PAYMENT, request.getPrincipalPaid(), txDate,
                     request.getNotes());
         }
 
         if (request.getInterestPaid() != null && request.getInterestPaid().compareTo(BigDecimal.ZERO) > 0) {
-            createTransaction(entry, TX_INTEREST_PAYMENT, request.getInterestPaid(), LocalDate.now(),
+            createTransaction(entry, TX_INTEREST_PAYMENT, request.getInterestPaid(), txDate,
                     request.getNotes());
         }
 
         if (request.getExtraPrincipal() != null && request.getExtraPrincipal().compareTo(BigDecimal.ZERO) > 0) {
-            LocalDate txDate = request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now();
             createTransaction(entry, TX_EXTRA_WITHDRAWAL, request.getExtraPrincipal(), txDate, request.getNotes());
         }
 
         if (request.getDiscountAmount() != null && request.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
-            createTransaction(entry, "DISCOUNT", request.getDiscountAmount(), LocalDate.now(), request.getNotes());
+            createTransaction(entry, "DISCOUNT", request.getDiscountAmount(), txDate, request.getNotes());
         }
 
         entry.setUpdatedDate(LocalDateTime.now());
@@ -276,11 +292,15 @@ public class DepositService {
     }
 
     @Transactional
-    public void closeDeposit(Integer id) {
-        log.info("[DepositService] Closing Deposit. ID: {}", id);
+    public void closeDeposit(Integer id, LocalDate closeDate) {
+        log.info("[DepositService] Closing Deposit. ID: {}, CloseDate: {}", id, closeDate);
         CustomerDepositEntry entry = depositRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new NoSuchElementException("Deposit not found"));
+
+        LocalDate finalCloseDate = closeDate != null ? closeDate : LocalDate.now();
+
         entry.setEntryStatus(STATUS_CLOSED);
+        entry.setCloseDate(finalCloseDate);
         entry.setUpdatedDate(LocalDateTime.now());
         depositRepository.save(entry);
 

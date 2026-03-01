@@ -98,7 +98,10 @@ public class DepositQueryService {
         List<CustomerDepositTransaction> transactions = transactionRepository.findByDepositEntry_Id(deposit.getId());
         FinancialSummary financial = calculateFinancials(transactions);
 
-        TimeSummary timeSummary = calculateTimeSummary(deposit.getDepositDate(), LocalDate.now(), configs);
+        LocalDate endDate = (STATUS_CLOSED.equals(deposit.getEntryStatus()) && deposit.getCloseDate() != null)
+                ? deposit.getCloseDate()
+                : LocalDate.now();
+        TimeSummary timeSummary = calculateTimeSummary(deposit.getDepositDate(), endDate, configs);
         dto.setDepositedMonths(timeSummary.interestMonths);
         dto.setDepositedTimeDisplay(timeSummary.displayString);
 
@@ -401,7 +404,15 @@ public class DepositQueryService {
         dto.setCustomerVillage(entry.getCustomer().getVillage());
         dto.setCustomerDistrict(entry.getCustomer().getDistrict());
         dto.setCustomerState(entry.getCustomer().getState());
+        dto.setCustomerCity(entry.getCustomer().getVillage());
+        dto.setCustomerPincode(entry.getCustomer().getPincode());
+        dto.setCustomerEmail(entry.getCustomer().getEmail());
+        dto.setCustomerKycVerified(entry.getCustomer().getKycVerified());
+        dto.setCustomerReferenceId(
+                entry.getCustomer().getReferralCustomer() != null ? entry.getCustomer().getReferralCustomer().getId()
+                        : null);
         dto.setCustomerReference(entry.getCustomer().getReferralName());
+
         dto.setDepositDate(entry.getDepositDate());
         dto.setInterestRate(entry.getTotalInterestRate());
         dto.setNotes(entry.getNotes());
@@ -417,7 +428,10 @@ public class DepositQueryService {
                 .collect(Collectors.toMap(ConfigProperty::getPropertyKey, ConfigProperty::getPropertyValue,
                         (a, b) -> a));
 
-        TimeSummary timeSummary = calculateTimeSummary(entry.getDepositDate(), LocalDate.now(), configs);
+        LocalDate endDate = (STATUS_CLOSED.equals(entry.getEntryStatus()) && entry.getCloseDate() != null)
+                ? entry.getCloseDate()
+                : LocalDate.now();
+        TimeSummary timeSummary = calculateTimeSummary(entry.getDepositDate(), endDate, configs);
         dto.setDepositedMonths(timeSummary.interestMonths);
         dto.setDepositedTimeDisplay(timeSummary.displayString);
 
@@ -560,7 +574,6 @@ public class DepositQueryService {
         depDto.setStatus(deposit.getEntryStatus());
 
         List<CustomerDepositTransaction> txs = transactionRepository.findByDepositEntry_Id(deposit.getId());
-        calculateFinancials(txs);
 
         BigDecimal principalPaid = txs.stream().filter(t -> TX_PRINCIPAL_PAYMENT.equals(t.getTransactionType()))
                 .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -589,9 +602,7 @@ public class DepositQueryService {
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         depDto.setMonthlyInterest(monthlyInterestAmount);
 
-        LocalDate endDate = (STATUS_CLOSED.equals(deposit.getEntryStatus()) && deposit.getUpdatedDate() != null)
-                ? deposit.getUpdatedDate().toLocalDate()
-                : LocalDate.now();
+        LocalDate endDate = resolvePortfolioEndDate(deposit);
         if (STATUS_CLOSED.equals(deposit.getEntryStatus())) {
             depDto.setEndDate(endDate);
         }
@@ -602,53 +613,71 @@ public class DepositQueryService {
         BigDecimal accrued = originalLoan.multiply(deposit.getTotalInterestRate())
                 .multiply(BigDecimal.valueOf(interestMonths))
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        depDto.setAccruedInterest(accrued);
 
-        if (STATUS_CLOSED.equals(deposit.getEntryStatus()) && discountAmount.compareTo(BigDecimal.ZERO) == 0) {
-            BigDecimal totalDue = originalLoan.add(accrued);
-            BigDecimal totalPaid = principalPaid.add(interestPaid);
-            if (totalDue.compareTo(totalPaid) > 0) {
-                discountAmount = totalDue.subtract(totalPaid);
+        // Finalize values for closed deposits
+        if (STATUS_CLOSED.equals(deposit.getEntryStatus())) {
+            // Reconcile discount for legacy closures
+            if (discountAmount.compareTo(BigDecimal.ZERO) == 0) {
+                BigDecimal totalDue = originalLoan.add(accrued);
+                BigDecimal totalPaid = principalPaid.add(interestPaid);
+                if (totalDue.compareTo(totalPaid) > 0) {
+                    discountAmount = totalDue.subtract(totalPaid);
+                }
+            }
+            // Ensure interest paid matches accrual for legacy records
+            if (interestPaid.compareTo(BigDecimal.ZERO) == 0) {
+                interestPaid = accrued;
+                depDto.setPaidInterest(accrued);
             }
         }
+
         depDto.setDiscountAmount(discountAmount);
-
-        if (STATUS_CLOSED.equals(deposit.getEntryStatus()) && interestPaid.compareTo(BigDecimal.ZERO) == 0) {
-            depDto.setPaidInterest(accrued);
-            interestPaid = accrued;
-        }
         depDto.setAccruedInterest(accrued);
+        depDto.setNetProfitLoss(principalPaid.add(interestPaid).subtract(originalLoan));
 
-        BigDecimal totalIn = principalPaid.add(interestPaid);
-        BigDecimal netProfit = totalIn.subtract(originalLoan);
-        depDto.setNetProfitLoss(netProfit);
-
-        // Items
+        // Items mapping
         List<CustomerDepositItems> items = itemsRepository.findByDepositEntry_Id(deposit.getId());
         List<CustomerPortfolioDTO.PortfolioItemDTO> itemDTOs = new ArrayList<>(
                 mapPortfolioItems(items, deposit.getEntryStatus()));
         depDto.setItems(itemDTOs);
 
-        // Transactions
+        // Transactions mapping
         depDto.setTransactions(new ArrayList<>(mapPortfolioTransactions(txs)));
 
-        // Status override for Active deposits
+        // Risk Assessment for Active records
         if (STATUS_ACTIVE.equals(deposit.getEntryStatus())) {
-            BigDecimal currentAssetValue = itemDTOs.stream()
-                    .map(CustomerPortfolioDTO.PortfolioItemDTO::getCurrentAssetValue)
-                    .filter(java.util.Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            BigDecimal unpaidInterest = accrued.subtract(interestPaid);
-            BigDecimal totalOwed = depDto.getLoanAmount().add(unpaidInterest);
-
-            BigDecimal riskThreshold = new BigDecimal(getConfig(configs, CONFIG_RISK_THRESHOLD, "100"));
-            BigDecimal limitValue = currentAssetValue.multiply(riskThreshold).divide(BigDecimal.valueOf(100), 2,
-                    RoundingMode.HALF_UP);
-            depDto.setStatus(totalOwed.compareTo(limitValue) > 0 ? STATUS_RISK : STATUS_SAFE);
+            evaluatePortfolioRisk(depDto, itemDTOs, accrued, interestPaid, configs);
         }
 
         return depDto;
+    }
+
+    private LocalDate resolvePortfolioEndDate(CustomerDepositEntry deposit) {
+        if (!STATUS_CLOSED.equals(deposit.getEntryStatus())) {
+            return LocalDate.now();
+        }
+        if (deposit.getCloseDate() != null) {
+            return deposit.getCloseDate();
+        }
+        return (deposit.getUpdatedDate() != null) ? deposit.getUpdatedDate().toLocalDate() : LocalDate.now();
+    }
+
+    private void evaluatePortfolioRisk(CustomerPortfolioDTO.PortfolioDepositDTO depDto,
+            List<CustomerPortfolioDTO.PortfolioItemDTO> itemDTOs,
+            BigDecimal accrued, BigDecimal interestPaid,
+            Map<String, String> configs) {
+        BigDecimal currentAssetValue = itemDTOs.stream()
+                .map(CustomerPortfolioDTO.PortfolioItemDTO::getCurrentAssetValue)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal unpaidInterest = accrued.subtract(interestPaid);
+        BigDecimal totalOwed = depDto.getLoanAmount().add(unpaidInterest);
+
+        BigDecimal riskThreshold = new BigDecimal(getConfig(configs, CONFIG_RISK_THRESHOLD, "100"));
+        BigDecimal limitValue = currentAssetValue.multiply(riskThreshold).divide(BigDecimal.valueOf(100), 2,
+                RoundingMode.HALF_UP);
+        depDto.setStatus(totalOwed.compareTo(limitValue) > 0 ? STATUS_RISK : STATUS_SAFE);
     }
 
     private int calculatePortfolioMonths(LocalDate start, LocalDate end) {

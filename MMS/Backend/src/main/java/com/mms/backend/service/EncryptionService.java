@@ -1,7 +1,6 @@
 package com.mms.backend.service;
 
 import com.mms.backend.repository.ConfigPropertyRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,22 +17,19 @@ public class EncryptionService {
     private ConfigPropertyRepository configRepository;
 
     private static final String ALGORITHM = "AES";
-    private String SECRET_KEY = "DefaultInsecureKey!!"; // Fallback, should be overwritten by DB
 
-    @PostConstruct
-    public void init() {
-        configRepository.findByPropertyKey("system.encryption.secret-key")
-                .ifPresent(config -> {
-                    this.SECRET_KEY = config.getPropertyValue();
-                    log.info("Encryption Key Loaded from Database.");
-                });
+    private String getSecretKey() {
+        return configRepository.findByPropertyKey("system.encryption.secret-key")
+                .map(com.mms.backend.entity.ConfigProperty::getPropertyValue)
+                .orElse("AntigravitySecretKey2024Secure!!"); // Secure Fallback
     }
 
     public String encrypt(String data) {
         try {
             if (data == null)
                 return null;
-            SecretKeySpec secretKey = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            String key = getSecretKey();
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), ALGORITHM);
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             byte[] encryptedBytes = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
@@ -48,7 +44,8 @@ public class EncryptionService {
         try {
             if (encryptedData == null)
                 return null;
-            SecretKeySpec secretKey = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+            String key = getSecretKey();
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), ALGORITHM);
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
             byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedData));

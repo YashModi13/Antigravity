@@ -42,9 +42,9 @@ public class EncryptionResponseAdvice implements ResponseBodyAdvice<Object> {
             return body;
         }
 
-        // Also skip for Swagger/OpenAPI endpoints if applicable
+        // Also skip for Swagger/OpenAPI and PUBLIC endpoints
         String path = request.getURI().getPath();
-        if (path.contains("/v3/api-docs") || path.contains("/swagger-ui")) {
+        if (path.contains("/v3/api-docs") || path.contains("/swagger-ui") || path.contains("/api/public/")) {
             return body;
         }
 

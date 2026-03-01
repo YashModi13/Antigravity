@@ -28,6 +28,8 @@ public interface CustomerDepositEntryRepository extends JpaRepository<CustomerDe
 
         boolean existsByTokenNo(Integer tokenNo);
 
+        boolean existsByTokenNoAndIdNot(Integer tokenNo, Integer id);
+
         @Query("SELECT MAX(c.tokenNo) FROM CustomerDepositEntry c")
         Integer findMaxTokenNo();
 
