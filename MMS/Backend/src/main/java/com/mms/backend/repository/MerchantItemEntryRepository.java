@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface MerchantItemEntryRepository extends JpaRepository<MerchantItemEntry, Integer> {
     List<MerchantItemEntry> findByEntryStatus(String entryStatus);
+    List<MerchantItemEntry> findByMerchantIdAndEntryStatus(Integer merchantId, String entryStatus);
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(m) FROM MerchantItemEntry m WHERE m.customerDepositItem.depositEntry.id = :depositId AND m.isActive = true")
     long countActiveByDepositId(@org.springframework.data.repository.query.Param("depositId") Long depositId);

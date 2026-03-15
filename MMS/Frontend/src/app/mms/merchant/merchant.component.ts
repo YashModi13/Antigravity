@@ -30,6 +30,7 @@ export class MmsMerchantComponent implements OnInit {
         weight: '',
         fineWeight: '',
         assetValue: '',
+        principalAmount: '',
         status: ''
     };
 
@@ -74,7 +75,9 @@ export class MmsMerchantComponent implements OnInit {
                     totalPrincipal: 0,
                     totalOwed: 0,
                     totalAssetValue: 0,
-                    totalNetMargin: 0
+                    totalNetMargin: 0,
+                    totalMonthlyInterest: 0,
+                    totalUnpaidInterest: 0
                 });
             }
             const data = portfolioMap.get(p.merchantId);
@@ -85,6 +88,8 @@ export class MmsMerchantComponent implements OnInit {
             data.totalOwed += (p.totalOwed || 0);
             data.totalAssetValue += (p.currentAssetValue || 0);
             data.totalNetMargin += (p.netMonthlyMargin || 0);
+            data.totalMonthlyInterest += (p.monthlyInterestAmount || 0);
+            data.totalUnpaidInterest += Math.max(0, (p.accruedInterest || 0) - (p.totalInterestPaid || 0));
         });
 
         return Array.from(portfolioMap.values()).sort((a, b) => b.totalOwed - a.totalOwed);
@@ -97,8 +102,10 @@ export class MmsMerchantComponent implements OnInit {
             acc.totalOwed += curr.totalOwed;
             acc.totalAssetValue += curr.totalAssetValue;
             acc.totalNetMargin += curr.totalNetMargin;
+            acc.totalUnpaidInterest += curr.totalUnpaidInterest;
+            acc.totalMonthlyInterest += curr.totalMonthlyInterest;
             return acc;
-        }, { totalItems: 0, totalPrincipal: 0, totalOwed: 0, totalAssetValue: 0, totalNetMargin: 0 });
+        }, { totalItems: 0, totalPrincipal: 0, totalOwed: 0, totalAssetValue: 0, totalNetMargin: 0, totalUnpaidInterest: 0, totalMonthlyInterest: 0 });
     }
 
     get selectedAssetValueTotal(): number {
@@ -139,7 +146,35 @@ export class MmsMerchantComponent implements OnInit {
         principalPaid: 0,
         interestPaid: 0,
         totalPaid: 0,
+        transactionDate: '',
         notes: ''
+    };
+
+    formatDate(dateVal: any): string {
+        if (!dateVal) return '';
+        if (Array.isArray(dateVal)) {
+            const y = dateVal[0];
+            const m = dateVal[1].toString().padStart(2, '0');
+            const d = dateVal[2].toString().padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+        if (typeof dateVal === 'string' && dateVal.includes('T')) {
+            return dateVal.split('T')[0];
+        }
+        return dateVal;
+    }
+
+    // Bulk Interest Modal
+    showBulkInterestModal = false;
+    showBulkConfirmModal = false;
+    selectedMerchantForBulk: any = null;
+    bulkInterestEntries: any[] = [];
+    bulkInterestForm: any = {
+        totalUnpaid: 0,
+        payAmount: 0,
+        notes: '',
+        transactionDate: new Date().toISOString().split('T')[0],
+        paymentConfirmed: false
     };
 
     // Transaction Modal
@@ -209,8 +244,9 @@ export class MmsMerchantComponent implements OnInit {
             const matchWeight = this.itemFilters.weight ? (i.weight || 0) >= Number.parseFloat(this.itemFilters.weight) : true;
             const matchFine = this.itemFilters.fineWeight ? (i.fineWeight || 0) >= Number.parseFloat(this.itemFilters.fineWeight) : true;
             const matchAsset = this.itemFilters.assetValue ? (i.currentAssetValue || 0) >= Number.parseFloat(this.itemFilters.assetValue) : true;
+            const matchPrincipal = this.itemFilters.principalAmount ? (i.principalAmount || 0) >= Number.parseFloat(this.itemFilters.principalAmount) : true;
             const matchStatus = this.itemFilters.status ? i.itemStatus.includes(this.itemFilters.status) : true;
-            return matchName && matchToken && matchItem && matchWeight && matchFine && matchAsset && matchStatus;
+            return matchName && matchToken && matchItem && matchWeight && matchFine && matchAsset && matchPrincipal && matchStatus;
         });
 
         // Sort: Selection first, then chosen column
@@ -379,7 +415,7 @@ export class MmsMerchantComponent implements OnInit {
 
     clearFilter() {
         this.depositFilterId = null;
-        this.itemFilters = { tokenNo: '', customerName: '', itemName: '', weight: '', fineWeight: '', assetValue: '', status: '' };
+        this.itemFilters = { tokenNo: '', customerName: '', itemName: '', weight: '', fineWeight: '', assetValue: '', principalAmount: '', status: '' };
         this.pledgeFilters = { tokenNo: '', merchantName: '', customerName: '', itemName: '', weight: '', interestRate: '', assetValue: '', totalOwed: '' };
         this.router.navigate([], { queryParams: { depositId: null }, queryParamsHandling: 'merge' });
         this.loadData();
@@ -458,6 +494,7 @@ export class MmsMerchantComponent implements OnInit {
             principalPaid: Number.parseFloat((pledge.principalAmount || 0).toFixed(2)),
             interestPaid: Number.parseFloat((Math.max(0, (pledge.accruedInterest || 0) - (pledge.totalInterestPaid || 0))).toFixed(2)),
             totalPaid: 0,
+            transactionDate: new Date().toISOString().split('T')[0],
             notes: 'Full Redemption of pledged item'
         };
 
@@ -465,20 +502,100 @@ export class MmsMerchantComponent implements OnInit {
         this.showRedeemModal = true;
     }
 
+    onRedeemDateChange() {
+        if (!this.selectedPledgeForRedeem) return;
+
+        const pledge = this.selectedPledgeForRedeem;
+        const entryDateStr = this.formatDate(pledge.entryDate);
+        const eDate = new Date(entryDateStr);
+        const tDateStr = this.redeemForm.transactionDate;
+        
+        let tDate = new Date();
+        if (tDateStr) {
+            tDate = new Date(tDateStr);
+        }
+
+        if (tDateStr < entryDateStr) {
+            this.toastService.error('Transaction date cannot be before entry date (' + entryDateStr + ')');
+            this.redeemForm.transactionDate = entryDateStr;
+            tDate = new Date(entryDateStr);
+        }
+
+        const m1 = eDate.getFullYear() * 12 + eDate.getMonth();
+        const m2 = tDate.getFullYear() * 12 + tDate.getMonth();
+        let diffMonths = m2 - m1;
+
+        if (tDate.getDate() < eDate.getDate()) {
+            diffMonths--;
+        }
+
+        if (diffMonths < 0) diffMonths = 0;
+        const totalMonths = diffMonths + 1;
+
+        const amount = pledge.principalAmount || 0;
+        const rate = pledge.interestRate || 0;
+        const accruedInterest = (amount * rate / 100) * totalMonths;
+
+        this.redeemForm.interestPaid = Number.parseFloat((Math.max(0, accruedInterest - (pledge.totalInterestPaid || 0))).toFixed(2));
+        this.calculateRedeemTotal();
+    }
+
     // Transaction Logic
     pendingInterestForTx = 0;
 
     openTransactionModal(pledge: any) {
         this.selectedPledgeForTransaction = pledge;
-        // Calc pending interest
+        // Calc pending interest initially based on today
         this.pendingInterestForTx = Math.max(0, (pledge.accruedInterest || 0) - (pledge.totalInterestPaid || 0));
 
         this.transactionForm = {
             amount: 0,
+            transactionDate: new Date().toISOString().split('T')[0],
             notes: '',
             payFullInterest: false
         };
         this.showTransactionModal = true;
+    }
+
+    onTransactionDateChange() {
+        if (!this.selectedPledgeForTransaction) return;
+
+        const pledge = this.selectedPledgeForTransaction;
+        const entryDateStr = this.formatDate(pledge.entryDate);
+        const eDate = new Date(entryDateStr);
+        const tDateStr = this.transactionForm.transactionDate;
+        
+        let tDate = new Date();
+        if (tDateStr) {
+            tDate = new Date(tDateStr);
+        }
+
+        if (tDateStr < entryDateStr) {
+            this.toastService.error('Transaction date cannot be before entry date (' + entryDateStr + ')');
+            this.transactionForm.transactionDate = entryDateStr;
+            tDate = new Date(entryDateStr);
+        }
+
+        const m1 = eDate.getFullYear() * 12 + eDate.getMonth();
+        const m2 = tDate.getFullYear() * 12 + tDate.getMonth();
+        let diffMonths = m2 - m1;
+
+        if (tDate.getDate() < eDate.getDate()) {
+            diffMonths--;
+        }
+
+        if (diffMonths < 0) diffMonths = 0;
+        const totalMonths = diffMonths + 1;
+
+        const amount = pledge.principalAmount || 0;
+        const rate = pledge.interestRate || 0;
+        const accruedInterest = (amount * rate / 100) * totalMonths;
+
+        this.pendingInterestForTx = Math.max(0, accruedInterest - (pledge.totalInterestPaid || 0));
+
+        if (this.transactionForm.payFullInterest) {
+            this.transactionForm.amount = Number(this.pendingInterestForTx.toFixed(2));
+        }
     }
 
     toggleFullInterest() {
@@ -517,6 +634,7 @@ export class MmsMerchantComponent implements OnInit {
         const data = {
             principalPaid: principalPaid,
             interestPaid: interestPaid,
+            transactionDate: this.transactionForm.transactionDate,
             notes: this.transactionForm.notes
         };
 
@@ -729,6 +847,123 @@ export class MmsMerchantComponent implements OnInit {
             error: (err) => {
                 console.error(err);
                 this.toastService.error(err.error || 'Error updating entry');
+            }
+        });
+    }
+
+    openBulkInterestModal(portfolioItem: any) {
+        this.selectedMerchantForBulk = portfolioItem;
+        this.showBulkInterestModal = true;
+
+        // Find the actual merchant ID
+        const mObj = this.merchants.find(m => m.merchantName === portfolioItem.merchantName);
+        const mId = mObj ? mObj.id : null;
+
+        // Filter active pledges for this merchant and store them for recalculation
+        this._rawBulkEntries = this.activePledges
+            .filter(p => (mId && p.merchantId == mId) || p.merchantName === portfolioItem.merchantName);
+
+        // Calculate min date (oldest unpaid month start) across all entries
+        let minDateValue = new Date().toISOString().split('T')[0];
+        if (this._rawBulkEntries.length > 0) {
+            const dates = this._rawBulkEntries.map(p => {
+                const monthlyInt = (p.principalAmount || 0) * (p.interestRate || 0) / 100;
+                const monthsPaid = monthlyInt > 0 ? Math.floor((p.totalInterestPaid || 0) / monthlyInt) : 0;
+                const d = new Date(p.entryDate);
+                d.setMonth(d.getMonth() + monthsPaid);
+                return d.toISOString().split('T')[0];
+            }).sort();
+            minDateValue = dates[0];
+        }
+
+        this.bulkInterestForm = {
+            merchantId: mId,
+            totalUnpaid: 0,
+            payAmount: 0,
+            notes: 'Bulk Interest Settlement',
+            transactionDate: new Date().toISOString().split('T')[0],
+            paymentConfirmed: false,
+            minDate: minDateValue
+        };
+
+        this.recalculateBulkInterest();
+    }
+
+    private _rawBulkEntries: any[] = [];
+    recalculateBulkInterest() {
+        if (!this.bulkInterestForm.transactionDate) return;
+        const refDate = new Date(this.bulkInterestForm.transactionDate);
+
+        let sumUnpaid = 0;
+        this.bulkInterestEntries = this._rawBulkEntries.map(p => {
+            const principal = p.principalAmount || 0;
+            const rate = p.interestRate || 0;
+            const monthlyInt = (principal * rate) / 100;
+            const interestPaid = p.totalInterestPaid || 0;
+
+            // 1. Calculate how many months were ALREADY paid for
+            const monthsPaid = monthlyInt > 0 ? Math.floor(interestPaid / monthlyInt) : 0;
+
+            // 2. Identify exactly when the unpaid period begins
+            const unpaidStart = new Date(p.entryDate);
+            unpaidStart.setMonth(unpaidStart.getMonth() + monthsPaid);
+
+            // 3. Compare with selected Clearance Date
+            let unpaidMonthsCount = 0;
+            
+            // Only calculate if the selected date is on or after the unpaid starting point
+            if (refDate >= unpaidStart) {
+                unpaidMonthsCount = (refDate.getFullYear() - unpaidStart.getFullYear()) * 12;
+                unpaidMonthsCount += (refDate.getMonth() - unpaidStart.getMonth()) + 1;
+            }
+
+            const unpaidAmount = monthlyInt * unpaidMonthsCount;
+            sumUnpaid += unpaidAmount;
+
+            return {
+                ...p,
+                unpaid: unpaidAmount,
+                unpaidFrom: unpaidStart.toISOString().split('T')[0],
+                unpaidMonths: unpaidMonthsCount
+            };
+        }).filter(e => e.unpaid > 0); // Hide items that don't have interest due for this specific date
+
+        this.bulkInterestForm.totalUnpaid = sumUnpaid;
+        this.bulkInterestForm.payAmount = sumUnpaid;
+    }
+
+    submitBulkInterestPayment() {
+        if (!this.bulkInterestForm.merchantId) {
+            this.toastService.error('Merchant ID missing');
+            return;
+        }
+
+        if (this.bulkInterestForm.transactionDate < this.bulkInterestForm.minDate) {
+            this.toastService.error(`Clearance date cannot be earlier than ${this.bulkInterestForm.minDate}`);
+            return;
+        }
+
+        this.showBulkConfirmModal = true;
+    }
+
+    processBulkPaymentAction() {
+        const payload = {
+            id: this.bulkInterestForm.merchantId,
+            notes: this.bulkInterestForm.notes,
+            transactionDate: this.bulkInterestForm.transactionDate
+        };
+
+        this.mmsService.payMerchantAllInterest(this.bulkInterestForm.merchantId, payload).subscribe({
+            next: () => {
+                this.toastService.success('Bulk interest payment recorded successfully');
+                this.showBulkConfirmModal = false;
+                this.showBulkInterestModal = false;
+                this.loadData();
+            },
+            error: (err) => {
+                console.error(err);
+                this.toastService.error(err.error || 'Error processing bulk payment');
+                this.showBulkConfirmModal = false;
             }
         });
     }

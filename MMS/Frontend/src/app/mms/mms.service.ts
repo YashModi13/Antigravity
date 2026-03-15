@@ -58,6 +58,7 @@ export interface DepositItem {
     fineWeight: number;
     itemStatus: string;
     currentAssetValue: number;
+    principalAmount?: number;
 }
 
 export interface MerchantItem {
@@ -295,6 +296,11 @@ export class MmsService {
 
     getAvailableItems(): Observable<DepositItem[]> {
         return this.http.post<DepositItem[]>(REST_URLS.ITEMS_AVAILABLE, {});
+    }
+
+    payMerchantAllInterest(merchantId: number, data?: any): Observable<any> {
+        const payload = data ? { ...data, id: merchantId } : { id: merchantId };
+        return this.http.post(REST_URLS.MERCHANTS_PAY_ALL_INTEREST, payload, { responseType: 'text' });
     }
 
     transferToMerchant(data: any): Observable<any> {

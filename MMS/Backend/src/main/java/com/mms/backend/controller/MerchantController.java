@@ -187,4 +187,32 @@ public class MerchantController {
         }
     }
 
+    @PostMapping("/merchants/pay-all-interest")
+    public ResponseEntity<String> payMerchantUnpaidInterest(@RequestBody Map<String, Object> payload) {
+        try {
+            Object idObj = payload.get("id");
+            if (idObj == null)
+                return ResponseEntity.badRequest().body("Merchant ID required");
+
+            Integer id;
+            if (idObj instanceof Number number) {
+                id = number.intValue();
+            } else {
+                id = Integer.parseInt(idObj.toString());
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new JavaTimeModule());
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            RedemptionRequest req = mapper.convertValue(payload, RedemptionRequest.class);
+
+            merchantService.payMerchantUnpaidInterest(id, req);
+            return ResponseEntity.ok("All unpaid interest for the merchant cleared successfully");
+        } catch (Exception e) {
+            log.error("[MerchantController] Bulk interest payment failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Bulk interest payment failed: " + e.getMessage());
+        }
+    }
 }

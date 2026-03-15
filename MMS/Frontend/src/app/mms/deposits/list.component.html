@@ -621,8 +621,8 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted text-uppercase"
                                     for="principalDate">Transaction Date</label>
-                                <input type="date" id="principalDate" disabled class="form-control"
-                                    [value]="paymentForm.transactionDate">
+                                <input type="date" id="principalDate" class="form-control"
+                                    [(ngModel)]="paymentForm.transactionDate" (change)="onPaymentDateChange()">
                             </div>
                         </div>
                     </div>

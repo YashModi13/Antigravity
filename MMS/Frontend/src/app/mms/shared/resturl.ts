@@ -44,6 +44,7 @@ export const REST_URLS = {
     MERCHANTS_CREATE: `${BASE_API_URL}/merchants/create`,
     MERCHANTS_UPDATE: `${BASE_API_URL}/merchants/update`,
     MERCHANTS_DELETE: `${BASE_API_URL}/merchants/delete`,
+    MERCHANTS_PAY_ALL_INTEREST: `${BASE_API_URL}/merchants/pay-all-interest`,
 
     MERCHANT_ENTRIES_TRANSFER: `${BASE_API_URL}/merchant-entries/transfer`,
     MERCHANT_ENTRIES_UPDATE: `${BASE_API_URL}/merchant-entries/update`,

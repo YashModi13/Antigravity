@@ -13,5 +13,6 @@ public class AvailableItemDTO {
     private BigDecimal weight;
     private BigDecimal fineWeight;
     private BigDecimal currentAssetValue;
+    private BigDecimal principalAmount;
     private String itemStatus;
 }

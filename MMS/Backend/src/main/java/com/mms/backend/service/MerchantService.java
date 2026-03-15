@@ -31,6 +31,7 @@ public class MerchantService {
     private final MerchantItemEntryRepository merchantItemEntryRepository;
     private final ItemPriceHistoryRepository priceRepository;
     private final MerchantItemTransactionRepository transactionRepository;
+    private final CustomerDepositTransactionRepository custTxnRepo;
 
     public List<MerchantMaster> getAllMerchants() {
         return merchantRepository.findAll();
@@ -41,7 +42,29 @@ public class MerchantService {
         Map<Integer, ItemPriceHistory> latestPricesMap = priceRepository.findLatestPricePerItem().stream()
                 .collect(Collectors.toMap(p -> p.getItem().getId(), p -> p));
 
-        return itemsRepository.findByItemStatusIn(List.of(STATUS_ACTIVE, "DEPOSITED")).stream()
+        List<CustomerDepositItems> availableItems = itemsRepository.findByItemStatusIn(List.of(STATUS_ACTIVE, "DEPOSITED"));
+        
+        // Optimize Principal calc by fetching in bulk per deposit
+        List<Integer> depositIds = availableItems.stream()
+                .map(item -> item.getDepositEntry().getId())
+                .distinct()
+                .toList();
+
+        Map<Integer, BigDecimal> loanMap = depositIds.stream().collect(Collectors.toMap(
+                id -> id,
+                id -> {
+                    List<CustomerDepositTransaction> txns = custTxnRepo.findByDepositEntry_Id(id);
+                    BigDecimal added = txns.stream()
+                            .filter(t -> TX_INITIAL_MONEY.equals(t.getTransactionType()) || TX_EXTRA_WITHDRAWAL.equals(t.getTransactionType()))
+                            .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    BigDecimal paid = txns.stream()
+                            .filter(t -> TX_PRINCIPAL_PAYMENT.equals(t.getTransactionType()))
+                            .map(CustomerDepositTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    return added.subtract(paid);
+                }
+        ));
+
+        return availableItems.stream()
                 .map(item -> {
                     AvailableItemDTO dto = new AvailableItemDTO();
                     dto.setId(item.getId());
@@ -70,6 +93,8 @@ public class MerchantService {
                             dto.setCurrentAssetValue(itemValue.setScale(2, RoundingMode.HALF_UP));
                         }
                     }
+                    
+                    dto.setPrincipalAmount(loanMap.getOrDefault(item.getDepositEntry().getId(), BigDecimal.ZERO));
 
                     return dto;
                 })
@@ -138,7 +163,7 @@ public class MerchantService {
         entry.setPrincipalAmount(request.getPrincipalAmount());
         entry.setNotes(request.getNotes());
         entry.setCreatedDate(LocalDateTime.now());
-        entry.setEntryStatus("ACTIVE");
+        entry.setEntryStatus(STATUS_ACTIVE);
 
         merchantItemEntryRepository.save(entry);
 
@@ -183,7 +208,7 @@ public class MerchantService {
         Map<Integer, ItemPriceHistory> latestPricesMap = priceRepository.findLatestPricePerItem().stream()
                 .collect(Collectors.toMap(p -> p.getItem().getId(), p -> p));
 
-        return merchantItemEntryRepository.findByEntryStatus("ACTIVE").stream()
+        return merchantItemEntryRepository.findByEntryStatus(STATUS_ACTIVE).stream()
                 .map(e -> mapToMerchantItemDTO(e, latestPricesMap.get(e.getCustomerDepositItem().getItem().getId())))
                 .toList();
     }
@@ -199,7 +224,7 @@ public class MerchantService {
             txn.setMerchantItemEntry(entry);
             txn.setTransactionType(TX_PRINCIPAL_PAYMENT);
             txn.setAmount(request.getPrincipalPaid());
-            txn.setTransactionDate(LocalDate.now());
+            txn.setTransactionDate(request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now());
             txn.setDescription(request.getNotes());
             txn.setCreatedDate(LocalDateTime.now());
             transactionRepository.save(txn);
@@ -216,7 +241,7 @@ public class MerchantService {
             txn.setMerchantItemEntry(entry);
             txn.setTransactionType(TX_INTEREST_PAYMENT);
             txn.setAmount(request.getInterestPaid());
-            txn.setTransactionDate(LocalDate.now());
+            txn.setTransactionDate(request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now());
             txn.setDescription(request.getNotes());
             txn.setCreatedDate(LocalDateTime.now());
             transactionRepository.save(txn);
@@ -237,7 +262,7 @@ public class MerchantService {
             txn.setMerchantItemEntry(entry);
             txn.setTransactionType(TX_INTEREST_PAYMENT);
             txn.setAmount(request.getInterestPaid());
-            txn.setTransactionDate(LocalDate.now());
+            txn.setTransactionDate(request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now());
             txn.setDescription(request.getNotes() != null ? request.getNotes() : "Interest Settled on Return");
             txn.setCreatedDate(LocalDateTime.now());
             transactionRepository.save(txn);
@@ -251,7 +276,7 @@ public class MerchantService {
         BigDecimal pAmount = request.getPrincipalPaid() != null ? request.getPrincipalPaid()
                 : entry.getPrincipalAmount();
         returnTx.setAmount(pAmount);
-        returnTx.setTransactionDate(LocalDate.now());
+        returnTx.setTransactionDate(request.getTransactionDate() != null ? request.getTransactionDate() : LocalDate.now());
         returnTx.setDescription("Item Returned to Inventory");
         returnTx.setCreatedDate(LocalDateTime.now());
         transactionRepository.save(returnTx);
@@ -265,6 +290,46 @@ public class MerchantService {
         CustomerDepositItems item = entry.getCustomerDepositItem();
         item.setItemStatus(STATUS_ACTIVE);
         itemsRepository.save(item);
+    }
+
+    @Transactional
+    public void payMerchantUnpaidInterest(Integer merchantId, RedemptionRequest request) {
+        List<MerchantItemEntry> entries = merchantItemEntryRepository.findByMerchantIdAndEntryStatus(merchantId, STATUS_ACTIVE);
+        String notes = (request != null && request.getNotes() != null) ? request.getNotes() : "Bulk Interest Clearance";
+        LocalDate tDate = (request != null && request.getTransactionDate() != null) ? request.getTransactionDate() : LocalDate.now();
+
+        for (MerchantItemEntry e : entries) {
+            List<MerchantItemTransaction> txns = transactionRepository.findByMerchantItemEntryId(e.getId());
+            BigDecimal interestPaid = txns.stream()
+                    .filter(t -> TX_INTEREST_PAYMENT.equals(t.getTransactionType()))
+                    .map(MerchantItemTransaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal interestAccrued = calculateAccruedInterest(e, tDate);
+            BigDecimal unpaid = interestAccrued.subtract(interestPaid);
+
+            if (unpaid.compareTo(BigDecimal.ZERO) > 0) {
+                MerchantItemTransaction txn = new MerchantItemTransaction();
+                txn.setMerchantItemEntry(e);
+                txn.setTransactionType(TX_INTEREST_PAYMENT);
+                txn.setAmount(unpaid);
+                txn.setTransactionDate(tDate);
+                txn.setDescription(notes);
+                txn.setCreatedDate(LocalDateTime.now());
+                transactionRepository.save(txn);
+            }
+        }
+    }
+
+    private BigDecimal calculateAccruedInterest(MerchantItemEntry e, LocalDate referenceDate) {
+        BigDecimal amount = e.getPrincipalAmount() != null ? e.getPrincipalAmount() : BigDecimal.ZERO;
+        BigDecimal rate = e.getInterestRate() != null ? e.getInterestRate() : BigDecimal.ZERO;
+
+        Period period = Period.between(e.getEntryDate(), referenceDate);
+        int totalMonths = (period.getYears() * 12) + period.getMonths() + 1;
+
+        return amount.multiply(rate)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(totalMonths));
     }
 
     @Transactional(readOnly = true)
@@ -330,12 +395,9 @@ public class MerchantService {
         BigDecimal amount = e.getPrincipalAmount() != null ? e.getPrincipalAmount() : BigDecimal.ZERO;
         BigDecimal rate = e.getInterestRate() != null ? e.getInterestRate() : BigDecimal.ZERO;
 
+        BigDecimal interestAccrued = calculateAccruedInterest(e, LocalDate.now());
         Period period = Period.between(e.getEntryDate(), LocalDate.now());
         int totalMonths = (period.getYears() * 12) + period.getMonths() + 1;
-
-        BigDecimal interestAccrued = amount.multiply(rate)
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(totalMonths));
 
         dto.setMonthsDuration(totalMonths);
         dto.setAccruedInterest(interestAccrued);
