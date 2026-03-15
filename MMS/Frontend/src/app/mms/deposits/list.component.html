@@ -1,6 +1,7 @@
 <div class="row">
     <div class="col-xl-12">
-        <app-card cardTitle="All Active Deposits" cardClass="Recent-Users table-card" blockClass="p-0">
+        <app-card [cardTitle]="isClosedView ? 'Historical Closed Deposits' : 'All Active Deposits'"
+            cardClass="Recent-Users table-card" blockClass="p-0">
             <div class="row m-3 align-items-center">
                 <div class="col-md-auto">
                     <label class="me-2" for="pageSizeSelect">Show</label>
@@ -9,9 +10,17 @@
                         <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
                     </select>
                 </div>
-                <div class="col-md text-end">
-                    <button class="btn btn-secondary me-2" (click)="resetFilter()"><i
-                            class="feather icon-refresh-cw"></i>
+                <div class="col-md text-end d-flex align-items-center justify-content-end">
+                    <div class="form-check form-switch d-inline-block me-4 mb-0" style="cursor: pointer;">
+                        <input class="form-check-input" type="checkbox" id="closedEntriesToggle"
+                            [(ngModel)]="isClosedView" (change)="toggleView()"
+                            style="cursor: pointer; width: 40px; height: 20px;">
+                        <label class="form-check-label fw-bold text-primary small ms-2" for="closedEntriesToggle"
+                            style="cursor: pointer; position: relative; top: 2px;">
+                            {{ isClosedView ? 'Showing Closed' : 'Show Closed Entries' }}
+                        </label>
+                    </div>
+                    <button class="btn btn-secondary" (click)="resetFilter()"><i class="feather icon-refresh-cw"></i>
                         Reset Filters</button>
                 </div>
             </div>
@@ -461,7 +470,8 @@
                 <div class="d-flex align-items-center w-100 justify-content-between">
                     <div class="d-flex align-items-center">
                         <h3 class="modal-title fw-bolder text-white mb-0 me-3" style="font-size: 1.8rem;">
-                            TOKEN #{{selectedDepositForPayment?.tokenNumber || 'N/A'}}
+                            TOKEN #{{selectedDepositForPayment?.tokenNo || selectedDepositForPayment?.tokenNumber ||
+                            'N/A'}}
                         </h3>
                         <span
                             class="badge bg-white bg-opacity-25 text-white fw-normal border border-white border-opacity-25">
@@ -472,52 +482,65 @@
                 </div>
             </div>
             <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold" for="paymentTransactionDate">Payment Date</label>
+                    <input type="date" id="paymentTransactionDate" class="form-control"
+                        [(ngModel)]="paymentForm.transactionDate" (change)="onPaymentDateChange()">
+                </div>
+
                 <!-- Summary Section -->
                 <div class="alert alert-secondary mb-4">
                     <div class="row g-2 small">
+                        <div class="col-12 border-bottom pb-2 mb-1 text-muted">
+                            <strong>Deposit Date:</strong> {{ paymentSummary?.depositDate | date:'dd-MMM-yyyy' }}
+                        </div>
                         <div class="col-6">
-                            <strong>Loan Amount:</strong><br> ₹{{ selectedDepositForPayment?.totalLoanAmount |
+                            <strong>Loan Amount:</strong><br> ₹{{ paymentSummary?.totalLoanAmount |
                             number:'1.2-2' }}
                         </div>
                         <div class="col-6">
-                            <strong>Duration:</strong><br> {{ selectedDepositForPayment?.depositedTimeDisplay }}
+                            <strong>Monthly Interest:</strong><br> ₹{{ paymentSummary?.monthlyInterestAmount |
+                            number:'1.2-2' }}
                         </div>
-                        <div class="col-6">
-                            <strong>Total Interest:</strong><br> ₹{{ selectedDepositForPayment?.totalInterestAccrued
+                        <div class="col-6 mt-2">
+                            <strong>Duration:</strong><br> {{ paymentSummary?.depositedTimeDisplay }}
+                        </div>
+                        <div class="col-6 mt-2">
+                            <strong>Total Interest:</strong><br> ₹{{ paymentSummary?.totalInterestAccrued
                             |
                             number:'1.2-2' }}
                         </div>
-                        <div class="col-6">
+                        <div class="col-6 mt-2">
                             <strong>Paid Interest:</strong><br> <span class="text-success">₹{{
-                                selectedDepositForPayment?.totalInterestPaid | number:'1.2-2' }}</span>
+                                paymentSummary?.totalInterestPaid | number:'1.2-2' }}</span>
                         </div>
                         <div class="col-12 border-top mt-2 pt-2">
                             <strong class="text-danger">Unpaid Interest (Due): ₹{{
-                                selectedDepositForPayment?.unpaidInterest | number:'1.2-2' }}</strong>
+                                paymentSummary?.unpaidInterest | number:'1.2-2' }}</strong>
                         </div>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold" for="interestPayment">Interest Payment</label>
+                    <label class="form-label fw-bold" for="totalAmountPayment">Total Amount Pay</label>
                     <div class="input-group">
                         <span class="input-group-text"
-                            [class.border-danger]="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest">₹</span>
-                        <input type="number" id="interestPayment" class="form-control"
-                            [class.is-invalid]="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest"
-                            [(ngModel)]="paymentForm.interestPaid" placeholder="Amount" [disabled]="payFullInterest">
+                            [class.border-danger]="(paymentForm.totalAmountPay || 0) > paymentSummary?.unpaidInterest && !showPrincipalPayment">₹</span>
+                        <input type="number" id="totalAmountPayment" class="form-control"
+                            [class.is-invalid]="(paymentForm.totalAmountPay || 0) > paymentSummary?.unpaidInterest && !showPrincipalPayment"
+                            [(ngModel)]="paymentForm.totalAmountPay" (ngModelChange)="onTotalAmountChange()"
+                            placeholder="Amount" [disabled]="payFullInterest">
                     </div>
 
                     <!-- Checkbox for Full Payment -->
-                    <!-- Checkbox for Full Payment -->
-                    <div class="mt-2" *ngIf="selectedDepositForPayment?.unpaidInterest > 0">
+                    <div class="mt-2" *ngIf="paymentSummary?.unpaidInterest > 0">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="fullInterestToggle"
                                 [(ngModel)]="payFullInterest" (change)="toggleFullInterest()"
                                 style="width: 20px; height: 20px; cursor: pointer; accent-color: #04a9f5;">
                             <label class="form-check-label ms-2 fw-bold text-dark" for="fullInterestToggle"
                                 style="cursor: pointer;">
-                                Pay Full Pending Interest Only (₹{{ selectedDepositForPayment?.unpaidInterest |
+                                Pay Full Pending Interest Only (₹{{ paymentSummary?.unpaidInterest |
                                 number:'1.2-2' }})
                             </label>
                         </div>
@@ -525,15 +548,54 @@
 
                     <!-- Warning if amount exceeds unpaid -->
                     <div class="alert alert-danger mt-2 py-2 small"
-                        *ngIf="paymentForm.interestPaid > selectedDepositForPayment?.unpaidInterest">
+                        *ngIf="(paymentForm.totalAmountPay || 0) > paymentSummary?.unpaidInterest && !showPrincipalPayment">
                         <i class="feather icon-alert-triangle me-1"></i> Warning: Entered amount exceeds the pending
-                        Unpaid Interest.
+                        Unpaid Interest. Please select "Pay Principal Amount" to allocate the excess.
                     </div>
 
                 </div>
 
-                <!-- Add Principal Section -->
-                <hr class="my-3">
+                <!-- Pay Principal Section -->
+                <ng-container
+                    *ngIf="(paymentForm.totalAmountPay || 0) > paymentSummary?.unpaidInterest || showPrincipalPayment">
+                    <hr class="my-3 border-secondary-subtle">
+                    <div class="mb-3">
+                        <div class="form-check form-switch custom-switch-lg mb-3">
+                            <input class="form-check-input" type="checkbox" id="togglePayPrincipal"
+                                [(ngModel)]="showPrincipalPayment" (change)="onPayPrincipalToggleChange()">
+                            <label class="form-check-label fw-bold"
+                                [ngClass]="showPrincipalPayment ? 'text-success' : 'text-primary'"
+                                for="togglePayPrincipal" style="cursor: pointer;">
+                                <i class="feather icon-minus-circle me-1"></i> Pay Principal Amount
+                            </label>
+                        </div>
+
+                        <div *ngIf="showPrincipalPayment"
+                            class="bg-light p-3 rounded border animate__animated animate__fadeIn border-success border-opacity-25">
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-bold text-muted text-uppercase"
+                                        for="principalPaid">Principal Amount to Pay</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-success">₹</span>
+                                        <input type="number" id="principalPaid"
+                                            class="form-control text-dark border-success fw-bold"
+                                            [value]="paymentForm.principalPaid" disabled placeholder="Amount">
+                                    </div>
+                                    <div class="alert alert-danger mt-2 py-2 small"
+                                        *ngIf="paymentForm.principalPaid > paymentSummary?.totalLoanAmount">
+                                        <i class="feather icon-alert-triangle me-1"></i> Warning: Entered amount exceeds
+                                        the
+                                        current Principal Amount.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <!-- Add Extra Principal Section -->
+                <hr class="my-3 border-secondary-subtle">
                 <div class="mb-3">
                     <div class="form-check form-switch custom-switch-lg mb-3">
                         <input class="form-check-input" type="checkbox" id="toggleAddPrincipal"
@@ -559,8 +621,8 @@
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted text-uppercase"
                                     for="principalDate">Transaction Date</label>
-                                <input type="date" id="principalDate" class="form-control"
-                                    [(ngModel)]="paymentForm.transactionDate">
+                                <input type="date" id="principalDate" disabled class="form-control"
+                                    [value]="paymentForm.transactionDate">
                             </div>
                         </div>
                     </div>
@@ -637,9 +699,23 @@
                                 <div class="d-flex align-items-center mb-2 text-muted text-uppercase small fw-bold">
                                     <i class="feather icon-briefcase me-2 fs-5"></i> Loan Amount
                                 </div>
-                                <div class="fs-4 fw-bold text-dark">₹ {{settlementData.initialLoanAmount |
+                                <div class="fs-4 fw-bold text-dark">₹ {{ledgerSummary?.principal |
                                     number:'1.2-2'}}</div>
-                                <div class="small text-muted">Initial Principal</div>
+                                <div class="small text-muted">{{ principalHistory.length > 1 ? 'Current Principal' : 'Initial Principal' }}</div>
+                                
+                                <ng-container *ngIf="principalHistory.length > 1">
+                                    <hr class="my-2 border-secondary-subtle">
+                                    <div class="small fw-bold text-muted mb-1" style="font-size: 0.70rem;">HISTORY</div>
+                                    <div class="d-flex justify-content-between align-items-center mb-1" *ngFor="let h of principalHistory">
+                                        <div class="text-muted" style="font-size: 0.70rem;">{{h.date | date:'dd-MMM-yy'}}</div>
+                                        <div class="fw-bold" style="font-size: 0.70rem;">
+                                            <span [ngClass]="h.amount > 0 ? 'text-success' : 'text-danger'" class="me-1">
+                                                {{h.amount > 0 ? '+' : ''}}{{h.amount | number:'1.0-0'}}
+                                            </span>
+                                            <span class="text-dark">₹{{h.balance | number:'1.0-0'}}</span>
+                                        </div>
+                                    </div>
+                                </ng-container>
                             </div>
                         </div>
 

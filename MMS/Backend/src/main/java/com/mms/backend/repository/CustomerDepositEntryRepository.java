@@ -19,6 +19,10 @@ public interface CustomerDepositEntryRepository extends JpaRepository<CustomerDe
         long countByEntryStatusAndUpdatedDateBetween(String status, java.time.LocalDateTime start,
                         java.time.LocalDateTime end);
 
+        @Query("SELECT c FROM CustomerDepositEntry c LEFT JOIN FETCH c.customer WHERE c.entryStatus = :status")
+        List<CustomerDepositEntry> findAllByStatusWithCustomer(
+                        @org.springframework.data.repository.query.Param("status") String status);
+
         @Query("SELECT c FROM CustomerDepositEntry c LEFT JOIN FETCH c.customer WHERE c.entryStatus = 'ACTIVE'")
         List<CustomerDepositEntry> findAllActiveWithCustomer();
 

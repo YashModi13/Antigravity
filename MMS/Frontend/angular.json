@@ -19,7 +19,8 @@
           "options": {
             "allowedCommonJsDependencies": [
               "apexcharts",
-              "crypto-js"
+              "crypto-js",
+              "sweetalert2"
             ],
             "outputPath": "dist",
             "index": "src/index.html",

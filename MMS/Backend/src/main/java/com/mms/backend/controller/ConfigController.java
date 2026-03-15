@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("/api/configs")
+@RequestMapping("/api")
 @CrossOrigin(origins = "http://localhost:4200")
 @Slf4j
 @RequiredArgsConstructor
@@ -21,12 +21,12 @@ public class ConfigController {
 
     private final ConfigPropertyRepository configRepository;
 
-    @PostMapping("/list")
+    @PostMapping("/configs/list")
     public ResponseEntity<List<ConfigProperty>> getAllConfigs() {
         return ResponseEntity.ok(configRepository.findAll());
     }
 
-    @PostMapping("/details")
+    @PostMapping("/configs/details")
     public ResponseEntity<ConfigProperty> getConfigByKey(@RequestBody Map<String, String> payload) {
         String key = payload.get("key");
         if (key == null)
@@ -36,12 +36,12 @@ public class ConfigController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/save")
+    @PostMapping("/configs/save")
     public ResponseEntity<ConfigProperty> saveConfig(@RequestBody ConfigProperty config) {
         return ResponseEntity.ok(configRepository.save(Objects.requireNonNull(config)));
     }
 
-    @PostMapping("/update")
+    @PostMapping("/configs/update")
     public ResponseEntity<ConfigProperty> updateConfig(@RequestBody ConfigProperty config) {
         log.info("[ConfigController] Request: Update Config. ID: {}", config.getId());
         if (config.getId() == null)
@@ -56,7 +56,7 @@ public class ConfigController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/delete")
+    @PostMapping("/configs/delete")
     public ResponseEntity<Void> deleteConfig(@RequestBody IdRequest request) {
         configRepository.deleteById(Objects.requireNonNull(request.getId()));
         return ResponseEntity.ok().build();
@@ -65,12 +65,17 @@ public class ConfigController {
     // PUBLIC ENDPOINTS - SKIPPED BY ENCRYPTION
     @GetMapping("/public/encryption-key")
     public ResponseEntity<java.util.Map<String, String>> getEncryptionKey() {
+        log.info("[ConfigController] Public Request: Fetching Encryption Key...");
         return configRepository.findByPropertyKey("system.encryption.secret-key")
                 .map(config -> {
+                    log.info("[ConfigController] Encryption Key Found in Database.");
                     java.util.Map<String, String> response = new java.util.HashMap<>();
                     response.put("key", config.getPropertyValue());
                     return ResponseEntity.ok(response);
                 })
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> {
+                    log.error("[ConfigController] CRITICAL: Encryption Key NOT FOUND in Database!");
+                    return ResponseEntity.notFound().build();
+                });
     }
 }

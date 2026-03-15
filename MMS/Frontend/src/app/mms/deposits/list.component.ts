@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { ToastService } from 'src/app/theme/shared/components/toast/toast.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap, map } from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
 
 @Component({
@@ -24,8 +25,11 @@ export class MmsDepositsListComponent implements OnInit {
 
     // Payment Modal
     showPaymentModal = false;
+    showPrincipalPayment = false;
     selectedDepositForPayment: any = null;
+    paymentSummary: any = null;
     paymentForm = {
+        totalAmountPay: null as any,
         principalPaid: 0,
         interestPaid: 0,
         notes: '',
@@ -57,9 +61,17 @@ export class MmsDepositsListComponent implements OnInit {
         unpaidInterest: '',
         assetValue: '',
         pl: '',
-        status: '',
+        status: 'ACTIVE',
         isVerified: ''
     };
+
+    isClosedView = false;
+
+    toggleView() {
+        this.filters.status = this.isClosedView ? 'CLOSED' : 'ACTIVE';
+        this.currentPage = 1;
+        this.loadData();
+    }
 
     // Settlement & Redemption State
     showSettlementModal = false;
@@ -115,8 +127,21 @@ export class MmsDepositsListComponent implements OnInit {
     }
 
     get pages(): number[] {
+        const total = this.totalPages;
+        const current = this.currentPage;
+
+        // "Max 5" best way: Sliding window centered on current page
+        let start = Math.max(1, current - 2);
+        let end = Math.min(total, start + 4);
+
+        if (end - start < 4) {
+            start = Math.max(1, end - 4);
+        }
+
         const pages = [];
-        for (let i = 1; i <= this.totalPages; i++) pages.push(i);
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
         return pages;
     }
 
@@ -155,13 +180,14 @@ export class MmsDepositsListComponent implements OnInit {
             unpaidInterest: '',
             assetValue: '',
             pl: '',
-            status: '',
+            status: 'ACTIVE',
             isVerified: ''
         };
+        this.isClosedView = false;
         this.sortColumn = 'depositId';
         this.sortDirection = 'asc';
         this.currentPage = 1;
-        this.applyFilter();
+        this.loadData();
     }
 
 
@@ -205,6 +231,7 @@ export class MmsDepositsListComponent implements OnInit {
     openPaymentModal(deposit: DepositSummary) {
         this.selectedDepositForPayment = deposit;
         this.paymentForm = {
+            totalAmountPay: null as any,
             principalPaid: 0,
             interestPaid: 0,
             notes: '',
@@ -213,25 +240,99 @@ export class MmsDepositsListComponent implements OnInit {
             transactionDate: new Date().toISOString().split('T')[0]
         };
         this.payFullInterest = false;
-        this.showPaymentModal = true;
+        this.showPrincipalPayment = false;
+
+        // Fetch full deposit details to allow recalculation of interest dynamically
+        this.mmsService.getDeposit(deposit.depositId).subscribe({
+            next: (data) => {
+                this.selectedDepositForPayment = data;
+                this.recalculatePaymentSummary();
+                this.showPaymentModal = true;
+            },
+            error: () => {
+                this.toastService.error('Failed to fetch deposit details');
+            }
+        });
+    }
+
+    onPaymentDateChange() {
+        this.recalculatePaymentSummary();
+        if (this.payFullInterest) {
+            this.paymentForm.totalAmountPay = Number.parseFloat((this.paymentSummary?.unpaidInterest || 0).toFixed(2));
+        }
+        this.onTotalAmountChange();
+    }
+
+    recalculatePaymentSummary() {
+        if (!this.selectedDepositForPayment) return;
+
+        const cutoffDate = new Date(this.paymentForm.transactionDate || new Date());
+        this.generateLedger(this.selectedDepositForPayment, cutoffDate);
+
+        const start = new Date(this.selectedDepositForPayment.depositDate);
+        const end = cutoffDate;
+        const diffTime = Math.max(0, end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const months = Math.floor(diffDays / 30);
+        const days = diffDays % 30;
+
+        this.paymentSummary = {
+            totalLoanAmount: this.ledgerSummary.principal,
+            monthlyInterestAmount: ((this.ledgerSummary.principal || 0) * (this.selectedDepositForPayment.interestRate || this.selectedDepositForPayment.totalInterestRate || 0)) / 100,
+            depositedTimeDisplay: `${months} months (${months} months ${days} days)`,
+            totalInterestAccrued: this.ledgerSummary.totalInterestAccrued,
+            totalInterestPaid: this.ledgerSummary.totalInterestPaid,
+            unpaidInterest: this.ledgerSummary.interest,
+            depositDate: this.selectedDepositForPayment.depositDate
+        };
+    }
+
+    onTotalAmountChange() {
+        const total = Number(this.paymentForm.totalAmountPay) || 0;
+        const unpaidInt = this.paymentSummary?.unpaidInterest || 0;
+
+        if (total > unpaidInt) {
+            this.paymentForm.interestPaid = Number.parseFloat(unpaidInt.toFixed(2));
+            if (this.showPrincipalPayment) {
+                this.paymentForm.principalPaid = Number.parseFloat((total - unpaidInt).toFixed(2));
+            } else {
+                this.paymentForm.principalPaid = 0;
+            }
+        } else {
+            this.paymentForm.interestPaid = total;
+            this.paymentForm.principalPaid = 0;
+            this.showPrincipalPayment = false;
+        }
+
+        if (this.payFullInterest && total !== Number.parseFloat(unpaidInt.toFixed(2))) {
+            this.payFullInterest = false;
+        }
+    }
+
+    onPayPrincipalToggleChange() {
+        this.onTotalAmountChange();
     }
 
     toggleFullInterest() {
-        if (this.payFullInterest && this.selectedDepositForPayment) {
-            this.paymentForm.interestPaid = this.selectedDepositForPayment.unpaidInterest;
+        if (this.payFullInterest && this.paymentSummary) {
+            const unpaidInt = Number.parseFloat((this.paymentSummary.unpaidInterest || 0).toFixed(2));
+            this.paymentForm.totalAmountPay = unpaidInt;
         } else {
-            this.paymentForm.interestPaid = 0;
+            this.paymentForm.totalAmountPay = null as any;
         }
+        this.onTotalAmountChange();
     }
 
     submitPayment() {
         if (!this.selectedDepositForPayment) return;
 
-        const p = Number(this.paymentForm.principalPaid) || 0;
+        // Ensure if toggles are off, we discard their values.
+        const p = this.showPrincipalPayment ? (Number(this.paymentForm.principalPaid) || 0) : 0;
         const i = Number(this.paymentForm.interestPaid) || 0;
+        const addP = this.paymentForm.addPrincipal ? (Number(this.paymentForm.extraPrincipal) || 0) : 0;
 
-        if (p <= 0 && i <= 0) {
-            this.toastService.error('Enter at least some Principal or Interest amount');
+        if (p <= 0 && i <= 0 && addP <= 0) {
+            this.toastService.error('Enter at least some valid Principal, Interest, or Extra Loan amount');
             return;
         }
 
@@ -240,19 +341,47 @@ export class MmsDepositsListComponent implements OnInit {
             interestPaid: i,
             totalPaid: p + i,
             notes: this.paymentForm.notes,
-            extraPrincipal: this.paymentForm.addPrincipal ? (Number(this.paymentForm.extraPrincipal) || 0) : 0,
+            extraPrincipal: addP,
             transactionDate: this.paymentForm.transactionDate
         };
 
-        this.mmsService.addDepositTransaction(this.selectedDepositForPayment.depositId, payload).subscribe({
-            next: () => {
-                this.toastService.success('Payment Recorded Successfully');
-                this.showPaymentModal = false;
-                this.loadData();
-            },
-            error: (err) => {
-                this.toastService.error('Failed to record payment');
-                console.error(err);
+        let htmlText = `<div style="text-align: left;">
+            <p>Are you sure you want to save this transaction?</p>
+            <ul>
+                <li><b>Principal Paid:</b> ₹${p}</li>
+                <li><b>Interest Paid:</b> ₹${i}</li>
+                ${addP > 0 ? `<li><b>Extra Principal Loan:</b> ₹${addP}</li>` : ''}
+            </ul>
+        </div>`;
+
+        Swal.fire({
+            title: 'Confirm Transaction',
+            html: htmlText,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Save Transaction',
+            didOpen: () => {
+                const container = Swal.getContainer();
+                if (container) {
+                    container.style.zIndex = '99999';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.mmsService.addDepositTransaction(this.selectedDepositForPayment.depositId, payload).subscribe({
+                    next: () => {
+                        this.toastService.success('Payment Recorded Successfully');
+                        // Do not close the modal, instead refresh the data and reset the form
+                        this.loadData();
+                        this.openPaymentModal(this.selectedDepositForPayment);
+                    },
+                    error: (err) => {
+                        this.toastService.error('Failed to record payment');
+                        console.error(err);
+                    }
+                });
             }
         });
     }
@@ -607,5 +736,24 @@ export class MmsDepositsListComponent implements OnInit {
             totalMerchInt,
             netProfit: totalCustInt - totalMerchInt
         };
+    }
+
+    get principalHistory() {
+        if (!this.settlementData?.transactions) return [];
+        let history: any[] = [];
+        let balance = 0;
+        
+        const sortedTxs = [...this.settlementData.transactions].sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        sortedTxs.forEach((tx: any) => {
+            if (tx.type === 'INITIAL_MONEY' || tx.type === 'EXTRA_WITHDRAWAL') {
+                balance += tx.amount;
+                history.push({ date: tx.date, type: tx.type, amount: tx.amount, balance: balance });
+            } else if (tx.type === 'PRINCIPAL_PAYMENT') {
+                balance -= tx.amount;
+                history.push({ date: tx.date, type: tx.type, amount: -tx.amount, balance: balance });
+            }
+        });
+        return history;
     }
 }

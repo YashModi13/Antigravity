@@ -67,8 +67,13 @@ public class DepositQueryService {
 
     @Transactional(readOnly = true)
     public List<DepositSummaryDTO> getActiveDepositSummary() {
-        log.info("[DepositQueryService] Fetching Active Deposit Summaries.");
-        List<CustomerDepositEntry> activeDeposits = depositRepository.findAllActiveWithCustomer();
+        return self.getDepositSummaryByStatus(STATUS_ACTIVE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DepositSummaryDTO> getDepositSummaryByStatus(String status) {
+        log.info("[DepositQueryService] Fetching Deposit Summaries for Status: {}.", status);
+        List<CustomerDepositEntry> deposits = depositRepository.findAllByStatusWithCustomer(status);
 
         Map<Integer, ItemPriceHistory> latestPricesMap = priceRepository.findLatestPricePerItem()
                 .stream()
@@ -82,7 +87,7 @@ public class DepositQueryService {
                 .collect(Collectors.toMap(ConfigProperty::getPropertyKey, ConfigProperty::getPropertyValue,
                         (a, b) -> a));
 
-        return activeDeposits.stream()
+        return deposits.stream()
                 .map(deposit -> buildDepositSummary(deposit, latestPricesMap, configs))
                 .toList();
     }
@@ -105,9 +110,7 @@ public class DepositQueryService {
         dto.setDepositedMonths(timeSummary.interestMonths);
         dto.setDepositedTimeDisplay(timeSummary.displayString);
 
-        BigDecimal projectedInterest = financial.loanAmount
-                .multiply(deposit.getTotalInterestRate().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP))
-                .multiply(timeSummary.interestMonths);
+        BigDecimal projectedInterest = calculateExactInterestAccrued(transactions, deposit.getDepositDate(), deposit.getTotalInterestRate(), endDate);
 
         BigDecimal totalInterestLiability = projectedInterest.max(financial.interestAccruedPosted);
         BigDecimal unpaidInterest = totalInterestLiability.subtract(financial.interestPaid);
@@ -157,6 +160,78 @@ public class DepositQueryService {
     }
 
     private record FinancialSummary(BigDecimal loanAmount, BigDecimal interestAccruedPosted, BigDecimal interestPaid) {
+    }
+
+    private static class LedgerEvent {
+        LocalDate date;
+        String type;
+        BigDecimal amount;
+        public LedgerEvent(LocalDate date, String type, BigDecimal amount) {
+            this.date = date; this.type = type; this.amount = amount;
+        }
+    }
+
+    private static final String EV_PRINCIPAL = "PRINCIPAL";
+    private static final String EV_INTEREST = "INTEREST";
+
+    private BigDecimal calculateExactInterestAccrued(List<CustomerDepositTransaction> transactions, LocalDate depositDate, BigDecimal interestRate, LocalDate endDate) {
+        List<LedgerEvent> events = buildLedgerEvents(transactions, depositDate, endDate);
+        return calculateAccruedFromEvents(events, interestRate);
+    }
+
+    private List<LedgerEvent> buildLedgerEvents(List<CustomerDepositTransaction> transactions, LocalDate depositDate, LocalDate endDate) {
+        List<LedgerEvent> events = new ArrayList<>();
+        addPrincipalEvents(events, transactions);
+        addInterestEvents(events, depositDate, endDate);
+        events.sort(this::compareLedgerEvents);
+        return events;
+    }
+
+    private void addPrincipalEvents(List<LedgerEvent> events, List<CustomerDepositTransaction> transactions) {
+        for (CustomerDepositTransaction tx : transactions) {
+            String type = tx.getTransactionType();
+            if (TX_INITIAL_MONEY.equals(type) || TX_EXTRA_WITHDRAWAL.equals(type)) {
+                events.add(new LedgerEvent(tx.getTransactionDate(), EV_PRINCIPAL, tx.getAmount()));
+            } else if (TX_PRINCIPAL_PAYMENT.equals(type)) {
+                events.add(new LedgerEvent(tx.getTransactionDate(), EV_PRINCIPAL, tx.getAmount().negate()));
+            }
+        }
+    }
+
+    private void addInterestEvents(List<LedgerEvent> events, LocalDate depositDate, LocalDate endDate) {
+        int monthCount = 1;
+        while (monthCount <= 1200) {
+            LocalDate intDate = depositDate.plusMonths(monthCount - 1L);
+            if (intDate.isAfter(endDate) && monthCount > 1) {
+                break;
+            }
+            events.add(new LedgerEvent(intDate, EV_INTEREST, BigDecimal.ZERO));
+            monthCount++;
+        }
+    }
+
+    private int compareLedgerEvents(LedgerEvent a, LedgerEvent b) {
+        int cmp = a.date.compareTo(b.date);
+        if (cmp != 0) return cmp;
+        if (EV_PRINCIPAL.equals(a.type) && EV_INTEREST.equals(b.type)) return -1;
+        if (EV_INTEREST.equals(a.type) && EV_PRINCIPAL.equals(b.type)) return 1;
+        return 0;
+    }
+
+    private BigDecimal calculateAccruedFromEvents(List<LedgerEvent> events, BigDecimal interestRate) {
+        BigDecimal currentPrincipal = BigDecimal.ZERO;
+        BigDecimal totalInterestAccrued = BigDecimal.ZERO;
+
+        for (LedgerEvent ev : events) {
+            if (EV_PRINCIPAL.equals(ev.type)) {
+                currentPrincipal = currentPrincipal.add(ev.amount);
+            } else if (EV_INTEREST.equals(ev.type)) {
+                BigDecimal intAmount = currentPrincipal.multiply(interestRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                totalInterestAccrued = totalInterestAccrued.add(intAmount);
+            }
+        }
+
+        return totalInterestAccrued;
     }
 
     private TimeSummary calculateTimeSummary(LocalDate startDate, LocalDate endDate, Map<String, String> configs) {
@@ -225,11 +300,19 @@ public class DepositQueryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DepositSummaryDTO> getActiveDepositSummaryPaginated(int page, int size, String sortBy, String direction,
+    public Page<DepositSummaryDTO> getActiveDepositSummaryPaginated(int page, int size,
+            String sortBy, String direction,
             DepositFilterDTO filters) {
         log.info("[DepositQueryService] Fetching Paginated Summaries. Page: {}, Size: {}, Sort: {}", page, size,
                 sortBy);
-        List<DepositSummaryDTO> allData = self.getActiveDepositSummary();
+
+        String initialStatus = STATUS_ACTIVE;
+        if (filters != null
+                && (STATUS_CLOSED.equals(filters.getStatus()) || STATUS_ACTIVE.equals(filters.getStatus()))) {
+            initialStatus = filters.getStatus();
+        }
+
+        List<DepositSummaryDTO> allData = self.getDepositSummaryByStatus(initialStatus);
 
         if (filters != null) {
             allData = applyFilters(allData, filters);
@@ -237,11 +320,13 @@ public class DepositQueryService {
 
         allData = applySorting(allData, sortBy, direction);
 
-        int start = Math.min((int) PageRequest.of(page, size).getOffset(), allData.size());
+        int start = Math.min((int) PageRequest.of(page, size).getOffset(),
+                allData.size());
         int end = Math.min((start + size), allData.size());
         List<DepositSummaryDTO> pagedList = allData.subList(start, end);
 
-        return new PageImpl<>(java.util.Objects.requireNonNull(pagedList), PageRequest.of(page, size), allData.size());
+        return new PageImpl<>(java.util.Objects.requireNonNull(pagedList),
+                PageRequest.of(page, size), allData.size());
     }
 
     private List<DepositSummaryDTO> applyFilters(List<DepositSummaryDTO> data, DepositFilterDTO filters) {
@@ -320,9 +405,11 @@ public class DepositQueryService {
     }
 
     private boolean matchStatus(DepositSummaryDTO d, DepositFilterDTO filters) {
-        if (filters.getStatus() == null || filters.getStatus().isEmpty())
+        String filterStatus = filters.getStatus();
+        if (filterStatus == null || filterStatus.isEmpty() || STATUS_ACTIVE.equals(filterStatus)
+                || STATUS_CLOSED.equals(filterStatus))
             return true;
-        return filters.getStatus().equals(d.getStatus());
+        return filterStatus.equals(d.getStatus());
     }
 
     private boolean matchVerified(DepositSummaryDTO d, DepositFilterDTO filters) {
@@ -435,10 +522,7 @@ public class DepositQueryService {
         dto.setDepositedMonths(timeSummary.interestMonths);
         dto.setDepositedTimeDisplay(timeSummary.displayString);
 
-        BigDecimal projectedInterest = financial.loanAmount
-                .multiply(
-                        entry.getTotalInterestRate().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP))
-                .multiply(timeSummary.interestMonths);
+        BigDecimal projectedInterest = calculateExactInterestAccrued(transactions, entry.getDepositDate(), entry.getTotalInterestRate(), endDate);
 
         BigDecimal totalInterestLiability = projectedInterest.max(financial.interestAccruedPosted);
         dto.setTotalInterestAccrued(totalInterestLiability);
@@ -610,9 +694,7 @@ public class DepositQueryService {
         int interestMonths = calculatePortfolioMonths(deposit.getDepositDate(), endDate);
         depDto.setDurationDisplay(interestMonths + LITERAL_MONTHS);
 
-        BigDecimal accrued = originalLoan.multiply(deposit.getTotalInterestRate())
-                .multiply(BigDecimal.valueOf(interestMonths))
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal accrued = calculateExactInterestAccrued(txs, deposit.getDepositDate(), deposit.getTotalInterestRate(), endDate);
 
         // Finalize values for closed deposits
         if (STATUS_CLOSED.equals(deposit.getEntryStatus())) {
