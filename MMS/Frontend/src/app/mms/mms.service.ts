@@ -130,6 +130,32 @@ export class MmsService {
         return config.propertyValue;
     }
 
+    hasPermission(menuName: string, action: 'view' | 'add' | 'edit' | 'delete'): boolean {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) return false;
+        
+        try {
+            const user = JSON.parse(userStr);
+            if (!user || !user.permissions) return false;
+
+            // Root/superAdmin always has access to everything
+            if (user.roleName === 'superAdmin') return true;
+
+            const perm = user.permissions.find((p: any) => p.menuName === menuName);
+            if (!perm) return false;
+
+            switch(action) {
+                case 'view': return !!perm.canView;
+                case 'add': return !!perm.canAdd;
+                case 'edit': return !!perm.canEdit;
+                case 'delete': return !!perm.canDelete;
+                default: return false;
+            }
+        } catch (e) {
+            return false;
+        }
+    }
+
     getDashboardData(): Observable<DepositSummary[]> {
         return this.http.post<DepositSummary[]>(REST_URLS.DASHBOARD, {});
     }

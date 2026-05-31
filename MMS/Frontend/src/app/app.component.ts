@@ -23,6 +23,16 @@ export class AppComponent implements OnInit {
         return;
       }
       window.scrollTo(0, 0);
+
+      // Check Session Expiration explicitly on every navigation
+      const sessionExpiryStr = localStorage.getItem('sessionExpiry');
+      if (sessionExpiryStr && this.router.url !== '/login' && this.router.url !== '/register') {
+        const expiryTime = parseInt(sessionExpiryStr, 10);
+        if (new Date().getTime() > expiryTime) {
+          localStorage.clear();
+          this.router.navigate(['/login']);
+        }
+      }
     });
   }
 }

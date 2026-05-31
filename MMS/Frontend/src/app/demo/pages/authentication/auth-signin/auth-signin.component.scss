@@ -1,0 +1,200 @@
+.auth-wrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #0f172a;
+
+  .auth-background {
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    background: radial-gradient(circle at 20% 30%, #1e293b 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, #0ea5e922 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, #6366f111 0%, transparent 50%);
+    animation: bgMove 20s infinite alternate ease-in-out;
+    z-index: 0;
+  }
+}
+
+@keyframes bgMove {
+  from { transform: translate(-10%, -10%); }
+  to { transform: translate(10%, 10%); }
+}
+
+.auth-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 450px;
+  padding: 15px;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.app-logo {
+  .logo-circle {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+    
+    i {
+      font-size: 28px;
+      color: white;
+    }
+  }
+}
+
+.auth-title {
+  color: #f8fafc;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8 !important;
+}
+
+.custom-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+  border-radius: 12px !important;
+  height: calc(3.5rem + 2px) !important;
+
+  &:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15) !important;
+  }
+
+  &::placeholder {
+    color: #64748b !important;
+  }
+}
+
+label {
+  color: #94a3b8 !important;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+  color: #6366f1 !important;
+  transform: scale(0.85) translateY(-0.75rem) translateX(0.15rem) !important;
+}
+
+.error-box {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-check {
+  .form-check-input {
+    background-color: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+
+    &:checked {
+      background-color: #6366f1;
+      border-color: #6366f1;
+    }
+  }
+
+  .form-check-label {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+}
+
+.forgot-link, .register-link {
+  color: #6366f1;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #818cf8;
+  }
+}
+
+.login-btn {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  border: none;
+  color: white;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+    filter: brightness(1.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.auth-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 10px;
+}
+
+.pwd-toggle {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 10;
+  color: #94a3b8;
+  padding: 5px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: #6366f1;
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  i {
+    font-size: 1.1rem;
+  }
+}

@@ -2,5 +2,19 @@
   <div class="navbar-wrapper">
     <app-nav-logo [navCollapsed]="navCollapsed" (NavCollapse)="navCollapse()" class="navbar-brand header-logo" />
     <app-nav-content (NavCollapsedMob)="navCollapseMob()" class="scroll-div w-100" />
+    
+    <div class="sidebar-logout-container" *ngIf="activeUser">
+      <div class="user-info">
+        <img src="assets/images/user/avatar-1.jpg" alt="User" class="img-radius">
+        <div class="user-details" *ngIf="!navCollapsed">
+          <span class="u-name">{{ activeUser?.fullName || activeUser?.username }}</span>
+          <span class="u-role">{{ activeUser?.roleName }}</span>
+        </div>
+      </div>
+      <button class="btn-logout-sidebar" (click)="logout()" title="Logout">
+        <i class="feather icon-log-out"></i>
+        <span *ngIf="!navCollapsed">Logout</span>
+      </button>
+    </div>
   </div>
 </nav>

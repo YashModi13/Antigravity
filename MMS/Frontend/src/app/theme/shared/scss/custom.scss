@@ -1,0 +1,81 @@
+// Premium UI Enhancements
+.card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  overflow: hidden;
+
+  .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 20px 25px;
+    
+    h5 {
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 0;
+    }
+  }
+
+  .card-body {
+    padding: 25px;
+  }
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  border: none;
+  box-shadow: 0 8px 20px -5px rgba(99, 102, 241, 0.4);
+  font-weight: 600;
+  
+  &:hover {
+    box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.5);
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+}
+
+.table {
+  thead th {
+    background-color: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #f1f5f9;
+    padding: 15px;
+  }
+  
+  tbody td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+  }
+}
+
+.badge {
+  padding: 6px 12px;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.form-control, .form-select {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 15px;
+  transition: all 0.2s;
+  
+  &:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+}
+
+.form-label {
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+}

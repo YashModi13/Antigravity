@@ -32,14 +32,42 @@ export class NavContentComponent {
 
   // constructor
   constructor() {
-    this.navigations = [...NavigationItems];
+    this.navigations = JSON.parse(JSON.stringify(NavigationItems));
+    this.filterNavigation();
+    
     this.mmsService.configs$.subscribe(configs => {
-      const bizName = configs.find(c => c.propertyKey === 'business.name')?.propertyValue;
+      const bizName = configs.find(c => (c as any).propertyKey === 'business.name')?.propertyValue;
       if (bizName) {
         const mmsGroup = this.navigations.find(n => n.id === 'mms');
-        if (mmsGroup) mmsGroup.title = bizName;
+        if (mmsGroup) mmsGroup.title = (bizName as any);
       }
     });
+  }
+
+  private filterNavigation() {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return;
+    try {
+        const user = JSON.parse(userStr);
+        if (!user) return;
+
+        // superAdmin bypass: Show everything
+        if (user.roleName === 'superAdmin') return;
+
+        if (!user.permissions) return;
+
+        this.navigations = JSON.parse(JSON.stringify(NavigationItems)).filter((group: any) => {
+           if (group.children) {
+              group.children = group.children.filter((item: any) => {
+                 return user.permissions.some((p: any) => p.menuName === item.title && p.canView);
+              });
+              return group.children.length > 0;
+           }
+           return true;
+        });
+    } catch (e) {
+        console.error('NavContent: Error filtering navigation', e);
+    }
   }
 
   fireOutClick() {

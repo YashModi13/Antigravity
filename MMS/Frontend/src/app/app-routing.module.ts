@@ -5,10 +5,13 @@ import { Routes, RouterModule } from '@angular/router';
 import { AdminComponent } from './theme/layout/admin/admin.component';
 import { GuestComponent } from './theme/layout/guest/guest.component';
 
+import { authGuard } from './core/guards/auth.guard';
+
 const routes: Routes = [
   {
     path: '',
     component: AdminComponent,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -57,8 +60,14 @@ const routes: Routes = [
         path: 'mms/backup',
         loadComponent: () => import('./mms/backup-restore/backup-restore.component').then((c) => c.BackupRestoreComponent)
       },
-
-
+      {
+        path: 'mms/users',
+        loadComponent: () => import('./mms/users/users.component').then((c) => c.UsersComponent)
+      },
+      {
+        path: 'mms/roles',
+        loadComponent: () => import('./mms/roles/roles.component').then((c) => c.RolesComponent)
+      },
       {
         path: 'basic',
         loadChildren: () => import('./demo/ui-elements/ui-basic/ui-basic.module').then((m) => m.UiBasicModule)

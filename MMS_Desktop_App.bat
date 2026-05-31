@@ -21,7 +21,7 @@ echo.
 
 REM 2. Cleanup existing processes to avoid port conflicts
 echo [1/5] Checking for existing instances...
-for /f "tokens=5" %%a in ('netstat -aon ^| find ":8080" ^| find "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| find ":8081" ^| find "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
 for /f "tokens=5" %%a in ('netstat -aon ^| find ":4200" ^| find "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
 
 REM 3. Start Backend
@@ -43,13 +43,13 @@ set "FRONTEND_READY=0"
 set /a COUNT+=1
 if !COUNT! GTR !MAX_RETRIES! (
     echo.
-    echo [ERROR] Services reached timeout. Please check if ports 8080 and 4200 are available.
+    echo [ERROR] Services reached timeout. Please check if ports 8081 and 4200 are available.
     pause
     exit /b
 )
 
 REM Check Backend
-netstat -an | find ":8080" | find "LISTENING" >nul
+netstat -an | find ":8081" | find "LISTENING" >nul
 if !ERRORLEVEL! EQU 0 set "BACKEND_READY=1"
 
 REM Check Frontend
@@ -95,7 +95,7 @@ taskkill /F /FI "WINDOWTITLE eq MMS_Backend_Service*" /T >nul 2>&1
 taskkill /F /FI "WINDOWTITLE eq MMS_Frontend_Service*" /T >nul 2>&1
 
 REM Fail-safe: Kill by Port
-for /f "tokens=5" %%a in ('netstat -aon ^| find ":8080" ^| find "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| find ":8081" ^| find "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
 for /f "tokens=5" %%a in ('netstat -aon ^| find ":4200" ^| find "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
 
 REM Cleanup profile data

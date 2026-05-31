@@ -102,6 +102,29 @@ export const NavigationItems: NavigationItem[] = [
         classes: 'nav-item'
       }
     ]
+  },
+  {
+    id: 'administration',
+    title: 'Administration',
+    type: 'group',
+    icon: 'icon-users',
+    children: [
+      {
+        id: 'mms-users',
+        title: 'Users',
+        type: 'item',
+        url: '/mms/users',
+        icon: 'feather icon-user',
+        classes: 'nav-item'
+      },
+      {
+        id: 'mms-roles',
+        title: 'Roles & Permissions',
+        type: 'item',
+        url: '/mms/roles',
+        icon: 'feather icon-lock',
+        classes: 'nav-item'
+      }
+    ]
   }
 ];
-

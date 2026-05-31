@@ -1,4 +1,6 @@
-export const BASE_DOMAIN = ''; // Leave empty for relative or update as needed e.g. 'http://localhost:8081'
+import { environment } from '../../../environments/environment';
+
+export const BASE_DOMAIN = environment.apiUrl || '';
 export const BASE_API_URL = BASE_DOMAIN + '/api';
 
 export const REST_URLS = {
@@ -57,5 +59,11 @@ export const REST_URLS = {
     DATABASE_BACKUP: `${BASE_API_URL}/database/backup`,
     DATABASE_RESTORE: `${BASE_API_URL}/database/restore`,
 
-    TEST_SEED: `${BASE_API_URL}/test/seed`
+    TEST_SEED: `${BASE_API_URL}/test/seed`,
+
+    AUTH_LOGIN: `${BASE_API_URL}/auth/login`,
+    AUTH_LOGOUT: `${BASE_API_URL}/auth/logout`,
+    AUTH_SIGNUP: `${BASE_API_URL}/auth/signup`,
+    USERS_LIST: `${BASE_API_URL}/users`,
+    ROLES_LIST: `${BASE_API_URL}/roles`
 };
